@@ -18,6 +18,27 @@ namespace sdl
     };
 
 
+    // static data
+    constexpr u32 N_SCREEN_MEMORY = 2;
+
+    static ScreenMemory screen_data[N_SCREEN_MEMORY] = { 0 };
+    static u32 screen_data_size = 0;
+
+
+    static ScreenMemory* allocate_screen_memory()
+    {
+        if (screen_data_size >= N_SCREEN_MEMORY)
+        {
+            return 0;
+        }
+
+        auto data = screen_data + screen_data_size;
+        ++screen_data_size;
+
+        return data;
+    }
+
+
     static void destroy_screen_memory(ScreenMemory& screen)
     {
         if (screen.texture)
@@ -199,10 +220,10 @@ namespace sdl
 /* window helpers */
 
 namespace window
-{
+{    
     bool create_screen(Window& window, cstr title, u32 width, u32 height)
     {
-        auto data = mem::alloc<sdl::ScreenMemory>("sdl::ScreenMemory");
+        auto data = sdl::allocate_screen_memory();
         if (!data)
         {
             return false;
@@ -212,7 +233,6 @@ namespace window
 
         if (!sdl::create_screen_memory(screen, title, width, height))
         {
-            mem::free(data);
             return false;
         }
 
@@ -271,7 +291,6 @@ namespace window
         if (!buffer)
         {
             sdl::destroy_screen_memory(screen);
-            mem::free(&screen);
             SDL_zero(window);
             return false;
         }
@@ -287,7 +306,6 @@ namespace window
         auto& screen = get_screen(window);
 
         sdl::destroy_screen_memory(screen);
-        mem::free(&screen);
         mem::free(window.pixel_buffer);
 
         SDL_zero(window);

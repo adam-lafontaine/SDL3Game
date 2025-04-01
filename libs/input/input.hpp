@@ -6,6 +6,8 @@
 #include "controller_input.hpp"
 
 
+/* button state */
+
 namespace input
 {
 	constexpr u32 N_STATES = 3;
@@ -401,7 +403,7 @@ namespace input
 		KeyboardInput keyboard;
 		MouseInput mouse;
 		
-		u32 num_controllers;
+		u32 n_controllers;
 
 		u64 frame;
 		f32 dt_frame;
@@ -423,3 +425,14 @@ namespace input
 
 
 
+/* api */
+
+namespace input
+{
+	bool init();
+
+	void close();
+
+
+
+}

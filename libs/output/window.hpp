@@ -39,7 +39,7 @@ namespace window
 
     void destroy(Window& window);
 
-    bool resize_pixel_buffer(Window& window);
+    bool resize_pixel_buffer(Window& window, u32 width, u32 height);
 
     void render(Window const& window);
 }
