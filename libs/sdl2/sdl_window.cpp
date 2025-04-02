@@ -75,6 +75,8 @@ namespace sdl
 
     static bool create_texture(ScreenMemory& screen, u32 width, u32 height)
     {
+        static_assert(window::PIXEL_SIZE == 4); // SDL_PIXELFORMAT_ABGR8888
+
         screen.texture =  SDL_CreateTexture(
             screen.renderer,
             SDL_PIXELFORMAT_ABGR8888,
@@ -150,6 +152,8 @@ namespace sdl
 
     static void set_window_icon(SDL_Window* window, window::Icon64 const& icon_64)
     {
+        static_assert(window::PIXEL_SIZE == icon_64.bytes_per_pixel);
+
         // these masks are needed to tell SDL_CreateRGBSurface(From)
         // to assume the data it gets is byte-wise RGB(A) data
         Uint32 rmask, gmask, bmask, amask;

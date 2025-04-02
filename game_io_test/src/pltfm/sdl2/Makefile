@@ -37,7 +37,9 @@ types_h := $(util)/types.hpp
 numeric_h := $(util)/numeric.hpp
 numeric_h += $(types_h)
 
-stopwatch_h    := $(util)/stopwatch.hpp
+stopwatch_h := $(util)/stopwatch.hpp
+
+memory_buffer := $(util)/memory_buffer.hpp
 
 #************
 
@@ -55,14 +57,20 @@ alloc_type_c += $(alloc_type_h)
 #*************
 
 
-#*** span ***
+#*** memory_buffer ***
 
-span := $(libs)/span
+memory_buffer_h := $(util)/memory_buffer.hpp
+memory_buffer_h += $(alloc_type_h)
 
-span_h := $(span)/span.hpp
-span_c := $(span)/span.cpp
+#***********
 
-#************
+
+#*** stack_buffer ***
+
+stack_buffer_h := $(util)/stack_buffer.hpp
+stack_buffer_h += $(types_h)
+
+#***********
 
 
 #*** stb_libs ***
@@ -70,8 +78,39 @@ span_c := $(span)/span.cpp
 stb_libs := $(libs)/stb_libs
 
 qsprintf_h := $(stb_libs)/qsprintf.hpp
+stb_image_options_h := $(stb_libs)/stb_image_options.hpp
 
 stb_libs_c := $(stb_libs)/stb_libs.cpp
+stb_libs_c += $(stb_image_options_h)
+
+#*************
+
+
+#*** span ***
+
+span := $(libs)/span
+
+span_h := $(span)/span.hpp
+span_h += $(memory_buffer_h)
+span_h += $(stack_buffer_h)
+span_h += $(qsprintf_h)
+
+span_c := $(span)/span.cpp
+
+#************
+
+
+#*** image ***
+
+image := $(libs)/image
+
+image_h := $(image)/image.hpp
+image_h += $(span_h)
+
+image_c := $(image)/image.cpp
+image_c += $(image_h)
+image_c += $(numeric_h)
+image_c += $(stb_image_options_h)
 
 #*************
 
@@ -120,6 +159,18 @@ sdl_window_c += $(sdl_include_h)
 #************
 
 
+#*** app ********
+
+app := $(src)/app
+
+app_h := $(app)/app.hpp
+
+app_c := $(app)/app.cpp
+app_c += $(app_h)
+
+#************
+
+
 #*** main cpp ***
 
 main_c := $(pltfm)/io_test_sdl2_main.cpp
@@ -129,16 +180,21 @@ obj    := $(main_o)
 main_dep := $(window_h)
 main_dep += $(input_h)
 main_dep += $(stopwatch_h)
+main_dep += $(app_h)
 
 # main_o.cpp
+main_dep += $(app_c)
 main_dep += $(alloc_type_c)
+main_dep += $(span_c)
+main_dep += $(image_c)
+main_dep += $(stb_libs_c)
 main_dep += $(sdl_input_c)
 main_dep += $(sdl_window_c)
 
 #*************
 
 
-#*** app ***
+#*** main ***
 
 $(main_o): $(main_c) $(main_dep)
 	@echo "\n  main"

@@ -2,7 +2,12 @@
 #include "../../../../libs/input/input.hpp"
 #include "../../../../libs/util/stopwatch.hpp"
 
+#include "../../app/app.hpp"
+
 #include <thread>
+
+namespace game = game_io_test;
+namespace img = image;
 
 
 constexpr f64 NANO = 1'000'000'000;
@@ -43,6 +48,21 @@ namespace mn
 
     window::Window window;
     input::InputArray input;
+
+    game::AppState app_state;
+}
+
+
+img::ImageView make_window_view()
+{
+    static_assert(window::PIXEL_SIZE == sizeof(img::Pixel));
+
+    img::ImageView view{};
+    view.matrix_data_ = (img::Pixel*)mn::window.pixel_buffer;
+    view.width = mn::window.width;
+    view.height = mn::window.height;
+
+    return view;
 }
 
 
@@ -60,15 +80,28 @@ static bool is_running()
 
 static bool main_init()
 {
-    auto title = "IO Test";
-    u32 width = 500;
-    u32 height = 500;
-
-
     if (!window::init())
     {
         return false;
     }
+
+    if (!input::init(mn::input))
+    {
+        return false;
+    }
+
+    auto result = game::init(mn::app_state);
+    if (!result.success)
+    {
+        // result.error_code
+        return false;
+    }
+
+    auto title = game::APP_TITLE;
+
+    u32 scale = 1;
+    u32 width = result.screen_dimensions.x / scale;
+    u32 height = result.screen_dimensions.y / scale;
 
     #include "../../../../res/icon/icon_64.cpp"
     window::Icon64 icon{};
@@ -84,7 +117,7 @@ static bool main_init()
         return false;
     }
 
-    if (!input::init(mn::input))
+    if (!game::set_screen_memory(mn::app_state, make_window_view()))
     {
         return false;
     }
@@ -97,6 +130,7 @@ void main_close()
 {
     mn::run_state = RunState::End;
 
+    game::close(mn::app_state);
     input::close();
     window::close();
 }
@@ -111,6 +145,9 @@ static void main_loop()
     {
         input::record_input(mn::input);
 
+        game::update(mn::app_state, mn::input.cur());
+
+        window::render(mn::window);
 
         mn::input.swap();
         cap_framerate(sw, TARGET_NS_PER_FRAME);
@@ -122,6 +159,7 @@ int main()
 {
     if (!main_init())
     {
+        main_close();
         return mn::MAIN_ERROR;
     }
 

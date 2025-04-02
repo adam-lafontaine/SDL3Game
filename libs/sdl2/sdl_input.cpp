@@ -6,8 +6,6 @@
 
 namespace num = numeric;
 
-void end_program(); // define in main.cpp
-
 
 /* gamepad device */
 

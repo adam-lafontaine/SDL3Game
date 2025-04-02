@@ -5,12 +5,15 @@
 
 namespace window
 {
+    static constexpr u32 PIXEL_SIZE = 4;
+
+
     class Icon64
     {
     public:
         static constexpr u32 width = 64;
         static constexpr u32 height = 64;
-        static constexpr u32 bytes_per_pixel = 4;
+        static constexpr u32 bytes_per_pixel = PIXEL_SIZE;
 
         static constexpr u32 min_data_size = width * height * bytes_per_pixel;
 

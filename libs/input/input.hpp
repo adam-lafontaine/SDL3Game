@@ -453,4 +453,6 @@ namespace input
 
 	void record_input(InputArray& input);
 
+	void end_program(); // define in main.cpp
+
 }
