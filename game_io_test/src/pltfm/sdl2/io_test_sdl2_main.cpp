@@ -60,7 +60,7 @@ static bool is_running()
 
 static bool main_init()
 {
-    auto title = "";
+    auto title = "IO Test";
     u32 width = 500;
     u32 height = 500;
     // icon?
@@ -117,9 +117,14 @@ int main()
         return mn::MAIN_ERROR;
     }
 
+    mn::run_state = RunState::Run;
+
     main_loop();
 
     main_close();
 
     return mn::MAIN_OK;
 }
+
+
+#include "main_o.cpp"

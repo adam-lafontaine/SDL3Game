@@ -305,12 +305,12 @@ namespace input
 
 namespace input
 {
-	inline void copy_input_state(Input const& src, Input& dst)
+	inline void copy_input_state(Input const& src, Input& dst, u32 n_controllers)
 	{
 		copy_keyboard_state(src.keyboard, dst.keyboard);
 		copy_mouse_state(src.mouse, dst.mouse);
 
-		for (u32 i = 0; i < src.n_controllers; i++)
+		for (u32 i = 0; i < n_controllers; i++)
 		{
 			copy_controller_state(src.controllers[i], dst.controllers[i]);
 		}

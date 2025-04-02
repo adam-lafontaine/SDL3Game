@@ -189,13 +189,10 @@ namespace sdl
                     toggle_fullscreen(window);
                     break;
                 #endif
-
-                default:
-                    break;
                 }
             }
 
-    #ifndef NDEBUG
+            #ifndef NDEBUG
 
             else
             {
@@ -211,9 +208,12 @@ namespace sdl
                 }
             }
 
-    #endif           
+            #endif           
 
         } break;
+
+        default:
+            break;
             
         }
     }
@@ -872,7 +872,7 @@ namespace input
         auto& pre = input.pre();
         auto& cur = input.cur();
 
-        copy_input_state(pre, cur);
+        copy_input_state(pre, cur, input.n_controllers);
         cur.frame = pre.frame + 1;
         cur.dt_frame = 1.0f / 60.0f; // TODO
 

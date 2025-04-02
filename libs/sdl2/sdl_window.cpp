@@ -308,7 +308,7 @@ namespace window
     {
         if (width == window.width && height == window.height)
         {
-            return;
+            return true;
         }
 
         auto& screen = get_screen(window);
