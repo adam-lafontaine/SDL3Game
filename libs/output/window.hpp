@@ -12,7 +12,9 @@ namespace window
         static constexpr u32 height = 64;
         static constexpr u32 bytes_per_pixel = 4;
 
-        u8 pixel_data[width * height * bytes_per_pixel + 1];
+        static constexpr u32 min_data_size = width * height * bytes_per_pixel;
+
+        u8* pixel_data = 0;
     };
 
 

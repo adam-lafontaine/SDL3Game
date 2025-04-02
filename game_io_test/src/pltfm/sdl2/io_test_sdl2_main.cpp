@@ -63,7 +63,6 @@ static bool main_init()
     auto title = "IO Test";
     u32 width = 500;
     u32 height = 500;
-    // icon?
 
 
     if (!window::init())
@@ -71,7 +70,16 @@ static bool main_init()
         return false;
     }
 
-    if (!window::create(mn::window, title, width, height))
+    #include "../../../../res/icon/icon_64.cpp"
+    window::Icon64 icon{};
+
+    static_assert(sizeof(icon_64.pixel_data) >= icon.min_data_size);
+    assert(icon_64.width == icon.width);
+    assert(icon_64.height == icon.height);
+
+    icon.pixel_data = (u8*)icon_64.pixel_data;
+
+    if (!window::create(mn::window, title, width, height, icon))
     {
         return false;
     }

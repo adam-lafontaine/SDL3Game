@@ -203,7 +203,7 @@ namespace window
 
         window.handle = (u64)data;
         window.width = width;
-        window.handle = height;
+        window.height = height;
 
         return true;
     }
