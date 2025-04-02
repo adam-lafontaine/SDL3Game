@@ -393,7 +393,7 @@ namespace input
 #ifdef SINGLE_CONTROLLER
 	constexpr u32 MAX_CONTROLLERS = 1;
 #else
-	constexpr u32 MAX_CONTROLLERS = 2;
+	constexpr u32 MAX_CONTROLLERS = 4;
 #endif
 
 
@@ -402,13 +402,11 @@ namespace input
 	public:
 		KeyboardInput keyboard;
 		MouseInput mouse;
-		
-		u32 n_controllers;
 
 		u64 frame;
 		f32 dt_frame;
 
-#ifdef SINGLE_CONTROLLER
+	#ifdef SINGLE_CONTROLLER
 
 		union
 		{
@@ -416,10 +414,30 @@ namespace input
 			ControllerInput controllers[MAX_CONTROLLERS];
 		};		
 		
-#else
+	#else
 		ControllerInput controllers[MAX_CONTROLLERS];
 		
-#endif
+	#endif
+	};
+
+
+	class InputArray
+	{
+	private:
+		b8 p = 0;
+		b8 c = 1;
+
+		Input inputs[2];
+
+	public:	
+		
+		u32 n_controllers;
+
+		Input& pre() { return inputs[p]; }
+
+		Input& cur() { return inputs[c]; }
+
+		void swap() { p = c; c = !p; }
 	};
 }
 
@@ -429,10 +447,10 @@ namespace input
 
 namespace input
 {
-	bool init();
+	bool init(InputArray& input);
 
 	void close();
 
-
+	void record_input(InputArray& input);
 
 }

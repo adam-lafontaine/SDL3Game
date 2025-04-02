@@ -15,6 +15,14 @@ namespace input
 	}
 
 
+	inline void record_button_input(ButtonState& state, b32 is_down)
+	{
+		state.pressed = !state.is_down && is_down;
+		state.raised = state.is_down && !is_down;
+		state.is_down = is_down;		
+	}
+
+
 	inline void copy_button_state(ButtonState const& src, ButtonState& dst)
 	{
 		dst.is_down = src.is_down;
@@ -113,12 +121,12 @@ namespace input
 	{
 		// .is_active is initially set in event listener
 
-#if MOUSE_POSITION
+	#if MOUSE_POSITION
 
-#endif
-#if MOUSE_WHEEL
+	#endif
+	#if MOUSE_WHEEL
 
-#endif
+	#endif
 
 		for (u32 i = 0; i < N_MOUSE_BUTTONS; ++i)
 		{
@@ -129,25 +137,25 @@ namespace input
 	
 	inline void copy_mouse_position(MouseInput const& src, MouseInput& dst)
 	{
-#if MOUSE_POSITION
+	#if MOUSE_POSITION
 		copy_vec_2d(src.window_pos, dst.window_pos);
-#endif
+	#endif
 	}
 
 
 	inline void reset_mouse_position(MouseInput& mouse)
 	{
-#if MOUSE_POSITION
+	#if MOUSE_POSITION
 		reset_vec_2d(mouse.window_pos);
-#endif
+	#endif
 	}
 
 
 	inline void reset_mouse_wheel(MouseInput& mouse)
 	{
-#if MOUSE_WHEEL
+	#if MOUSE_WHEEL
 		reset_vec_2d(mouse.wheel);
-#endif
+	#endif
 	}	
 
 
@@ -302,7 +310,7 @@ namespace input
 		copy_keyboard_state(src.keyboard, dst.keyboard);
 		copy_mouse_state(src.mouse, dst.mouse);
 
-		for (u32 i = 0; i < MAX_CONTROLLERS; i++)
+		for (u32 i = 0; i < src.n_controllers; i++)
 		{
 			copy_controller_state(src.controllers[i], dst.controllers[i]);
 		}

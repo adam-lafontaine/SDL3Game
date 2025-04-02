@@ -37,6 +37,8 @@ namespace window
 
     bool create(Window& window, cstr title, u32 width, u32 height, Icon64 const& icon);
 
+    bool create(Window& window, cstr title, u32 width, u32 height);
+
     void destroy(Window& window);
 
     bool resize_pixel_buffer(Window& window, u32 width, u32 height);

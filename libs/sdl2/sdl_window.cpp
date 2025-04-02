@@ -18,27 +18,6 @@ namespace sdl
     };
 
 
-    // static data
-    constexpr u32 N_SCREEN_MEMORY = 2;
-
-    static ScreenMemory screen_data[N_SCREEN_MEMORY] = { 0 };
-    static u32 screen_data_size = 0;
-
-
-    static ScreenMemory* allocate_screen_memory()
-    {
-        if (screen_data_size >= N_SCREEN_MEMORY)
-        {
-            return 0;
-        }
-
-        auto data = screen_data + screen_data_size;
-        ++screen_data_size;
-
-        return data;
-    }
-
-
     static void destroy_screen_memory(ScreenMemory& screen)
     {
         if (screen.texture)
@@ -140,11 +119,35 @@ namespace sdl
 }
 
 
-/* sdl helpers */
+/* static data */
 
 namespace sdl
 {
-    
+    constexpr u32 N_SCREEN_MEMORY = 2;
+
+    static ScreenMemory screen_data[N_SCREEN_MEMORY] = { 0 };
+    static u32 screen_data_size = 0;
+}
+
+
+/* sdl helpers */
+
+namespace sdl
+{    
+    static ScreenMemory* allocate_screen_memory()
+    {
+        if (screen_data_size >= N_SCREEN_MEMORY)
+        {
+            return 0;
+        }
+
+        auto data = screen_data + screen_data_size;
+        ++screen_data_size;
+
+        return data;
+    }
+
+
     static void set_window_icon(SDL_Window* window, window::Icon64 const& icon_64)
     {
         // these masks are needed to tell SDL_CreateRGBSurface(From)
@@ -176,44 +179,6 @@ namespace sdl
         SDL_FreeSurface(icon);
     }
 
-    
-    static void handle_window_event(SDL_WindowEvent const& w_event)
-    {
-    #ifndef NO_WINDOW
-
-        auto window = SDL_GetWindowFromID(w_event.windowID);
-
-        switch(w_event.event)
-        {
-            case SDL_WINDOWEVENT_SIZE_CHANGED:
-            {
-
-            }break;
-            case SDL_WINDOWEVENT_EXPOSED:
-            {
-                
-            } break;
-        }
-
-    #endif
-    }
-
-
-    static void toggle_fullscreen(SDL_Window* window)
-    {
-        static bool is_fullscreen = false;
-
-        if (is_fullscreen)
-        {
-            SDL_SetWindowFullscreen(window, 0);
-        }
-        else
-        {
-            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
-        }
-
-        is_fullscreen = !is_fullscreen;
-    }
 }
 
 
@@ -279,6 +244,8 @@ namespace window
 
     bool create(Window& window, cstr title, u32 width, u32 height, Icon64 const& icon)
     {
+        SDL_zero(window);
+        
         if (!create_screen(window, title, width, height))
         {
             return false;
@@ -286,6 +253,31 @@ namespace window
 
         auto& screen = get_screen(window);
         sdl::set_window_icon(screen.window, icon);
+
+        auto buffer = mem::alloc<u32>(width * height, "window.pixel_buffer");
+        if (!buffer)
+        {
+            sdl::destroy_screen_memory(screen);
+            SDL_zero(window);
+            return false;
+        }
+
+        window.pixel_buffer = buffer;
+
+        return true;
+    }
+
+
+    bool create(Window& window, cstr title, u32 width, u32 height)
+    {
+        SDL_zero(window);
+        
+        if (!create_screen(window, title, width, height))
+        {
+            return false;
+        }
+
+        auto& screen = get_screen(window);
 
         auto buffer = mem::alloc<u32>(width * height, "window.pixel_buffer");
         if (!buffer)

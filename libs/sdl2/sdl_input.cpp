@@ -6,6 +6,8 @@
 
 namespace num = numeric;
 
+void end_program(); // define in main.cpp
+
 
 /* gamepad device */
 
@@ -18,14 +20,10 @@ namespace sdl
 
         SDL_GameController* controllers[input::MAX_CONTROLLERS];
         SDL_Haptic* rumbles[input::MAX_CONTROLLERS];
-    };
+    };    
 
 
-    // static data
-    static GamepadDevice gamepad;
-
-
-    static void open_gamepad_device(GamepadDevice& device, input::Input& input)
+    static void open_gamepad_device(GamepadDevice& device, input::InputArray& input)
     {
 #ifndef NO_CONTROLLER
         int num_joysticks = SDL_NumJoysticks();
@@ -93,6 +91,14 @@ namespace sdl
 }
 
 
+/* static data */
+
+namespace sdl
+{
+    static GamepadDevice gamepad;
+}
+
+
 /* helpers */
 
 namespace sdl
@@ -105,6 +111,111 @@ namespace sdl
         f32 norm = (f32)axis / 32767;
 
         return num::abs(norm) < 0.3f ? 0.0f : num::clamp(norm, min, max);
+    }
+
+
+    static void handle_window_event(SDL_WindowEvent const& w_event)
+    {
+    #ifndef NO_WINDOW
+
+        auto window = SDL_GetWindowFromID(w_event.windowID);
+
+        switch(w_event.event)
+        {
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+            {
+
+            }break;
+            case SDL_WINDOWEVENT_EXPOSED:
+            {
+                
+            } break;
+        }
+
+    #endif
+    }
+
+
+    static void toggle_fullscreen(SDL_Window* window)
+    {
+        static bool is_fullscreen = false;
+
+        if (is_fullscreen)
+        {
+            SDL_SetWindowFullscreen(window, 0);
+        }
+        else
+        {
+            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
+        }
+
+        is_fullscreen = !is_fullscreen;
+    }
+
+
+    static void handle_sdl_event(SDL_Event const& event)
+    {
+        switch(event.type)
+        {
+        case SDL_WINDOWEVENT:
+            (event.window);
+            break;
+
+        case SDL_QUIT:
+            print_message("SDL_QUIT");
+            end_program();
+            break;
+
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
+        {
+            auto key_code = event.key.keysym.sym;
+            auto alt = event.key.keysym.mod & KMOD_ALT;
+
+            if (alt)
+            {
+                switch (key_code)
+                {
+                case SDLK_F4:
+                    print_message("ALT F4");
+                    end_program();
+                    break;
+
+                #ifndef NDEBUG
+                case SDLK_RETURN:
+                case SDLK_KP_ENTER:
+                    print_message("ALT ENTER");
+                    auto window = SDL_GetWindowFromID(event.window.windowID);
+                    toggle_fullscreen(window);
+                    break;
+                #endif
+
+                default:
+                    break;
+                }
+            }
+
+    #ifndef NDEBUG
+
+            else
+            {
+                switch (key_code)
+                {
+                case SDLK_ESCAPE:
+                    print_message("ESC");
+                    end_program();
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
+    #endif           
+
+        } break;
+            
+        }
     }
 }
 
@@ -716,9 +827,9 @@ namespace input
     }
 
 
-    static void record_gamepad_input(Input const& pre, Input& cur)
+    static void record_gamepad_input(Input const& pre, Input& cur, u32 n_controllers)
     {
-        for (u32 i = 0; i < cur.n_controllers; i++)
+        for (u32 i = 0; i < n_controllers; i++)
         {
             record_controller_input(sdl::gamepad.controllers[i], pre.controllers[i], cur.controllers[i]);
             set_is_active(cur.controllers[i]);
@@ -734,7 +845,7 @@ namespace input
 	constexpr auto subsystem_flags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
 
 
-    bool init(Input& input)
+    bool init(InputArray& input)
     {
         auto error = SDL_InitSubSystem(subsystem_flags);
         if (error)
@@ -756,8 +867,11 @@ namespace input
     }
 
 
-    void record_input(Input const& pre, Input& cur)
+    void record_input(InputArray& input)
     {
+        auto& pre = input.pre();
+        auto& cur = input.cur();
+
         copy_input_state(pre, cur);
         cur.frame = pre.frame + 1;
         cur.dt_frame = 1.0f / 60.0f; // TODO
@@ -765,10 +879,11 @@ namespace input
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
+            sdl::handle_sdl_event(event);
             record_keyboard_input(event, pre.keyboard, cur.keyboard);
             record_mouse_input(event, pre.mouse, cur.mouse);
         }
 
-        record_gamepad_input(pre, cur);
+        record_gamepad_input(pre, cur, input.n_controllers);
     }
 }
