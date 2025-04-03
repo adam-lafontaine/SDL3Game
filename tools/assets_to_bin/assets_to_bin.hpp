@@ -7,12 +7,16 @@
 #include <fstream>
 #include <cstdio>
 #include <algorithm>
+#include <functional>
 #include <cassert>
 
 namespace fs = std::filesystem;
 namespace mb = memory_buffer;
 
 using ByteBuffer = MemoryBuffer<u8>;
+
+template <typename T>
+using fn = std::function<T>;
 
 
 namespace a2b
@@ -134,13 +138,8 @@ namespace internal
         return true;
     }
 
-}
-}
 
-
-namespace a2b
-{
-    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag)
+    static bool validate_directories(cstr src_dir, cstr dst_dir)
     {
         printf("check src directory: ");
         if (!fs::exists(src_dir) || !fs::is_directory(src_dir))
@@ -158,6 +157,22 @@ namespace a2b
         }
         printf("OK\n");
         
+        return true;
+    }
+
+}
+}
+
+
+namespace a2b
+{
+    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag)
+    {
+        if (!internal::validate_directories(src_dir, dst_dir))
+        {
+            return false;
+        }
+
         printf("open bin file: ");
         auto bin_path = internal::out_bin_path(dst_dir, tag);
         std::ofstream bin_file(bin_path);
@@ -178,11 +193,82 @@ namespace a2b
             }
 
             auto buffer = internal::read_bytes(entry);
-
-            data.emplace_back(internal::file_to_var(entry), buffer.size_);
+            
             bin_file.write((char*)buffer.data_, buffer.size_);
             total += buffer.size_;
 
+            data.emplace_back(internal::file_to_var(entry), buffer.size_);
+
+            printf("read %s \n", data.back().name.c_str());
+
+            mb::destroy_buffer(buffer);
+        }
+
+        bin_file.close();
+
+        auto file_size = fs::file_size(bin_path);
+
+        printf("bin size: ");
+        if (file_size != total)
+        {
+            printf("FAIL\n");
+        }
+        else
+        {
+            printf("OK | %u bytes\n", total);
+        }
+
+        auto struct_str = to_struct_str(data, tag);
+
+        printf("sizes: ");
+        if (!internal::write_cpp_file(struct_str, dst_dir, tag))
+        {
+            printf("FAIL\n");
+            return false;
+        }
+        printf("OK\n");
+
+        return true;
+    }
+
+
+    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag, fn<ByteBuffer(ByteBuffer const&)> const& convert_bytes)
+    {
+        if (!internal::validate_directories(src_dir, dst_dir))
+        {
+            return false;
+        }
+
+        printf("open bin file: ");
+        auto bin_path = internal::out_bin_path(dst_dir, tag);
+        std::ofstream bin_file(bin_path);
+        if (!bin_file.is_open())
+        {
+            printf("FAIL\n");
+            return false;
+        }
+        printf("OK\n");
+
+        std::vector<internal::DataSize> data;
+        u32 total = 0;
+        for (auto const& entry : fs::directory_iterator(src_dir))
+        {
+            if (!internal::is_file(entry))
+            {
+                continue;
+            }
+
+            auto raw = internal::read_bytes(entry);
+            auto buffer = convert_bytes(raw);
+            
+            bin_file.write((char*)buffer.data_, buffer.size_);
+            total += buffer.size_;
+
+            data.emplace_back(internal::file_to_var(entry), buffer.size_);
+
+            printf("read %s \n", data.back().name.c_str());
+
+            mb::destroy_buffer(raw);
             mb::destroy_buffer(buffer);
         }
 
