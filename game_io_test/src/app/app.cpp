@@ -1,10 +1,10 @@
 #include "app.hpp"
 
+#include "assets.cpp"
+
 
 namespace game_io_test
 {
-    namespace img = image;
-
     constexpr u32 SCREEN_WIDTH = 500;
     constexpr u32 SCREEN_HEIGHT = 500;
 }
@@ -39,9 +39,15 @@ namespace game_io_test
     }
 
 
-    StateData& get_data(AppState& state)
+    static StateData& get_data(AppState& state)
     {
         return *state.data;
+    }
+
+
+    static void reset_data(StateData& data)
+    {
+        data.placeholder = 0;
     }
 }
 
@@ -104,7 +110,10 @@ namespace game_io_test
 
     void reset(AppState& state)
     {
-        // TODO
+        auto& data = get_data(state);
+        reset_data(data);
+
+        img::fill(state.screen, img::to_pixel(0));
     }
 
 

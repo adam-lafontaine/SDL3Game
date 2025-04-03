@@ -117,7 +117,7 @@ namespace image
 	}
 
 
-    inline Rect2Du32 make_rect(u32 width, u32 height)
+    inline constexpr Rect2Du32 make_rect(u32 width, u32 height)
     {
         Rect2Du32 range{};
         range.x_begin = 0;
@@ -129,7 +129,7 @@ namespace image
     }
 
 
-    inline Rect2Du32 make_rect(u32 x_begin, u32 y_begin, u32 width, u32 height)
+    inline constexpr Rect2Du32 make_rect(u32 x_begin, u32 y_begin, u32 width, u32 height)
     {
         Rect2Du32 range{};
         range.x_begin = x_begin;

@@ -6,6 +6,8 @@
 
 namespace game_io_test
 {
+    namespace img = image;
+
     constexpr auto APP_TITLE = "IO Test";
     constexpr auto VERSION = "1.0.0";
 
@@ -16,7 +18,7 @@ namespace game_io_test
     class AppState
     {
     public:
-        image::ImageView screen;
+        img::ImageView screen;
 
         StateData* data = nullptr;        
     };
@@ -33,7 +35,7 @@ namespace game_io_test
 
     AppResult init(AppState& state);
 
-    bool set_screen_memory(AppState& state, image::ImageView screen);
+    bool set_screen_memory(AppState& state, img::ImageView screen);
 
     void update(AppState& state, input::Input const& input);
 
