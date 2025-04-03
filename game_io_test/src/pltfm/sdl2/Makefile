@@ -168,6 +168,8 @@ app_h := $(app)/app.hpp
 app_c := $(app)/app.cpp
 app_c += $(app_h)
 
+app_c += $(app)/assets.cpp
+
 #************
 
 

@@ -2,8 +2,11 @@
 
 #include "app.hpp"
 
-
 namespace game_io_test
+{
+
+
+namespace assets
 {
 namespace controller
 {
@@ -102,7 +105,7 @@ namespace controller
 }
 
 
-namespace game_io_test
+namespace assets
 {
 namespace keyboard
 {
@@ -170,7 +173,7 @@ namespace keyboard
 }
 
 
-namespace game_io_test
+namespace assets
 {
 namespace mouse
 {
@@ -235,3 +238,7 @@ namespace mouse
         }
     }
 }
+
+
+
+} // game_io_test
