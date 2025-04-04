@@ -266,6 +266,8 @@ namespace window
             return false;
         }
 
+        SDL_memset(buffer, 0, width * height * sizeof(u32));
+
         window.pixel_buffer = buffer;
 
         return true;

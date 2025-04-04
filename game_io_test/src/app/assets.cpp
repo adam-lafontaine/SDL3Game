@@ -258,7 +258,7 @@ namespace assets
     static void destroy(DrawMaskData& data)
     {
         mb::destroy_buffer(data.buffer);
-    }    
+    }
 
 
     static DrawMaskData create_draw_mask_data()
@@ -284,18 +284,18 @@ namespace assets
         auto kmv = keyboard::make_mask(data.buffer);
         auto mmv = mouse::make_mask(data.buffer);
 
-        auto const setm = [](auto const& v, auto const& r, auto& m)
+        auto const set_mask_regions = [](auto const& view, auto const& reg, auto& mask)
         {
-            static_assert(r.count == m.count);
-            for (u32 i = 0; i < r.count; i++)
+            static_assert(reg.count == mask.count);
+            for (u32 i = 0; i < reg.count; i++)
             {
-                m.list[i] = img::sub_view(v, r.list[i]);
+                mask.list[i] = img::sub_view(view, reg.list[i]);
             }
         };
 
-        setm(cmv, cr, data.controller);
-        setm(kmv, kr, data.keyboard);
-        setm(mmv, mr, data.mouse);
+        set_mask_regions(cmv, cr, data.controller);
+        set_mask_regions(kmv, kr, data.keyboard);
+        set_mask_regions(mmv, mr, data.mouse);
 
         return data;
     }

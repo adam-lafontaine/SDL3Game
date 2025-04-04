@@ -810,6 +810,17 @@ namespace image
     }
 
 
+    void transform(GraySubView const& src, SubView const& dst, fn<Pixel(u8)> const& func)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        transform_sub_view(src, dst, func);
+    }
+
+
     void transform_scale_up(GraySubView const& src, SubView const& dst, u32 scale, fn<Pixel(u8, Pixel)> const& func)
     {
         assert(src.matrix_data_);

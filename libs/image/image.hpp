@@ -371,6 +371,8 @@ namespace image
 
     void transform(GraySubView const& src, ImageView const& dst, fn<Pixel(u8)> const& func);
 
+    void transform(GraySubView const& src, SubView const& dst, fn<Pixel(u8)> const& func);
+
 
     void transform_scale_up(GraySubView const& src, SubView const& dst, u32 scale, fn<Pixel(u8, Pixel)> const& func);
 
