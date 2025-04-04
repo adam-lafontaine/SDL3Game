@@ -1,4 +1,4 @@
-#include "../../libs/util/memory_buffer.hpp"
+#include "../util/memory_buffer.hpp"
 
 #include <filesystem>
 #include <vector>
@@ -10,13 +10,21 @@
 #include <functional>
 #include <cassert>
 
-namespace fs = std::filesystem;
-namespace mb = memory_buffer;
 
 using ByteBuffer = MemoryBuffer<u8>;
+namespace mb = memory_buffer;
 
-template <typename T>
-using fn = std::function<T>;
+
+namespace a2b
+{
+    namespace fs = std::filesystem;
+    
+
+    template <typename T>
+    using fn = std::function<T>;
+
+    using convert = fn<ByteBuffer(ByteBuffer const&)>;
+}
 
 
 namespace a2b
@@ -232,7 +240,7 @@ namespace a2b
     }
 
 
-    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag, fn<ByteBuffer(ByteBuffer const&)> const& convert_bytes)
+    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag, convert const& convert_bytes)
     {
         if (!internal::validate_directories(src_dir, dst_dir))
         {

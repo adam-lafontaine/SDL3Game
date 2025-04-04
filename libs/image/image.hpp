@@ -31,6 +31,11 @@ namespace image
     void destroy_image(Image& image);
 
 
+    bool create_image(ImageGray& image, u32 width, u32 height);
+
+    void destroy_image(ImageGray& image);
+
+
     inline u32 as_u32(Pixel p)
     {
         return  *((u32*)(&p));
@@ -147,6 +152,8 @@ namespace image
 namespace image
 {
     ImageView make_view(Image const& image);
+
+    GrayView make_view(ImageGray const& image);
 
     ImageView make_view(u32 width, u32 height, Buffer32& buffer);
 

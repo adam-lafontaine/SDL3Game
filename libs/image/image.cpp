@@ -43,6 +43,35 @@ namespace image
 		image.width = 0;
 		image.height = 0;
     }
+
+
+    bool create_image(ImageGray& image, u32 width, u32 height)
+    {
+        auto data = mem::alloc<u8>(width * height, "create_image");
+        if (!data)
+        {
+            return false;
+        }
+
+        image.data_ = data;
+        image.width = width;
+        image.height = height;
+
+        return true;
+    }
+
+    
+    void destroy_image(ImageGray& image)
+    {
+        if (image.data_)
+		{
+			mem::free(image.data_);
+			image.data_ = nullptr;
+		}
+
+		image.width = 0;
+		image.height = 0;
+    }
 }
 
 
@@ -156,6 +185,18 @@ namespace image
     ImageView make_view(Image const& image)
     {
         ImageView view{};
+
+        view.width = image.width;
+        view.height = image.height;
+        view.matrix_data_ = image.data_;
+
+        return view;
+    }
+
+
+    GrayView make_view(ImageGray const& image)
+    {
+        GrayView view{};
 
         view.width = image.width;
         view.height = image.height;
