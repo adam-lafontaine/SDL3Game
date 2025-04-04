@@ -14,7 +14,7 @@ namespace controller
     class ControllerDef
     {
     public:
-        static constexpr u32 count = 16;
+        static constexpr u32 count = 17;
 
         union
         {
@@ -22,6 +22,8 @@ namespace controller
 
             struct
             {
+                T all;
+
                 T dpad_up;
                 T dpad_down;
                 T dpad_left;
@@ -48,13 +50,15 @@ namespace controller
     };
 
 
-    using RegionList = ControllerDef<img::SubView>;
+    using MaskList = ControllerDef<img::GraySubView>;
     using RectList = ControllerDef<Rect2Du32>;
 
 
     static RectList get_region_rects()
     {
         RectList r{};
+
+        r.all = img::make_rect(192, 92);
 
         r.trigger_left  = img::make_rect(17, 4, 19, 15);
         r.trigger_right = img::make_rect(156, 4, 19, 15);
@@ -80,28 +84,24 @@ namespace controller
 
         return r;
     }
-}
 
 
-    class ControllerView
+    static img::GrayView make_mask(img::Buffer8& buffer)
     {
-    public:
-        img::SubView view;
+#include "../res/controller.cpp"
 
-        controller::RegionList regions;
-    };
+        auto w = controller.width;
+        auto h = controller.height;
 
+        auto src = span::make_view((u8*)controller.data, w * h);
+        
+        auto mask = img::make_view(w, h, buffer);
 
-    static void set_regions(ControllerView& v)
-    {
-        auto r = controller::get_region_rects();
-        static_assert(r.count == v.regions.count);
+        span::copy(src, img::to_span(mask));
 
-        for (u32 i = 0; i < r.count; i++)
-        {
-            v.regions.list[i] = img::sub_view(v.view, r.list[i]);
-        }
+        return mask;
     }
+}
 }
 
 
@@ -113,7 +113,7 @@ namespace keyboard
     class KeyboardDef
     {
     public:
-        static constexpr u32 count = 5;
+        static constexpr u32 count = 6;
 
         union
         {
@@ -121,6 +121,8 @@ namespace keyboard
 
             struct
             {
+                T all;
+
                 T w;
                 T a;
                 T s;
@@ -131,13 +133,15 @@ namespace keyboard
     };
 
 
-    using RegionList = KeyboardDef<img::SubView>;
+    using MaskList = KeyboardDef<img::GraySubView>;
     using RectList = KeyboardDef<Rect2Du32>;
 
 
     static RectList get_region_rects()
     {
         RectList r{};
+
+        r.all = img::make_rect(272, 92);
 
         r.w = img::make_rect(47, 20, 16, 16);
         r.a = img::make_rect(34, 38, 16, 16);
@@ -148,28 +152,25 @@ namespace keyboard
 
         return r;
     }
-}
 
 
-    class KeyboardView
+    static img::GrayView make_mask(img::Buffer8& buffer)
     {
-    public:
-        img::SubView view;
+#include "../res/keyboard.cpp"
 
-        keyboard::RegionList regions;        
-    };
+        auto w = keyboard.width;
+        auto h = keyboard.height;
 
+        auto src = span::make_view((u8*)keyboard.data, w * h);
 
-    static void set_regions(KeyboardView& v)
-    {
-        auto r = keyboard::get_region_rects();
-        static_assert(r.count == v.regions.count);
+        auto mask = img::make_view(w, h, buffer);
 
-        for (u32 i = 0; i < r.count; i++)
-        {
-            v.regions.list[i] = img::sub_view(v.view, r.list[i]);
-        }
+        span::copy(src, img::to_span(mask));
+
+        return mask;
     }
+    
+}
 }
 
 
@@ -181,7 +182,7 @@ namespace mouse
     class MouseDef
     {
     public:
-        static constexpr u32 count = 5;
+        static constexpr u32 count = 6;
 
         union
         {
@@ -189,6 +190,8 @@ namespace mouse
 
             struct
             {
+                T all;
+
                 T left;
                 T right;
                 T middle;
@@ -199,13 +202,15 @@ namespace mouse
     };
 
 
-    using RegionList = MouseDef<img::SubView>;
+    using MaskList = MouseDef<img::GraySubView>;
     using RectList = MouseDef<Rect2Du32>;
 
 
     static RectList get_region_rects()
     {
         RectList r{};
+
+        r.all = img::make_rect(80, 92);
 
         r.left   = img::make_rect(1, 1, 30, 30);
         r.right  = img::make_rect(49, 1, 30, 30);
@@ -215,27 +220,84 @@ namespace mouse
 
         return r;
     }
+
+
+    static img::GrayView make_mask(img::Buffer8& buffer)
+    {
+#include "../res/mouse.cpp"
+
+        auto w = mouse.width;
+        auto h = mouse.height;
+
+        auto src = span::make_view((u8*)mouse.data, w * h);
+
+        auto mask = img::make_view(w, h, buffer);
+
+        span::copy(src, img::to_span(mask));
+
+        return mask;
+    }
+}
 }
 
 
-    class MouseView
+namespace assets
+{
+    class DrawMaskData
     {
     public:
-        img::SubView view;
 
-        mouse::RegionList regions;        
+        controller::MaskList controller;
+        keyboard::MaskList keyboard;
+        mouse::MaskList mouse;
+        
+        img::Buffer8 buffer;
     };
 
 
-    static void set_regions(MouseView& v)
+    static void destroy(DrawMaskData& data)
     {
-        auto r = mouse::get_region_rects();
-        static_assert(r.count == v.regions.count);
+        mb::destroy_buffer(data.buffer);
+    }    
 
-        for (u32 i = 0; i < r.count; i++)
+
+    static DrawMaskData create_draw_mask_data()
+    {
+        auto cr = controller::get_region_rects();
+        auto kr = keyboard::get_region_rects();
+        auto mr = mouse::get_region_rects();
+
+        auto const w = [](auto const& r) { return r.all.x_end - r.all.x_begin; };
+        auto const h = [](auto const& r) { return r.all.y_end - r.all.y_begin; };
+
+        auto cn = w(cr) * h(cr);
+        auto kn = w(kr) * h(kr);
+        auto mn = w(mr) * h(mr);
+
+        auto n = cn + kn + mn;
+
+        DrawMaskData data;
+
+        data.buffer = img::create_buffer8(n, "mask");
+
+        auto cmv = controller::make_mask(data.buffer);
+        auto kmv = keyboard::make_mask(data.buffer);
+        auto mmv = mouse::make_mask(data.buffer);
+
+        auto const setm = [](auto const& v, auto const& r, auto& m)
         {
-            v.regions.list[i] = img::sub_view(v.view, r.list[i]);
-        }
+            static_assert(r.count == m.count);
+            for (u32 i = 0; i < r.count; i++)
+            {
+                m.list[i] = img::sub_view(v, r.list[i]);
+            }
+        };
+
+        setm(cmv, cr, data.controller);
+        setm(kmv, kr, data.keyboard);
+        setm(mmv, mr, data.mouse);
+
+        return data;
     }
 }
 

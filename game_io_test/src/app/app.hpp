@@ -7,6 +7,7 @@
 namespace game_io_test
 {
     namespace img = image;
+    namespace mb = memory_buffer;
 
     constexpr auto APP_TITLE = "IO Test";
     constexpr auto VERSION = "1.0.0";

@@ -32,6 +32,7 @@ namespace internal
         return fs::is_regular_file(entry) && entry.has_filename() && entry.has_extension();
     }
     
+    
     static std::string to_struct_str(img::ImageGray image, std::string const& name)
     {
         cstr tab = "    ";
@@ -41,7 +42,8 @@ namespace internal
         std::ostringstream oss;
 
         oss
-        << "static constexpr struct\n"
+        //<< "static constexpr struct\n"
+        << "const struct\n"
         << "{\n";
 
         oss

@@ -162,6 +162,7 @@ sdl_window_c += $(sdl_include_h)
 #*** app ********
 
 app := $(src)/app
+res := $(src)/res
 
 app_h := $(app)/app.hpp
 
@@ -169,6 +170,9 @@ app_c := $(app)/app.cpp
 app_c += $(app_h)
 
 app_c += $(app)/assets.cpp
+app_c += $(res)/controller.cpp
+app_c += $(res)/keyboard.cpp
+app_c += $(res)/mouse.cpp
 
 #************
 

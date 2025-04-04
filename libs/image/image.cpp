@@ -142,18 +142,6 @@ namespace image
 
 
     template <typename T>
-    static inline SpanView<T> to_span(MatrixView2D<T> const& view)
-    {
-        SpanView<T> span{};
-
-        span.data = view.matrix_data_;
-        span.length = view.width * view.height;
-
-        return span;
-    }
-
-
-    template <typename T>
     static inline SpanView<T> sub_span(MatrixView2D<T> const& view, u32 y, u32 x_begin, u32 x_end)
     {
         SpanView<T> span{};

@@ -7,6 +7,9 @@ namespace game_io_test
 {
     constexpr u32 SCREEN_WIDTH = 500;
     constexpr u32 SCREEN_HEIGHT = 500;
+
+
+
 }
 
 
@@ -15,12 +18,21 @@ namespace game_io_test
     class StateData
     {
     public:
-        u32 placeholder = 0;
+        assets::DrawMaskData masks;
     };
+
+
+    static StateData& get_data(AppState& state)
+    {
+        return *state.data;
+    }
 
 
     static void destroy_state_data(AppState& state)
     {
+        auto& data = get_data(state);
+
+        assets::destroy(data.masks);
         mem::free(state.data);
     }
 
@@ -35,19 +47,15 @@ namespace game_io_test
 
         state.data = data;
 
+        data->masks = assets::create_draw_mask_data();
+
         return true;
-    }
-
-
-    static StateData& get_data(AppState& state)
-    {
-        return *state.data;
     }
 
 
     static void reset_data(StateData& data)
     {
-        data.placeholder = 0;
+        
     }
 }
 

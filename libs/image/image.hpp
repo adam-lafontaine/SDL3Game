@@ -243,6 +243,30 @@ namespace image
 
         return pt;
     }
+
+
+    template <typename T>
+    static inline SpanView<T> to_span(Matrix2D<T> const& view)
+    {
+        SpanView<T> span{};
+
+        span.data = view.matrix_data_;
+        span.length = view.width * view.height;
+
+        return span;
+    }
+    
+
+    template <typename T>
+    static inline SpanView<T> to_span(MatrixView2D<T> const& view)
+    {
+        SpanView<T> span{};
+
+        span.data = view.matrix_data_;
+        span.length = view.width * view.height;
+
+        return span;
+    }
 }
 
 

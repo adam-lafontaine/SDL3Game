@@ -1,6 +1,6 @@
 // mouse.cpp
 
-static constexpr struct
+const struct
 {
     unsigned width;
     unsigned height;
