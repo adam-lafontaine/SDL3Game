@@ -115,24 +115,24 @@ namespace game_io_test
     constexpr auto COLOR_OFF = img::to_pixel(127);
 
 
-    static p32 mask_set_on(u8 m)
+    static p32 mask_set_on(u8 m, p32 d)
     {
         switch (m)
         {
         case 1: return COLOR_BLACK;
         case 2: return COLOR_ON;
-        default: return COLOR_TRANSPARENT;
+        default: return d;
         }
     }
 
 
-    static p32 mask_set_off(u8 m)
+    static p32 mask_set_off(u8 m, p32 d)
     {
         switch (m)
         {
         case 1: return COLOR_BLACK;
         case 2: return COLOR_OFF;
-        default: return COLOR_TRANSPARENT;
+        default: return d;
         }
     }
 
