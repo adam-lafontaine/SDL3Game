@@ -193,6 +193,7 @@ app_c += $(app)/assets.cpp
 app_c += $(res)/controller.cpp
 app_c += $(res)/keyboard.cpp
 app_c += $(res)/mouse.cpp
+app_c += $(res)/mask_sizes.cpp
 
 #************
 

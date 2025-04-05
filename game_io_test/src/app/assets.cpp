@@ -16,7 +16,7 @@ namespace controller
     class ControllerDef
     {
     public:
-        static constexpr u32 count = 17;
+        static constexpr u32 count = 16;
 
         union
         {
@@ -24,7 +24,7 @@ namespace controller
 
             struct
             {
-                T all;
+                //T all;
 
                 T dpad_up;
                 T dpad_down;
@@ -60,8 +60,6 @@ namespace controller
     {
         RectList r{};
 
-        r.all = img::make_rect(192, 92);
-
         r.trigger_left  = img::make_rect(17, 4, 19, 15);
         r.trigger_right = img::make_rect(156, 4, 19, 15);
 
@@ -90,7 +88,7 @@ namespace controller
 
     static img::GrayView make_mask(img::Buffer8& buffer)
     {
-#include "../res/controller.cpp"
+    #include "../res/controller.cpp"
 
         auto w = controller.width;
         auto h = controller.height;
@@ -117,7 +115,7 @@ namespace keyboard
     class KeyboardDef
     {
     public:
-        static constexpr u32 count = 10;
+        static constexpr u32 count = 9;
 
         union
         {
@@ -125,7 +123,7 @@ namespace keyboard
 
             struct
             {
-                T all;
+                //T all;
 
                 T n_1;
                 T n_2;
@@ -151,8 +149,6 @@ namespace keyboard
     {
         RectList r{};
 
-        r.all = img::make_rect(272, 92);
-
         r.n_1 = img::make_rect(20, 2, 16, 16);
         r.n_2 = img::make_rect(38, 2, 16, 16);
         r.n_3 = img::make_rect(56, 2, 16, 16);
@@ -171,7 +167,7 @@ namespace keyboard
 
     static img::GrayView make_mask(img::Buffer8& buffer)
     {
-#include "../res/keyboard.cpp"
+    #include "../res/keyboard.cpp"
 
         auto w = keyboard.width;
         auto h = keyboard.height;
@@ -199,7 +195,7 @@ namespace mouse
     class MouseDef
     {
     public:
-        static constexpr u32 count = 6;
+        static constexpr u32 count = 5;
 
         union
         {
@@ -207,11 +203,12 @@ namespace mouse
 
             struct
             {
-                T all;
+                //T all;
 
                 T left;
                 T right;
                 T middle;
+
                 T pos_x;
                 T pos_y;
             };
@@ -227,8 +224,6 @@ namespace mouse
     {
         RectList r{};
 
-        r.all = img::make_rect(80, 92);
-
         r.left   = img::make_rect(1, 1, 30, 30);
         r.right  = img::make_rect(49, 1, 30, 30);
         r.middle = img::make_rect(32, 1, 14, 30);
@@ -241,7 +236,7 @@ namespace mouse
 
     static img::GrayView make_mask(img::Buffer8& buffer)
     {
-#include "../res/mouse.cpp"
+    #include "../res/mouse.cpp"
 
         auto w = mouse.width;
         auto h = mouse.height;
@@ -267,21 +262,24 @@ namespace assets
         controller::MaskList controller;
         keyboard::MaskList keyboard;
         mouse::MaskList mouse;
+
+        img::GrayView controller_view;
+        img::GrayView keyboard_view;
+        img::GrayView mouse_view;
     };
 
 
     static u32 draw_mask_size()
     {
-        auto cr = controller::get_region_rects();
-        auto kr = keyboard::get_region_rects();
-        auto mr = mouse::get_region_rects();
+    #include "../res/mask_sizes.cpp"
 
-        auto const w = [](auto const& r) { return r.all.x_end - r.all.x_begin; };
-        auto const h = [](auto const& r) { return r.all.y_end - r.all.y_begin; };
+        auto c = mask_sizes.controller;
+        auto k = mask_sizes.keyboard;
+        auto m = mask_sizes.mouse;        
 
-        auto cn = w(cr) * h(cr);
-        auto kn = w(kr) * h(kr);
-        auto mn = w(mr) * h(mr);
+        auto cn = c.width * c.height;
+        auto kn = k.width * k.height;
+        auto mn = m.width * m.height;
 
         return cn + kn + mn;
     }
@@ -311,6 +309,10 @@ namespace assets
         set_mask_regions(cmv, cr, data.controller);
         set_mask_regions(kmv, kr, data.keyboard);
         set_mask_regions(mmv, mr, data.mouse);
+
+        data.controller_view = cmv;
+        data.keyboard_view = kmv;
+        data.mouse_view = mmv;
 
         return data;
     }

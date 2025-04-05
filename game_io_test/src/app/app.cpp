@@ -40,11 +40,16 @@ namespace game_io_test
     class MaskViewList
     {
     public:
+        
+        MaskView controller1;
+        MaskView controller2;
+        MaskView keyboard;
+        MaskView mouse;
 
-        ControllerDef<MaskView> controller1;
-        ControllerDef<MaskView> controller2;
-        KeyboardDef<MaskView> keyboard;
-        MouseDef<MaskView> mouse;
+        ControllerDef<MaskView> controller1_in;
+        ControllerDef<MaskView> controller2_in;
+        KeyboardDef<MaskView> keyboard_in;
+        MouseDef<MaskView> mouse_in;
     };    
 
 
@@ -52,12 +57,12 @@ namespace game_io_test
     {
         /*
         | ctlr ctlr |
-        | kbd  mse  |
+        | kbd   mse |
         */
 
-        auto& c = masks.controller.all;
-        auto& k = masks.keyboard.all;
-        auto& m = masks.mouse.all;
+        auto& c = masks.controller_view;
+        auto& k = masks.keyboard_view;
+        auto& m = masks.mouse_view;
 
         auto w = num::max(c.width * 2, k.width + m.width);
         auto h = num::max(c.height + k.height, c.height + m.height);
@@ -68,23 +73,37 @@ namespace game_io_test
 
     static void set_mask_views(assets::DrawMaskData const& masks, img::ImageView const& out, MaskViewList& mv)
     {
-        auto& c = masks.controller.all;
-        auto& k = masks.keyboard.all;
-        auto& m = masks.mouse.all;
+        auto& c_mask = masks.controller_view;
+        auto& k_mask = masks.keyboard_view;
+        auto& m_mask = masks.mouse_view;
 
         auto sw = out.width;
         auto sh = out.height;
-        auto cw = c.width;
-        auto ch = c.height;
-        auto kw = k.width;
-        auto kh = k.height;
-        auto mw = m.width;
-        auto mh = m.height;
+        auto cw = c_mask.width;
+        auto ch = c_mask.height;
+        auto kw = k_mask.width;
+        auto kh = k_mask.height;
+        auto mw = m_mask.width;
+        auto mh = m_mask.height;
 
-        auto cview1 = img::sub_view(out, img::make_rect(0, 0, cw, ch));
-        auto cview2 = img::sub_view(out, img::make_rect(sw - cw, 0, cw, ch));
-        auto kview = img::sub_view(out, img::make_rect(0, sh - kh, kw, kh));
-        auto mview = img::sub_view(out, img::make_rect(sw - mw, sh - mh, mw, mh));
+        auto c_out1 = img::sub_view(out, img::make_rect(0, 0, cw, ch));
+        auto c_out2 = img::sub_view(out, img::make_rect(sw - cw, 0, cw, ch));
+        auto k_out = img::sub_view(out, img::make_rect(0, sh - kh, kw, kh));
+        auto m_out = img::sub_view(out, img::make_rect(sw - mw, sh - mh, mw, mh));
+
+        auto const sub_full = [](auto const& v) { return img::sub_view(v, img::make_rect(v.width, v.height)); };
+
+        mv.controller1.mask = sub_full(c_mask);
+        mv.controller1.out = c_out1;
+
+        mv.controller2.mask = sub_full(c_mask);
+        mv.controller2.out = c_out2;
+
+        mv.keyboard.mask = sub_full(k_mask);
+        mv.keyboard.out = k_out;
+
+        mv.mouse.mask = sub_full(m_mask);
+        mv.mouse.out = m_out;
 
         auto creg = assets::controller::get_region_rects();
         auto kreg = assets::keyboard::get_region_rects();
@@ -108,15 +127,15 @@ namespace game_io_test
             }
         };
 
-        set_mask_regions(masks.controller, mv.controller1);
-        set_mask_regions(masks.controller, mv.controller2);
-        set_mask_regions(masks.keyboard, mv.keyboard);
-        set_mask_regions(masks.mouse, mv.mouse);
+        set_mask_regions(masks.controller, mv.controller1_in);
+        set_mask_regions(masks.controller, mv.controller2_in);
+        set_mask_regions(masks.keyboard, mv.keyboard_in);
+        set_mask_regions(masks.mouse, mv.mouse_in);
 
-        set_out_regions(cview1, creg, mv.controller1);
-        set_out_regions(cview2, creg, mv.controller2);
-        set_out_regions(kview, kreg, mv.keyboard);
-        set_out_regions(mview, mreg, mv.mouse);
+        set_out_regions(c_out1, creg, mv.controller1_in);
+        set_out_regions(c_out2, creg, mv.controller2_in);
+        set_out_regions(k_out, kreg, mv.keyboard_in);
+        set_out_regions(m_out, mreg, mv.mouse_in);
     }
 }
 
@@ -292,6 +311,11 @@ namespace game_io_test
 
     static void draw(MaskViewList const& mv, InputList const& input)
     {
+        draw(mv.controller1, 0);
+        draw(mv.controller2, 0);
+        draw(mv.keyboard, 0);
+        draw(mv.mouse, 0);
+
         auto const draw_masks = [](auto const& m, auto const& in)
         {
             static_assert(m.count == in.count);
@@ -301,12 +325,12 @@ namespace game_io_test
             }
         };
 
-        draw_masks(mv.controller1, input.controller1);
-        draw_masks(mv.controller2, input.controller2);
-        draw_masks(mv.keyboard, input.keyboard);
-        draw_masks(mv.mouse, input.mouse);
+        draw_masks(mv.controller1_in, input.controller1);
+        draw_masks(mv.controller2_in, input.controller2);
+        draw_masks(mv.keyboard_in, input.keyboard);
+        draw_masks(mv.mouse_in, input.mouse);
 
-        draw_mouse_coords(mv.mouse, input.mouse_pos);
+        draw_mouse_coords(mv.mouse_in, input.mouse_pos);
     }
 }
 
