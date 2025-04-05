@@ -4,11 +4,29 @@
 #include "assets.cpp"
 
 
+/* definitions */
+
 namespace game_io_test
 {
     namespace num = numeric;
 
+    using Input = input::Input;
 
+    template <typename T>
+    using ControllerDef = assets::controller::ControllerDef<T>;
+
+    template <typename T>
+    using KeyboardDef = assets::keyboard::KeyboardDef<T>;
+
+    template <typename T>
+    using MouseDef = assets::mouse::MouseDef<T>;
+}
+
+
+/* mask view */
+
+namespace game_io_test
+{
     class MaskView
     {
     public:
@@ -21,12 +39,11 @@ namespace game_io_test
     {
     public:
 
-        assets::controller::ControllerDef<MaskView> controller1;
-        assets::controller::ControllerDef<MaskView> controller2;
-        assets::keyboard::KeyboardDef<MaskView> keyboard;
-        assets::mouse::MouseDef<MaskView> mouse;        
-    };
-    
+        ControllerDef<MaskView> controller1;
+        ControllerDef<MaskView> controller2;
+        KeyboardDef<MaskView> keyboard;
+        MouseDef<MaskView> mouse;
+    };    
 
 
     static Vec2Du32 app_screen_dimensions(assets::DrawMaskData const& masks)
@@ -102,6 +119,54 @@ namespace game_io_test
 }
 
 
+/* update */
+
+namespace game_io_test
+{
+    class InputList
+    {
+    public:
+
+        ControllerDef<b8> controller1;
+        ControllerDef<b8> controller2;
+        KeyboardDef<b8> keyboard;
+        MouseDef<b8> mouse;
+    };
+
+
+    static void clear_input_list(InputList& inputs)
+    {
+        auto const& clear = [](auto& in)
+        {
+            for (u32 i = 0; i < in.count; i++)
+            {
+                in.list[i] = 0;
+            }
+        };
+
+        clear(inputs.controller1);
+        clear(inputs.controller2);
+        clear(inputs.keyboard);
+        clear(inputs.mouse);
+    }
+
+
+    static void map_controller(input::ControllerInput const& src, ControllerDef<b8>& dst)
+    {
+        dst.dpad_up = src.btn_dpad_up.is_down;
+        dst.dpad_down = src.btn_dpad_down.is_down;
+        dst.dpad_left = src.btn_dpad_left.is_down;
+        dst.dpad_right = src.btn_dpad_right.is_down;
+    }
+
+
+    static void update(Input const& src, InputList& dst)
+    {
+        map_controller(src.controllers[0], dst.controller1);
+    }
+}
+
+
 /* draw */
 
 namespace game_io_test
@@ -148,20 +213,21 @@ namespace game_io_test
     }
 
 
-    static void draw(MaskViewList const& mv)
+    static void draw(MaskViewList const& mv, InputList const& input)
     {
-        auto const draw_masks = [](auto const& m)
+        auto const draw_masks = [](auto const& m, auto const& in)
         {
+            static_assert(m.count == in.count);
             for (u32 i = 0; i < m.count; i++)
             {
-                draw(m.list[i], 0); // TODO
+                draw(m.list[i], in.list[i]);
             }
         };
 
-        draw_masks(mv.controller1);
-        draw_masks(mv.controller2);
-        draw_masks(mv.keyboard);
-        draw_masks(mv.mouse);
+        draw_masks(mv.controller1, input.controller1);
+        draw_masks(mv.controller2, input.controller2);
+        draw_masks(mv.keyboard, input.keyboard);
+        draw_masks(mv.mouse, input.mouse);
     }
 }
 
@@ -175,6 +241,7 @@ namespace game_io_test
     public:
         assets::DrawMaskData masks;
         MaskViewList mask_views;
+        InputList inputs;
 
         img::ImageView out_src;
         img::SubView out_dst;
@@ -232,13 +299,15 @@ namespace game_io_test
         data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
         set_mask_views(data.masks, data.out_src, data.mask_views);
 
+        clear_input_list(data.inputs);
+
         return true;
     }
 
 
     static void reset_data(StateData& data)
     {
-        
+        clear_input_list(data.inputs);
     }
 }
 
@@ -293,16 +362,17 @@ namespace game_io_test
     }
 
 
-    void update(AppState& state, input::Input const& input)
+    void update(AppState& state, Input const& input)
     {
         auto& kbd = input.keyboard;
 
         auto& data = get_data(state);
 
+        update(input, data.inputs);
+
         img::fill(data.out_src, COLOR_BACKGROUND);
 
-
-        draw(data.mask_views);
+        draw(data.mask_views, data.inputs);
         img::scale_up(data.out_src, data.out_dst, data.out_scale);
     }
 
