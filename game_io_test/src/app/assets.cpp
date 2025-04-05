@@ -29,13 +29,13 @@ namespace controller
                 T dpad_left;
                 T dpad_right;
 
-                T start;
-                T back;
-
                 T a;
                 T b;
                 T x;
                 T y;
+
+                T start;
+                T back;
 
                 T shoulder_left;
                 T shoulder_right;
@@ -66,8 +66,8 @@ namespace controller
         r.shoulder_left  = img::make_rect(17, 21, 19, 8);
         r.shoulder_right = img::make_rect(156, 21, 19, 8);
 
-        r.start = img::make_rect(74, 23, 16, 9);
-        r.back  = img::make_rect(102, 23, 16, 9);
+        r.back = img::make_rect(74, 23, 16, 9);
+        r.start  = img::make_rect(102, 23, 16, 9);
 
         r.dpad_up    = img::make_rect(21, 32, 10, 17);
         r.dpad_down  = img::make_rect(21, 60, 10, 17);
@@ -78,8 +78,8 @@ namespace controller
         r.stick_right = img::make_rect(108, 44, 25, 25);
 
         r.a = img::make_rect(158, 62, 15, 15);
-        r.b = img::make_rect(143, 47, 15, 15);
-        r.x = img::make_rect(173, 47, 15, 15);
+        r.b = img::make_rect(173, 47, 15, 15);
+        r.x = img::make_rect(143, 47, 15, 15);        
         r.y = img::make_rect(158, 32, 15, 15);
 
         return r;

@@ -756,7 +756,8 @@ namespace input
         constexpr f32 hypot = 1.4142135f;
         constexpr f32 i_hypot = 1.0f / hypot;
 
-        auto mag = (x && y) ? hypot : (x || y) ? 1.0f : 0.0f;
+        //auto mag = (x && y) ? hypot : (x || y) ? 1.0f : 0.0f;
+        auto mag = (x || y) ? 1.0f : 0.0f;
         auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
 
         vec.magnitude = mag;

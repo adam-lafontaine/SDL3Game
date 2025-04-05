@@ -151,18 +151,42 @@ namespace game_io_test
     }
 
 
+    static inline void map_button(input::ButtonState const& btn, b8& dst)
+    {
+        dst = btn.is_down;
+    }
+
+
     static void map_controller(input::ControllerInput const& src, ControllerDef<b8>& dst)
     {
-        dst.dpad_up = src.btn_dpad_up.is_down;
-        dst.dpad_down = src.btn_dpad_down.is_down;
-        dst.dpad_left = src.btn_dpad_left.is_down;
-        dst.dpad_right = src.btn_dpad_right.is_down;
+        map_button(src.btn_dpad_up, dst.dpad_up);
+        map_button(src.btn_dpad_down, dst.dpad_down);
+        map_button(src.btn_dpad_left, dst.dpad_left);
+        map_button(src.btn_dpad_right, dst.dpad_right);
+
+        map_button(src.btn_a, dst.a);
+        map_button(src.btn_b, dst.b);
+        map_button(src.btn_x, dst.x);
+        map_button(src.btn_y, dst.y);
+
+        map_button(src.btn_start, dst.start);
+        map_button(src.btn_back, dst.back);
+        
+        map_button(src.btn_shoulder_left, dst.shoulder_left);
+        map_button(src.btn_shoulder_right, dst.shoulder_right);
+
+        dst.stick_left = src.stick_left.magnitude > 0.0f;
+        dst.stick_right = src.stick_right.magnitude > 0.0f;
+
+        dst.trigger_left = src.trigger_left > 0.0f;
+        dst.trigger_right = src.trigger_right > 0.0f;
     }
 
 
     static void update(Input const& src, InputList& dst)
     {
         map_controller(src.controllers[0], dst.controller1);
+        map_controller(src.controllers[1], dst.controller2);
     }
 }
 
