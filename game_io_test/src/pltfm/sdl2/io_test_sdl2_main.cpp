@@ -10,6 +10,10 @@ namespace game = game_io_test;
 namespace img = image;
 
 
+constexpr u32 WINDOW_WIDTH = 800;
+constexpr u32 WINDOW_HEIGHT = 600;
+
+
 constexpr f64 NANO = 1'000'000'000;
 
 constexpr f64 TARGET_FPS = 60.0;
@@ -98,10 +102,14 @@ static bool main_init()
     }
 
     auto title = game::APP_TITLE;
+    
+    u32 width = result.screen_dimensions.x;
+    u32 height = result.screen_dimensions.y;
 
-    u32 scale = 1;
-    u32 width = result.screen_dimensions.x / scale;
-    u32 height = result.screen_dimensions.y / scale;
+    if (width > WINDOW_WIDTH || height > WINDOW_HEIGHT)
+    {
+        return false;
+    }
 
     #include "../../../../res/icon/icon_64.cpp"
     window::Icon64 icon{};
@@ -112,7 +120,7 @@ static bool main_init()
 
     icon.pixel_data = (u8*)icon_64.pixel_data;
 
-    if (!window::create(mn::window, title, width, height, icon))
+    if (!window::create(mn::window, title, WINDOW_WIDTH, WINDOW_HEIGHT, icon))
     {
         return false;
     }

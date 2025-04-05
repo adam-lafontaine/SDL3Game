@@ -479,6 +479,8 @@ namespace image
 
     void scale_up(ImageView const& src, ImageView const& dst, u32 scale);
 
+    void scale_up(ImageView const& src, SubView const& dst, u32 scale);
+
     bool resize(ImageView const& src, ImageView const& dst);
 }
 

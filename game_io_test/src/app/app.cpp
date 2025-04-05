@@ -17,19 +17,19 @@ namespace game_io_test
     };
 
 
-    class ScreenView
+    class MaskViewList
     {
     public:
 
         assets::controller::ControllerDef<MaskView> controller1;
         assets::controller::ControllerDef<MaskView> controller2;
         assets::keyboard::KeyboardDef<MaskView> keyboard;
-        assets::mouse::MouseDef<MaskView> mouse;
+        assets::mouse::MouseDef<MaskView> mouse;        
     };
     
 
 
-    static Vec2Du32 screen_dimensions(assets::DrawMaskData const& masks)
+    static Vec2Du32 app_screen_dimensions(assets::DrawMaskData const& masks)
     {
         /*
         | ctlr ctlr |
@@ -47,14 +47,14 @@ namespace game_io_test
     }
 
 
-    static void set_screen_view(assets::DrawMaskData const& masks, img::ImageView const& screen, ScreenView& view)
+    static void set_mask_views(assets::DrawMaskData const& masks, img::ImageView const& out, MaskViewList& mv)
     {
         auto& c = masks.controller.all;
         auto& k = masks.keyboard.all;
         auto& m = masks.mouse.all;
 
-        auto sw = screen.width;
-        auto sh = screen.height;
+        auto sw = out.width;
+        auto sh = out.height;
         auto cw = c.width;
         auto ch = c.height;
         auto kw = k.width;
@@ -62,14 +62,14 @@ namespace game_io_test
         auto mw = m.width;
         auto mh = m.height;
 
-        auto cv1 = img::sub_view(screen, img::make_rect(0, 0, cw, ch));
-        auto cv2 = img::sub_view(screen, img::make_rect(sw - cw, 0, cw, ch));
-        auto kv = img::sub_view(screen, img::make_rect(0, sh - kh, kw, kh));
-        auto mv = img::sub_view(screen, img::make_rect(sw - mw, sh - mh, mw, mh));
+        auto cview1 = img::sub_view(out, img::make_rect(0, 0, cw, ch));
+        auto cview2 = img::sub_view(out, img::make_rect(sw - cw, 0, cw, ch));
+        auto kview = img::sub_view(out, img::make_rect(0, sh - kh, kw, kh));
+        auto mview = img::sub_view(out, img::make_rect(sw - mw, sh - mh, mw, mh));
 
-        auto cr = assets::controller::get_region_rects();
-        auto kr = assets::keyboard::get_region_rects();
-        auto mr = assets::mouse::get_region_rects();
+        auto creg = assets::controller::get_region_rects();
+        auto kreg = assets::keyboard::get_region_rects();
+        auto mreg = assets::mouse::get_region_rects();
 
         auto const set_mask_regions = [](auto const& m, auto& mv)
         {
@@ -89,15 +89,15 @@ namespace game_io_test
             }
         };
 
-        set_mask_regions(masks.controller, view.controller1);
-        set_mask_regions(masks.controller, view.controller2);
-        set_mask_regions(masks.keyboard, view.keyboard);
-        set_mask_regions(masks.mouse, view.mouse);
+        set_mask_regions(masks.controller, mv.controller1);
+        set_mask_regions(masks.controller, mv.controller2);
+        set_mask_regions(masks.keyboard, mv.keyboard);
+        set_mask_regions(masks.mouse, mv.mouse);
 
-        set_out_regions(cv1, cr, view.controller1);
-        set_out_regions(cv2, cr, view.controller2);
-        set_out_regions(kv, kr, view.keyboard);
-        set_out_regions(mv, mr, view.mouse);
+        set_out_regions(cview1, creg, mv.controller1);
+        set_out_regions(cview2, creg, mv.controller2);
+        set_out_regions(kview, kreg, mv.keyboard);
+        set_out_regions(mview, mreg, mv.mouse);
     }
 }
 
@@ -148,7 +148,7 @@ namespace game_io_test
     }
 
 
-    static void draw(ScreenView const& screen)
+    static void draw(MaskViewList const& mv)
     {
         auto const draw_masks = [](auto const& m)
         {
@@ -158,13 +158,15 @@ namespace game_io_test
             }
         };
 
-        draw_masks(screen.controller1);
-        draw_masks(screen.controller2);
-        draw_masks(screen.keyboard);
-        draw_masks(screen.mouse);
+        draw_masks(mv.controller1);
+        draw_masks(mv.controller2);
+        draw_masks(mv.keyboard);
+        draw_masks(mv.mouse);
     }
 }
 
+
+/* state */
 
 namespace game_io_test
 {
@@ -172,7 +174,14 @@ namespace game_io_test
     {
     public:
         assets::DrawMaskData masks;
-        ScreenView screen_view;
+        MaskViewList mask_views;
+
+        img::ImageView out_src;
+        img::SubView out_dst;
+
+        u32 out_scale = 1;
+
+        img::Buffer32 buffer;
     };
 
 
@@ -186,6 +195,7 @@ namespace game_io_test
     {
         auto& data = get_data(state);
 
+        mb::destroy_buffer(data.buffer);
         assets::destroy(data.masks);
         mem::free(state.data);
     }
@@ -230,7 +240,7 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        res.screen_dimensions = screen_dimensions(data.masks);
+        res.screen_dimensions = app_screen_dimensions(data.masks);
 
         return res;
     }
@@ -238,21 +248,37 @@ namespace game_io_test
 
     bool set_screen_memory(AppState& state, image::ImageView screen)
     {
+        state.screen = screen;
+
         auto& data = get_data(state);
 
-        auto dim = screen_dimensions(data.masks);
+        auto dim = app_screen_dimensions(data.masks);
 
-        auto scale_w = dim.x / screen.width;
-        auto scale_h = dim.y / screen.height;
-
-        if ( (scale_w != scale_h) || (scale_w != 1))
+        data.buffer = img::create_buffer32(dim.x * dim.y, "");
+        if (!data.buffer.ok)
         {
             return false;
         }
 
-        state.screen = screen;
+        data.out_src = img::make_view(dim.x, dim.y, data.buffer);
 
-        set_screen_view(data.masks, screen, data.screen_view);
+        set_mask_views(data.masks, data.out_src, data.mask_views);
+
+        auto scale_w = screen.width / dim.x;
+        auto scale_h = screen.height / dim.y;
+
+        auto scale = num::min(scale_w, scale_h);
+
+        auto w = dim.x * scale;
+        auto h = dim.y * scale;
+
+        auto x = (screen.width - w) / 2;
+        auto y = (screen.height - h) / 2;
+
+        auto r = img::make_rect(x, y, w, h);
+
+        data.out_dst = img::sub_view(screen, r);
+        data.out_scale = scale;
 
         return true;
     }
@@ -264,8 +290,11 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        img::fill(state.screen, COLOR_BACKGROUND);
-        draw(data.screen_view);
+        img::fill(data.out_src, COLOR_BACKGROUND);
+
+        
+        draw(data.mask_views);
+        img::scale_up(data.out_src, data.out_dst, data.out_scale);
     }
 
 

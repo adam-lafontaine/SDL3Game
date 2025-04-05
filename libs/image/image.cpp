@@ -1770,6 +1770,37 @@ namespace image
     }
 
 
+    void scale_up(ImageView const& src, SubView const& dst, u32 scale)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width * scale);
+        assert(dst.height == src.height * scale);
+
+        for (u32 ys = 0; ys < src.height; ys++)
+        {
+            auto yd = scale * ys;
+            auto rs = row_begin(src, ys);
+
+            for (u32 xs = 0; xs < src.width; xs++)
+            {
+                auto xd = scale * xs;
+
+                auto p = rs[xs];
+
+                for (u32 v = 0; v < scale; v++)
+                {
+                    auto rd = row_begin(dst, yd + v) + xd;
+                    for (u32 u = 0; u < scale; u++)
+                    {
+                        rd[u] = p;
+                    }
+                }
+            }
+        }
+    }
+
+
     bool resize(ImageView const& src, ImageView const& dst)
     {
 #ifdef IMAGE_RESIZE
