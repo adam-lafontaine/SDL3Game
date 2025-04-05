@@ -157,7 +157,7 @@ namespace game_io_test
     }
 
 
-    static void map_controller(input::ControllerInput const& src, ControllerDef<b8>& dst)
+    static void map_controller_input(input::ControllerInput const& src, ControllerDef<b8>& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
         map_button(src.btn_dpad_down, dst.dpad_down);
@@ -183,10 +183,30 @@ namespace game_io_test
     }
 
 
+    static void map_keyboard_input(input::KeyboardInput const& src, KeyboardDef<b8>& dst)
+    {
+        map_button(src.kbd_W, dst.w);
+        map_button(src.kbd_A, dst.a);
+        map_button(src.kbd_S, dst.s);
+        map_button(src.kbd_D, dst.d);
+        map_button(src.kbd_space, dst.space);
+    }
+
+
+    static void map_mouse_input(input::MouseInput const& src, MouseDef<b8>& dst)
+    {
+        map_button(src.btn_left, dst.left);
+        map_button(src.btn_right, dst.right);
+        map_button(src.btn_middle, dst.middle);
+    }
+
+
     static void update(Input const& src, InputList& dst)
     {
-        map_controller(src.controllers[0], dst.controller1);
-        map_controller(src.controllers[1], dst.controller2);
+        map_controller_input(src.controllers[0], dst.controller1);
+        map_controller_input(src.controllers[1], dst.controller2);
+        map_keyboard_input(src.keyboard, dst.keyboard);
+        map_mouse_input(src.mouse, dst.mouse);
     }
 }
 

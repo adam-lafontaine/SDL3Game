@@ -6,6 +6,8 @@ namespace game_io_test
 {
 
 
+/* controller */
+
 namespace assets
 {
 namespace controller
@@ -105,6 +107,8 @@ namespace controller
 }
 
 
+/* keyboard */
+
 namespace assets
 {
 namespace keyboard
@@ -173,6 +177,8 @@ namespace keyboard
 }
 }
 
+
+/* mouse */
 
 namespace assets
 {
