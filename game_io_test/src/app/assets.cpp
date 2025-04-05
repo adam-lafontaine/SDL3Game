@@ -221,8 +221,8 @@ namespace mouse
         r.left   = img::make_rect(1, 1, 30, 30);
         r.right  = img::make_rect(49, 1, 30, 30);
         r.middle = img::make_rect(32, 1, 14, 30);
-        r.pos_x  = img::make_rect(4, 37, 72, 16);
-        r.pos_y  = img::make_rect(4, 55, 72, 16);
+        r.pos_x  = img::make_rect(6, 44, 68, 8);
+        r.pos_y  = img::make_rect(6, 56, 68, 8);
 
         return r;
     }

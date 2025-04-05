@@ -272,11 +272,15 @@ namespace game_io_test
 
         char buffer[16];
 
+        auto out = mv.pos_x.out;
+        img::fill(out, COLOR_BACKGROUND);
         stb::qsnprintf(buffer, 16, "X: %d", pos.x);
-        ascii::render_text(buffer, mv.pos_x.out, font, color);
+        ascii::render_text(buffer, out, font, color);
 
+        out = mv.pos_y.out;
+        img::fill(out, COLOR_BACKGROUND);
         stb::qsnprintf(buffer, 16, "Y: %d", pos.y);
-        ascii::render_text(buffer, mv.pos_y.out, font, color);
+        ascii::render_text(buffer, out, font, color);
     }
 
 
