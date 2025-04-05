@@ -117,7 +117,7 @@ namespace keyboard
     class KeyboardDef
     {
     public:
-        static constexpr u32 count = 6;
+        static constexpr u32 count = 10;
 
         union
         {
@@ -127,10 +127,16 @@ namespace keyboard
             {
                 T all;
 
+                T n_1;
+                T n_2;
+                T n_3;
+                T n_4;
+
                 T w;
                 T a;
                 T s;
                 T d;
+
                 T space;
             };
         };
@@ -146,6 +152,11 @@ namespace keyboard
         RectList r{};
 
         r.all = img::make_rect(272, 92);
+
+        r.n_1 = img::make_rect(20, 2, 16, 16);
+        r.n_2 = img::make_rect(38, 2, 16, 16);
+        r.n_3 = img::make_rect(56, 2, 16, 16);
+        r.n_4 = img::make_rect(74, 2, 16, 16);
 
         r.w = img::make_rect(47, 20, 16, 16);
         r.a = img::make_rect(34, 38, 16, 16);

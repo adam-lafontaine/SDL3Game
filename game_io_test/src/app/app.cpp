@@ -191,10 +191,16 @@ namespace game_io_test
 
     static void map_keyboard_input(input::KeyboardInput const& src, KeyboardDef<b8>& dst)
     {
+        map_button(src.kbd_1, dst.n_1);
+        map_button(src.kbd_2, dst.n_2);
+        map_button(src.kbd_3, dst.n_3);
+        map_button(src.kbd_4, dst.n_4);
+
         map_button(src.kbd_W, dst.w);
         map_button(src.kbd_A, dst.a);
         map_button(src.kbd_S, dst.s);
         map_button(src.kbd_D, dst.d);
+
         map_button(src.kbd_space, dst.space);
     }
 
