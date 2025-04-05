@@ -1,5 +1,7 @@
 #include "app.hpp"
 #include "../../../libs/util/numeric.hpp"
+#include "../../../libs/ascii_image/ascii_image.hpp"
+#include "../../../libs/stb_libs/qsprintf.hpp"
 
 #include "assets.cpp"
 
@@ -131,6 +133,8 @@ namespace game_io_test
         ControllerDef<b8> controller2;
         KeyboardDef<b8> keyboard;
         MouseDef<b8> mouse;
+
+        Vec2Di32 mouse_pos;
     };
 
 
@@ -148,6 +152,8 @@ namespace game_io_test
         clear(inputs.controller2);
         clear(inputs.keyboard);
         clear(inputs.mouse);
+
+        inputs.mouse_pos = { 0 };
     }
 
 
@@ -207,6 +213,8 @@ namespace game_io_test
         map_controller_input(src.controllers[1], dst.controller2);
         map_keyboard_input(src.keyboard, dst.keyboard);
         map_mouse_input(src.mouse, dst.mouse);
+
+        dst.mouse_pos = src.mouse.window_pos;
     }
 }
 
@@ -257,6 +265,21 @@ namespace game_io_test
     }
 
 
+    static void draw_mouse_coords(MouseDef<MaskView>const& mv, Vec2Di32 pos)
+    {
+        auto font = ascii::Font::Joystick8;
+        auto color = COLOR_BLACK;
+
+        char buffer[16];
+
+        stb::qsnprintf(buffer, 16, "X: %d", pos.x);
+        ascii::render_text(buffer, mv.pos_x.out, font, color);
+
+        stb::qsnprintf(buffer, 16, "Y: %d", pos.y);
+        ascii::render_text(buffer, mv.pos_y.out, font, color);
+    }
+
+
     static void draw(MaskViewList const& mv, InputList const& input)
     {
         auto const draw_masks = [](auto const& m, auto const& in)
@@ -272,6 +295,8 @@ namespace game_io_test
         draw_masks(mv.controller2, input.controller2);
         draw_masks(mv.keyboard, input.keyboard);
         draw_masks(mv.mouse, input.mouse);
+
+        draw_mouse_coords(mv.mouse, input.mouse_pos);
     }
 }
 

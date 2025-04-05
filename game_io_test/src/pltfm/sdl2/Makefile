@@ -115,6 +115,23 @@ image_c += $(stb_image_options_h)
 #*************
 
 
+#*** ascii_image ***
+
+ascii_image := $(libs)/ascii_image
+
+ascii_image_h := $(ascii_image)/ascii_image.hpp
+ascii_image_h += $(image_h)
+ascii_image_h += $(span_h)
+ascii_image_h += $(numeric_h)
+
+ascii_image_c := $(ascii_image)/ascii_image.cpp
+ascii_image_c += $(ascii_image_h)
+ascii_image_c += $(ascii_image)/ascii_5.cpp
+ascii_image_c += $(ascii_image)/ascii_joystick_8.cpp
+
+#************
+
+
 #*** input ***
 
 input := $(libs)/input
@@ -168,7 +185,10 @@ app_h := $(app)/app.hpp
 
 app_c := $(app)/app.cpp
 app_c += $(app_h)
+app_c += $(numeric_h)
+app_c += $(ascii_image_h)
 
+# assets.cpp
 app_c += $(app)/assets.cpp
 app_c += $(res)/controller.cpp
 app_c += $(res)/keyboard.cpp
@@ -194,6 +214,7 @@ main_dep += $(alloc_type_c)
 main_dep += $(span_c)
 main_dep += $(image_c)
 main_dep += $(stb_libs_c)
+main_dep += $(ascii_image_c)
 main_dep += $(sdl_input_c)
 main_dep += $(sdl_window_c)
 
