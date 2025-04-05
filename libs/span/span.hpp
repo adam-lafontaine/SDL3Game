@@ -1,29 +1,10 @@
 #pragma once
 
-#include "../util/types.hpp"
+#include "../util/memory_buffer.hpp"
+#include "../util/stack_buffer.hpp"
 
-#include <functional>
-
-template <class F>
-using fn = std::function<F>;
-
-//#define SPAN_STRING
-
-
-#ifdef SPAN_STRING
-
-#include "../stb_libs/qsprintf.hpp"
-
-
-class StringView
-{
-public:
-    char* begin = 0;
-    u32 capacity = 0;
-    u32 length = 0;
-};
-
-#endif
+#define SPAN_TRANSFORM
+#define SPAN_STRING
 
 
 template <typename T>
@@ -38,8 +19,14 @@ public:
 using ByteView = SpanView<u8>;
 
 
+/* make_view */
+
 namespace span
 {
+    namespace mb = memory_buffer;
+    namespace sb = stack_buffer;
+
+
     template <typename T>
     inline SpanView<T> make_view(T* data, u32 len)
     {
@@ -49,8 +36,44 @@ namespace span
 
         return span;
     }
+
+
+    template <typename T>
+    inline SpanView<T> make_view(MemoryBuffer<T> const& buffer)
+    {
+        return make_view(buffer.data_, buffer.capacity_);
+    }
+
+
+    template <typename T>
+    inline SpanView<T> push_span(MemoryBuffer<T>& buffer, u32 length)
+    {
+        SpanView<T> view{};
+
+        auto data = mb::push_elements(buffer, length);
+        
+        return make_view(data, length);
+    }
+
+
+    template <typename T, u32 N>
+    inline SpanView<T> push_span(StackBuffer<T, N>& buffer, u32 length)
+    {
+        SpanView<T> view{};
+
+        auto data = sb::push_elements(buffer, length);
+        if (data)
+        {
+            view.data = data;
+            view.length = length;
+        }
+
+        return view;
+    }
 }
 
+
+/* copy/fill */
 
 namespace span
 {
@@ -118,6 +141,8 @@ namespace span
 	}
 }
 
+
+/* ops */
 
 namespace span
 {    
@@ -236,7 +261,95 @@ namespace span
 }
 
 
+#ifdef SPAN_TRANSFORM
+
+#include <functional>
+
+template <class F>
+using fn = std::function<F>;
+
+
+/* transform */
+
+namespace span
+{
+    template <typename S, typename D, class FUNC>
+    inline void transform(SpanView<S> const& src, SpanView<D> const& dst, FUNC const& func)
+    {
+        constexpr u32 N = 8;
+        auto len = (src.length / N) * N;
+
+        auto s = src.data;
+        auto d = dst.data;
+
+        u32 i = 0;
+        for (; i < len; i += N)
+        {
+            d[i] = func(s[i]);
+            d[i + 1] = func(s[i + 1]);
+            d[i + 2] = func(s[i + 2]);
+            d[i + 3] = func(s[i + 3]);
+            d[i + 4] = func(s[i + 4]);
+            d[i + 5] = func(s[i + 5]);
+            d[i + 6] = func(s[i + 6]);
+            d[i + 7] = func(s[i + 7]);
+        }
+
+        len = src.length;
+        for (; i < len; i++)
+        {
+            d[i] = func(s[i]);
+        }
+    }
+
+
+    template <typename S1, typename S2, typename D, class FUNC>
+    inline void transform(SpanView<S1> const& src1, SpanView<S2> const& src2, SpanView<D> const& dst, FUNC const& func)
+    {
+        constexpr u32 N = 8;
+        auto len = (src1.length / N) * N;
+
+        auto s1 = src1.data;
+        auto s2 = src2.data;
+        auto d = dst.data;
+
+        u32 i = 0;
+        for (; i < len; i += N)
+        {
+            d[i] = func(s1[i], s2[i]);
+            d[i + 1] = func(s1[i + 1], s2[i + 1]);
+            d[i + 2] = func(s1[i + 2], s2[i + 2]);
+            d[i + 3] = func(s1[i + 3], s2[i + 3]);
+            d[i + 4] = func(s1[i + 4], s2[i + 4]);
+            d[i + 5] = func(s1[i + 5], s2[i + 5]);
+            d[i + 6] = func(s1[i + 6], s2[i + 6]);
+            d[i + 7] = func(s1[i + 7], s2[i + 7]);
+        }
+
+        len = src1.length;
+        for (; i < len; i++)
+        {
+            d[i] = func(s1[i], s2[i]);
+        }
+    }
+}
+
+#endif // SPAN_TRANSFORM
+
+
 #ifdef SPAN_STRING
+
+#include "../stb_libs/qsprintf.hpp"
+
+
+class StringView
+{
+public:
+    char* begin = 0;
+    u32 capacity = 0;
+    u32 length = 0;
+};
+
 
 /* string view */
 
@@ -249,6 +362,18 @@ namespace span
         for (; text[len]; len++) {}
 
         return len;
+    }
+
+
+    inline constexpr int strcmp(cstr a, cstr b)
+    {
+        while (*a && (*a == *b))
+        {
+            ++a;
+            ++b;
+        }
+
+        return (int)*a - (int)*b;
     }
 
 
@@ -332,69 +457,3 @@ namespace span
 }
 
 #endif // SPAN_STRING
-
-
-/* transform */
-
-namespace span
-{
-    template <typename S, typename D, class FUNC>
-    inline void transform(SpanView<S> const& src, SpanView<D> const& dst, FUNC const& func)
-    {
-        constexpr u32 N = 8;
-        auto len = (src.length / N) * N;
-
-        auto s = src.data;
-        auto d = dst.data;
-
-        u32 i = 0;
-        for (; i < len; i += N)
-        {
-            d[i] = func(s[i]);
-            d[i + 1] = func(s[i + 1]);
-            d[i + 2] = func(s[i + 2]);
-            d[i + 3] = func(s[i + 3]);
-            d[i + 4] = func(s[i + 4]);
-            d[i + 5] = func(s[i + 5]);
-            d[i + 6] = func(s[i + 6]);
-            d[i + 7] = func(s[i + 7]);
-        }
-
-        len = src.length;
-        for (; i < len; i++)
-        {
-            d[i] = func(s[i]);
-        }
-    }
-
-
-    template <typename S1, typename S2, typename D, class FUNC>
-    inline void transform(SpanView<S1> const& src1, SpanView<S2> const& src2, SpanView<D> const& dst, FUNC const& func)
-    {
-        constexpr u32 N = 8;
-        auto len = (src1.length / N) * N;
-
-        auto s1 = src1.data;
-        auto s2 = src2.data;
-        auto d = dst.data;
-
-        u32 i = 0;
-        for (; i < len; i += N)
-        {
-            d[i] = func(s1[i], s2[i]);
-            d[i + 1] = func(s1[i + 1], s2[i + 1]);
-            d[i + 2] = func(s1[i + 2], s2[i + 2]);
-            d[i + 3] = func(s1[i + 3], s2[i + 3]);
-            d[i + 4] = func(s1[i + 4], s2[i + 4]);
-            d[i + 5] = func(s1[i + 5], s2[i + 5]);
-            d[i + 6] = func(s1[i + 6], s2[i + 6]);
-            d[i + 7] = func(s1[i + 7], s2[i + 7]);
-        }
-
-        len = src1.length;
-        for (; i < len; i++)
-        {
-            d[i] = func(s1[i], s2[i]);
-        }
-    }
-}
