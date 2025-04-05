@@ -181,7 +181,8 @@ namespace game_io_test
 
         u32 out_scale = 1;
 
-        img::Buffer32 buffer;
+        img::Buffer32 buffer32;
+        img::Buffer8 buffer8;
     };
 
 
@@ -195,23 +196,41 @@ namespace game_io_test
     {
         auto& data = get_data(state);
 
-        mb::destroy_buffer(data.buffer);
-        assets::destroy(data.masks);
+        mb::destroy_buffer(data.buffer32);
+        mb::destroy_buffer(data.buffer8);
         mem::free(state.data);
     }
 
 
     static bool create_state_data(AppState& state)
     {
-        auto data = mem::alloc<StateData>("StateData");
-        if (!data)
+        auto state_data = mem::alloc<StateData>("StateData");
+        if (!state_data)
         {
             return false;
         }
 
-        state.data = data;
+        state.data = state_data;
 
-        data->masks = assets::create_draw_mask_data();
+        auto& data = get_data(state);
+
+        data.buffer8 = img::create_buffer8(assets::draw_mask_size(), "buffer8");
+        if (!data.buffer8.ok)
+        {
+            return false;
+        }
+
+        data.masks = assets::create_draw_mask_data(data.buffer8);
+
+        auto dim = app_screen_dimensions(data.masks);
+        data.buffer32 = img::create_buffer32(dim.x * dim.y, "buffer32");
+        if (!data.buffer32.ok)
+        {
+            return false;
+        }
+
+        data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
+        set_mask_views(data.masks, data.out_src, data.mask_views);
 
         return true;
     }
@@ -254,16 +273,6 @@ namespace game_io_test
 
         auto dim = app_screen_dimensions(data.masks);
 
-        data.buffer = img::create_buffer32(dim.x * dim.y, "");
-        if (!data.buffer.ok)
-        {
-            return false;
-        }
-
-        data.out_src = img::make_view(dim.x, dim.y, data.buffer);
-
-        set_mask_views(data.masks, data.out_src, data.mask_views);
-
         auto scale_w = screen.width / dim.x;
         auto scale_h = screen.height / dim.y;
 
@@ -292,7 +301,7 @@ namespace game_io_test
 
         img::fill(data.out_src, COLOR_BACKGROUND);
 
-        
+
         draw(data.mask_views);
         img::scale_up(data.out_src, data.out_dst, data.out_scale);
     }

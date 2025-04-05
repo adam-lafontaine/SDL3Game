@@ -250,18 +250,10 @@ namespace assets
         controller::MaskList controller;
         keyboard::MaskList keyboard;
         mouse::MaskList mouse;
-        
-        img::Buffer8 buffer;
     };
 
 
-    static void destroy(DrawMaskData& data)
-    {
-        mb::destroy_buffer(data.buffer);
-    }
-
-
-    static DrawMaskData create_draw_mask_data()
+    static u32 draw_mask_size()
     {
         auto cr = controller::get_region_rects();
         auto kr = keyboard::get_region_rects();
@@ -274,15 +266,21 @@ namespace assets
         auto kn = w(kr) * h(kr);
         auto mn = w(mr) * h(mr);
 
-        auto n = cn + kn + mn;
+        return cn + kn + mn;
+    }
+
+
+    static DrawMaskData create_draw_mask_data(img::Buffer8& buffer)
+    {
+        auto cr = controller::get_region_rects();
+        auto kr = keyboard::get_region_rects();
+        auto mr = mouse::get_region_rects();
 
         DrawMaskData data;
 
-        data.buffer = img::create_buffer8(n, "mask");
-
-        auto cmv = controller::make_mask(data.buffer);
-        auto kmv = keyboard::make_mask(data.buffer);
-        auto mmv = mouse::make_mask(data.buffer);
+        auto cmv = controller::make_mask(buffer);
+        auto kmv = keyboard::make_mask(buffer);
+        auto mmv = mouse::make_mask(buffer);
 
         auto const set_mask_regions = [](auto const& view, auto const& reg, auto& mask)
         {
