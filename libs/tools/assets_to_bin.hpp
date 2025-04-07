@@ -1,4 +1,5 @@
-#include "../util/memory_buffer.hpp"
+#define IMAGE_READ
+#include "../image/image.hpp"
 
 #include <filesystem>
 #include <vector>
@@ -18,6 +19,8 @@ namespace mb = memory_buffer;
 namespace a2b
 {
     namespace fs = std::filesystem;
+    namespace img = image;
+    using p32 = img::Pixel;
     
 
     template <typename T>
@@ -306,4 +309,171 @@ namespace a2b
 
         return true;
     }
+}
+
+
+
+
+
+namespace a2b
+{
+    class AssetImageBuffer
+    {
+    private:
+
+        static constexpr u32 s32 = sizeof(u32);
+
+        // offsets
+        static constexpr u32 bpp_ = 0; // bytes_per_pixel
+        static constexpr u32 width_ = bpp_ + s32;
+        static constexpr u32 height_ = width_ + s32;
+        static constexpr u32 pixels_ = height_ + s32;        
+
+    public:
+        b8 ok = 0;
+
+        u8* data = 0;
+
+        u32& bpp() { return *(u32*)(data + bpp_); }
+        u32& width() { return *(u32*)(data + width_); }
+        u32& height() { return *(u32*)(data + height_); }
+        u8* pixels() { return data + pixels_; }
+
+        u32& bpp() const { return *(u32*)(data + bpp_); }
+        u32& width() const { return *(u32*)(data + width_); }
+        u32& height() const { return *(u32*)(data + height_); }
+        u8* pixels() const { return data + pixels_; }
+
+        ByteView to_span() { return { data, bpp() * width() * height() + 3 * s32 }; }
+        ByteView to_span() const { return { data, bpp() * width() * height() + 3 * s32 }; }
+    };
+
+
+
+}
+
+
+namespace a2b
+{
+namespace internal
+{
+    static AssetImageBuffer encode_asset_image(img::Image const& image)
+    {
+        auto s32 = sizeof(u32);
+        auto bpp = sizeof(p32);
+        auto data_len = image.width * image.height * bpp;
+        auto meta_len = 3 * s32;
+        auto n_bytes = data_len + meta_len;
+
+        AssetImageBuffer im_buffer;
+        im_buffer.ok = 0;
+
+        ByteBuffer buffer;
+        mb::create_buffer(buffer, n_bytes, "encode_asset_image");
+        if (!buffer.ok)
+        {
+            return im_buffer;
+        }
+
+        im_buffer.data = buffer.data_;
+        im_buffer.bpp() = bpp;
+        im_buffer.width() = image.width;
+        im_buffer.height() = image.height;
+
+        auto src = span::make_view((u8*)image.data_, data_len);
+        auto dst = span::make_view(im_buffer.pixels(), data_len);
+
+        span::copy(src, dst);
+
+        im_buffer.ok = 1;
+
+        return im_buffer;
+    }
+
+
+    static AssetImageBuffer encode_asset_image(img::Image const& image, fn<u8(p32)> const& encode)
+    {
+        auto s32 = sizeof(u32);
+        auto bpp = 1;
+        auto data_len = image.width * image.height * bpp;
+        auto meta_len = 3 * s32;
+        auto n_bytes = data_len + meta_len;
+
+        AssetImageBuffer im_buffer;
+        im_buffer.ok = 0;
+
+        ByteBuffer buffer;
+        mb::create_buffer(buffer, n_bytes, "encode_asset_image");
+        if (!buffer.ok)
+        {
+            return im_buffer;
+        }
+
+        im_buffer.data = buffer.data_;
+        im_buffer.bpp() = bpp;
+        im_buffer.width() = image.width;
+        im_buffer.height() = image.height;
+
+        auto src = span::make_view(image.data_, data_len);
+        auto dst = span::make_view(im_buffer.pixels(), data_len);
+
+        span::transform(src, dst, encode);
+
+        im_buffer.ok = 1;
+
+        return im_buffer;
+    }
+
+
+    static img::ImageView decode_asset_image32(ByteView const& bytes)
+    {
+        img::ImageView view{};
+
+        AssetImageBuffer buffer{};
+        buffer.data = bytes.data;
+
+        if (buffer.bpp() != 4)
+        {
+            assert(false);
+            return view;
+        }
+
+        auto data_len = buffer.bpp() * buffer.width() * buffer.height();
+        if (data_len > bytes.length)
+        {
+            assert(false);
+            return view;
+        }
+
+        view = img::make_view(buffer.width(), buffer.height(), (p32*)bytes.data);
+
+        return view;
+    }
+
+
+    static img::GrayView decode_asset_image8(ByteView const& bytes)
+    {
+        img::GrayView view{};
+
+        AssetImageBuffer buffer{};
+        buffer.data = bytes.data;
+
+        if (buffer.bpp() != 1)
+        {
+            assert(false);
+            return view;
+        }
+
+        auto data_len = buffer.bpp() * buffer.width() * buffer.height();
+        if (data_len > bytes.length)
+        {
+            assert(false);
+            return view;
+        }
+
+        view = img::make_view(buffer.width(), buffer.height(), bytes.data);
+
+        return view;
+    }
+}
 }

@@ -151,6 +151,10 @@ namespace image
 
 namespace image
 {
+    ImageView make_view(u32 width, u32 height, Pixel* data);
+
+    GrayView make_view(u32 width, u32 height, u8* data);
+    
     ImageView make_view(Image const& image);
 
     GrayView make_view(ImageGray const& image);

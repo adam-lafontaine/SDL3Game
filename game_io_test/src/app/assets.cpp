@@ -1,6 +1,10 @@
 #pragma once
 
 #include "app.hpp"
+#include "../../../libs/output/audio.hpp"
+
+
+/* images */
 
 namespace game_io_test
 {
@@ -66,8 +70,8 @@ namespace controller
         r.shoulder_left  = img::make_rect(17, 21, 19, 8);
         r.shoulder_right = img::make_rect(156, 21, 19, 8);
 
-        r.back = img::make_rect(74, 23, 16, 9);
-        r.start  = img::make_rect(102, 23, 16, 9);
+        r.back  = img::make_rect(74, 23, 16, 9);
+        r.start = img::make_rect(102, 23, 16, 9);
 
         r.dpad_up    = img::make_rect(21, 32, 10, 17);
         r.dpad_down  = img::make_rect(21, 60, 10, 17);
@@ -79,7 +83,7 @@ namespace controller
 
         r.a = img::make_rect(158, 62, 15, 15);
         r.b = img::make_rect(173, 47, 15, 15);
-        r.x = img::make_rect(143, 47, 15, 15);        
+        r.x = img::make_rect(143, 47, 15, 15);
         r.y = img::make_rect(158, 32, 15, 15);
 
         return r;
@@ -88,7 +92,7 @@ namespace controller
 
     static img::GrayView make_mask(img::Buffer8& buffer)
     {
-    #include "../res/controller.cpp"
+    #include "../res/masks/controller.cpp"
 
         auto w = controller.width;
         auto h = controller.height;
@@ -167,7 +171,7 @@ namespace keyboard
 
     static img::GrayView make_mask(img::Buffer8& buffer)
     {
-    #include "../res/keyboard.cpp"
+    #include "../res/masks/keyboard.cpp"
 
         auto w = keyboard.width;
         auto h = keyboard.height;
@@ -236,7 +240,7 @@ namespace mouse
 
     static img::GrayView make_mask(img::Buffer8& buffer)
     {
-    #include "../res/mouse.cpp"
+    #include "../res/masks/mouse.cpp"
 
         auto w = mouse.width;
         auto h = mouse.height;
@@ -271,7 +275,7 @@ namespace assets
 
     static u32 draw_mask_size()
     {
-    #include "../res/mask_sizes.cpp"
+    #include "../res/masks/mask_sizes.cpp"
 
         auto c = mask_sizes.controller;
         auto k = mask_sizes.keyboard;
@@ -319,5 +323,72 @@ namespace assets
 }
 
 
+} // game_io_test
+
+
+/* sounds */
+
+namespace game_io_test
+{
+    using Sound = audio::Sound;    
+
+
+    class SoundList
+    {
+    public:
+        static constexpr u32 count = 4;
+
+        union
+        {
+            Sound list[count];
+
+            struct
+            {
+                Sound laser;
+                Sound explosion;
+                Sound ui_confirm;
+                Sound ui_select;
+            };
+        };
+    };
+
+
+namespace sound
+{
+    static inline bool load_sound(auto const& src, audio::Sound& sound, cstr mem_tag)
+    {
+        auto bytes = span::make_view((u8*)src.data, src.length);
+
+        return audio::load_sound_from_bytes(bytes, sound, mem_tag);
+    }
+}    
 
 } // game_io_test
+
+
+/* music */
+
+namespace game_io_test
+{
+    using Music = audio::Music;
+
+
+    class MusicList
+    {
+    public:
+        static constexpr u32 count = 4;
+
+        union
+        {
+            Music list[count];
+
+            struct
+            {
+                Music game_00;
+                Music game_01;
+                Music game_02;
+                Music game_03;
+            };
+        };
+    };
+}

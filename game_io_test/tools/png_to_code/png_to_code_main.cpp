@@ -26,9 +26,9 @@ u8 to_mask(p32 p)
 
 
 int main()
-{
-    auto src_dir = SRC_ROOT;
-    auto dst_dir = DST_ROOT;
+{    
+    auto src_dir = fs::path(SRC_ROOT) / "masks";
+    auto dst_dir = fs::path(DST_ROOT) / "masks";
 
     i2c::images_to_code(src_dir, dst_dir, to_mask);
     i2c::image_dimensions_to_code(src_dir, dst_dir, "mask_sizes");

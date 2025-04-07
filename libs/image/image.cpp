@@ -170,27 +170,39 @@ namespace image
 
 namespace image
 {
-    ImageView make_view(Image const& image)
+    ImageView make_view(u32 width, u32 height, Pixel* data)
     {
         ImageView view{};
 
-        view.width = image.width;
-        view.height = image.height;
-        view.matrix_data_ = image.data_;
+        view.width = width;
+        view.height = height;
+        view.matrix_data_ = data;
 
         return view;
     }
 
 
-    GrayView make_view(ImageGray const& image)
+    GrayView make_view(u32 width, u32 height, u8* data)
     {
         GrayView view{};
 
-        view.width = image.width;
-        view.height = image.height;
-        view.matrix_data_ = image.data_;
+        view.width = width;
+        view.height = height;
+        view.matrix_data_ = data;
 
         return view;
+    }
+
+
+    ImageView make_view(Image const& image)
+    {
+        return make_view(image.width, image.height, image.data_);
+    }
+
+
+    GrayView make_view(ImageGray const& image)
+    {
+        return make_view(image.width, image.height, image.data_);
     }
 
 

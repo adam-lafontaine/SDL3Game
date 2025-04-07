@@ -1,29 +1,19 @@
 #pragma once
 
-#include "../audio/audio.hpp"
+#include "sdl_include.hpp"
+
+#include "../output/audio.hpp"
 #include "../util/numeric.hpp"
 #include "../alloc_type/alloc_type.hpp"
 
-#include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
-#include <cstring>
-#include <cassert>
-
-namespace num = numeric;
-
-#ifndef NDEBUG
-#define PRINT_MESSAGES
-#endif
-
-#ifdef PRINT_MESSAGES
-#include <cstdio>
-#endif
 
 
 /* helpers */
 
 namespace audio
 {
+    namespace num = numeric;
 
     static void print_message(const char* msg)
     {
@@ -35,10 +25,10 @@ namespace audio
 
     static bool has_extension(cstr filename, const char* ext)
     {
-        size_t file_length = std::strlen(filename);
-        size_t ext_length = std::strlen(ext);
+        auto file_length = span::strlen(filename);
+        auto ext_length = span::strlen(ext);
 
-        return !std::strcmp(&filename[file_length - ext_length], ext);
+        return !span::strcmp(&filename[file_length - ext_length], ext);
     }
 
 

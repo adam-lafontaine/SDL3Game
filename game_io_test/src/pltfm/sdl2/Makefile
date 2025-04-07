@@ -153,6 +153,7 @@ input_state_h += $(input_h)
 output := $(libs)/output
 
 window_h := $(output)/window.hpp
+audio_h := $(output)/audio.hpp
 
 #*************
 
@@ -173,6 +174,8 @@ sdl_window_c += $(window_h)
 sdl_window_c += $(alloc_type_h)
 sdl_window_c += $(sdl_include_h)
 
+sdl_audio_c := $(sdl2)/sdl_audio.cpp
+
 #************
 
 
@@ -190,10 +193,10 @@ app_c += $(ascii_image_h)
 
 # assets.cpp
 app_c += $(app)/assets.cpp
-app_c += $(res)/controller.cpp
-app_c += $(res)/keyboard.cpp
-app_c += $(res)/mouse.cpp
-app_c += $(res)/mask_sizes.cpp
+app_c += $(res)/masks/controller.cpp
+app_c += $(res)/masks/keyboard.cpp
+app_c += $(res)/masks/mouse.cpp
+app_c += $(res)/masks/mask_sizes.cpp
 
 #************
 
