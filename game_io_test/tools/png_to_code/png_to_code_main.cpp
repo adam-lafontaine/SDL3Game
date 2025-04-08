@@ -32,6 +32,8 @@ int main()
 
     i2c::images_to_code(src_dir, dst_dir, to_mask);
     i2c::image_dimensions_to_code(src_dir, dst_dir, "mask_sizes");
+
+    
 }
 
 
