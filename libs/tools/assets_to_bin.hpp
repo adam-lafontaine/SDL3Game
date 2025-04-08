@@ -14,19 +14,18 @@
 
 using ByteBuffer = MemoryBuffer<u8>;
 namespace mb = memory_buffer;
+namespace fs = std::filesystem;
 
 
 namespace a2b
 {
-    namespace fs = std::filesystem;
+    
     namespace img = image;
     using p32 = img::Pixel;
     
 
     template <typename T>
     using fn = std::function<T>;
-
-    using convert = fn<ByteBuffer(ByteBuffer const&)>;
 }
 
 
@@ -34,27 +33,6 @@ namespace a2b
 {
 namespace internal
 {
-    static fs::path out_bin_path(cstr out_dir, cstr tag)
-    {
-        return fs::path(out_dir) / (std::string(tag) + ".bin");
-    }
-
-
-    static bool is_file(fs::path const& entry)
-    {
-        return fs::is_regular_file(entry) && entry.has_filename() && entry.has_extension();
-    }
-
-
-    static std::string file_to_var(fs::path const& filepath)
-    {
-        auto str = std::string(filepath.filename());
-        std::replace(str.begin(), str.end(), '.', '_');
-
-        return str;
-    }
-
-
     static ByteBuffer read_bytes(fs::path const& path)
     {
         ByteBuffer buffer;
@@ -80,53 +58,6 @@ namespace internal
         file.close();
         return buffer;
     }
-    
-
-    class DataSize    
-    {
-    public:
-        std::string name;
-        u32 size;
-
-        DataSize(std::string&& n, u32 s)
-        {
-            name = std::move(n);
-            size = s;
-        }
-    };
-
-
-    std::string to_struct_str(std::vector<DataSize> const& data, std::string const& tag)
-    {
-        cstr tab = "    ";
-        auto name = tag + "_sizes";
-
-        std::ostringstream oss;
-
-        oss
-        << "static constexpr struct\n"
-        << "{\n";
-
-        for (auto const& item : data)
-        {
-            oss << tab << "unsigned " << item.name << ";\n";
-        }
-
-        oss
-        << "}\n"
-        << name << " = \n"
-        << "{\n";
-
-        for (auto const& item : data)
-        {
-            oss << tab << item.size << ",\n";
-        }
-
-        oss
-        << "};\n";
-
-        return oss.str();
-    }
 
 
     static bool write_cpp_file(std::string code_str, fs::path const& dst_dir, std::string const& tag)
@@ -148,175 +79,22 @@ namespace internal
     
         return true;
     }
+    
 
-
-    static bool validate_directories(fs::path const& src_dir, fs::path const& dst_dir)
+    class DataSize    
     {
-        printf("check src directory: ");
-        if (!fs::exists(src_dir) || !fs::is_directory(src_dir))
+    public:
+        std::string name;
+        u32 size;
+
+        DataSize(std::string&& n, u32 s)
         {
-            printf("FAIL\n");
-            return false;
+            name = std::move(n);
+            size = s;
         }
-        printf("OK\n");
-
-        printf("check dst directory: ");
-        if (!fs::exists(dst_dir) || !fs::is_directory(dst_dir))
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-        
-        return true;
-    }
-
-}
-}
+    };
 
 
-namespace a2b
-{
-    /*inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag)
-    {
-        if (!internal::validate_directories(src_dir, dst_dir))
-        {
-            return false;
-        }
-
-        printf("open bin file: ");
-        auto bin_path = internal::out_bin_path(dst_dir, tag);
-        std::ofstream bin_file(bin_path);
-        if (!bin_file.is_open())
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-
-        std::vector<internal::DataSize> data;
-        u32 total = 0;
-        for (auto const& entry : fs::directory_iterator(src_dir))
-        {
-            if (!internal::is_file(entry))
-            {
-                continue;
-            }
-
-            auto buffer = internal::read_bytes(entry);
-            
-            bin_file.write((char*)buffer.data_, buffer.size_);
-            total += buffer.size_;
-
-            data.emplace_back(internal::file_to_var(entry), buffer.size_);
-
-            printf("read %s \n", data.back().name.c_str());
-
-            mb::destroy_buffer(buffer);
-        }
-
-        bin_file.close();
-
-        auto file_size = fs::file_size(bin_path);
-
-        printf("bin size: ");
-        if (file_size != total)
-        {
-            printf("FAIL\n");
-        }
-        else
-        {
-            printf("OK | %u bytes\n", total);
-        }
-
-        auto struct_str = to_struct_str(data, tag);
-
-        printf("sizes: ");
-        if (!internal::write_cpp_file(struct_str, dst_dir, std::string(tag) + "_sizes"))
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-
-        return true;
-    }*/
-
-
-    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag, convert const& convert_bytes)
-    {
-        if (!internal::validate_directories(src_dir, dst_dir))
-        {
-            return false;
-        }
-
-        printf("open bin file: ");
-        auto bin_path = internal::out_bin_path(dst_dir, tag);
-        std::ofstream bin_file(bin_path);
-        if (!bin_file.is_open())
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-
-        std::vector<internal::DataSize> data;
-        u32 total = 0;
-        for (auto const& entry : fs::directory_iterator(src_dir))
-        {
-            if (!internal::is_file(entry))
-            {
-                continue;
-            }
-
-            auto raw = internal::read_bytes(entry);
-            auto buffer = convert_bytes(raw);
-            
-            bin_file.write((char*)buffer.data_, buffer.size_);
-            total += buffer.size_;
-
-            data.emplace_back(internal::file_to_var(entry), buffer.size_);
-
-            printf("read %s \n", data.back().name.c_str());
-
-            mb::destroy_buffer(raw);
-            mb::destroy_buffer(buffer);
-        }
-
-        bin_file.close();
-
-        auto file_size = fs::file_size(bin_path);
-
-        printf("bin size: ");
-        if (file_size != total)
-        {
-            printf("FAIL\n");
-        }
-        else
-        {
-            printf("OK | %u bytes\n", total);
-        }
-
-        auto struct_str = to_struct_str(data, tag);
-
-        printf("sizes: ");
-        if (!internal::write_cpp_file(struct_str, dst_dir, std::string(tag) + "_sizes"))
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-
-        return true;
-    }
-}
-
-
-
-
-
-namespace a2b
-{
     class AssetImageBuffer
     {
     private:
@@ -327,10 +105,11 @@ namespace a2b
         static constexpr u32 bpp_ = 0; // bytes_per_pixel
         static constexpr u32 width_ = bpp_ + s32;
         static constexpr u32 height_ = width_ + s32;
-        static constexpr u32 pixels_ = height_ + s32;        
+        static constexpr u32 pixels_ = height_ + s32;
+
+        ByteBuffer buffer;
 
     public:
-        b8 ok = 0;
 
         u8* data = 0;
 
@@ -346,18 +125,37 @@ namespace a2b
 
         ByteView to_span() { return { data, bpp() * width() * height() + 3 * s32 }; }
         ByteView to_span() const { return { data, bpp() * width() * height() + 3 * s32 }; }
+
+        void destroy() { mb::destroy_buffer(buffer); data = 0; }
+
+        bool create(u32 w, u32 h, u32 b) 
+        {
+            if (!mb::create_buffer(buffer, w * h * b + 3 * s32, ""))
+            {
+                return false;
+            }
+
+            data = buffer.data_;
+
+            width() = w;
+            height() = h;
+            bpp() = b;
+            
+            return true;
+        }
     };
 
-
-
+}
 }
 
+
+/* images */
 
 namespace a2b
 {
 namespace internal
 {
-    static AssetImageBuffer encode_asset_image(img::Image const& image)
+    static AssetImageBuffer encode_image(img::Image const& image)
     {
         auto s32 = sizeof(u32);
         auto bpp = sizeof(p32);
@@ -366,32 +164,19 @@ namespace internal
         auto n_bytes = data_len + meta_len;
 
         AssetImageBuffer im_buffer;
-        im_buffer.ok = 0;
 
-        ByteBuffer buffer;
-        mb::create_buffer(buffer, n_bytes, "encode_asset_image");
-        if (!buffer.ok)
-        {
-            return im_buffer;
-        }
-
-        im_buffer.data = buffer.data_;
-        im_buffer.bpp() = bpp;
-        im_buffer.width() = image.width;
-        im_buffer.height() = image.height;
+        im_buffer.create(image.width, image.height, bpp);
 
         auto src = span::make_view((u8*)image.data_, data_len);
         auto dst = span::make_view(im_buffer.pixels(), data_len);
 
         span::copy(src, dst);
 
-        im_buffer.ok = 1;
-
         return im_buffer;
     }
 
 
-    static AssetImageBuffer encode_asset_image(img::Image const& image, fn<u8(p32)> const& encode)
+    static AssetImageBuffer encode_image(img::Image const& image, fn<u8(p32)> const& encode)
     {
         auto s32 = sizeof(u32);
         auto bpp = 1;
@@ -400,32 +185,19 @@ namespace internal
         auto n_bytes = data_len + meta_len;
 
         AssetImageBuffer im_buffer;
-        im_buffer.ok = 0;
-
-        ByteBuffer buffer;
-        mb::create_buffer(buffer, n_bytes, "encode_asset_image");
-        if (!buffer.ok)
-        {
-            return im_buffer;
-        }
-
-        im_buffer.data = buffer.data_;
-        im_buffer.bpp() = bpp;
-        im_buffer.width() = image.width;
-        im_buffer.height() = image.height;
+        
+        im_buffer.create(image.width, image.height, bpp);
 
         auto src = span::make_view(image.data_, data_len);
         auto dst = span::make_view(im_buffer.pixels(), data_len);
 
         span::transform(src, dst, encode);
 
-        im_buffer.ok = 1;
-
         return im_buffer;
     }
 
 
-    static img::ImageView decode_asset_image32(ByteView const& bytes)
+    static img::ImageView decode_image32(ByteView const& bytes)
     {
         img::ImageView view{};
 
@@ -451,7 +223,7 @@ namespace internal
     }
 
 
-    static img::GrayView decode_asset_image8(ByteView const& bytes)
+    static img::GrayView decode_image8(ByteView const& bytes)
     {
         img::GrayView view{};
 
@@ -478,6 +250,8 @@ namespace internal
 }
 }
 
+
+/* files */
 
 namespace a2b
 {
@@ -519,23 +293,38 @@ namespace internal
     }
 
 
-    static std::vector<DirFiles> save_directory(fs::path const& dir, std::ofstream& bin)
+    static DirFiles read_image32_files(fs::path const& dir, std::ofstream& bin, fn<u8(p32)> const& encode)
     {
-        std::vector<DirFiles> items;
+        DirFiles df;
+
+        df.dir_name = dir.filename().string();
 
         for (auto const& entry : fs::directory_iterator(dir))
-        {
-            if (!fs::is_directory(entry))
+        {            
+            auto p = entry.path();
+            if (!fs::is_regular_file(p))
             {
                 continue;
             }
 
-            items.push_back(read_files(entry, bin));
+            img::Image img32;
+            if (!img::read_image_from_file(p.string().c_str(), img32))
+            {
+                continue;
+            }
+
+            auto buffer = encode_image(img32, encode);
+            auto span = buffer.to_span();
+
+            df.files.emplace_back(p.stem().string(), span.length);
+            
+            bin.write((char*)span.data, span.length);
+            
+            buffer.destroy();
+            img::destroy_image(img32);
         }
 
-        bin.close();
-
-        return items;
+        return df;
     }
 
 
@@ -556,12 +345,14 @@ namespace internal
             for (auto const& f : item.files)
             {
                 oss
-                << tabtab << "unsigned " << f.name << ";\n";
+                << tabtab << "struct { " << "unsigned size; unsigned offset; } " << f.name << ";\n";
             }
 
             oss
             << tab << "} " << item.dir_name << ";\n\n";
         }
+
+        u32 offset = 0;
 
         oss
         << "}\n"
@@ -576,7 +367,9 @@ namespace internal
             for (auto const& f : item.files)
             {
                 oss
-                << tabtab << f.size << ",\n";
+                << tabtab << "{ " << f.size << ", " << offset << " },\n";
+
+                offset += f.size;
             }
 
             oss
@@ -594,19 +387,62 @@ namespace internal
 
 namespace a2b
 {
-    bool files_to_binary(fs::path const& src_dir, fs::path const& dst_dir, cstr tag)
+    class AssetFiles
     {
-        if (!internal::validate_directories(src_dir, dst_dir))
+    public:
+
+        std::vector<internal::DirFiles> file_sizes;
+        std::ofstream bin_file;
+        fs::path out_dir;
+    };
+
+
+    inline bool create(AssetFiles& af, fs::path const& out_dir, cstr bin_name)
+    {
+        auto bin_out = out_dir / (std::string(bin_name) + ".bin");
+
+        af.bin_file = std::ofstream(bin_out);
+        if (!af.bin_file.is_open())
         {
             return false;
         }
 
-        std::ofstream bin_file(dst_dir / (std::string(tag) + ".bin"));
-        
-        auto data  = internal::save_directory(src_dir, bin_file);
+        af.out_dir = out_dir;
 
-        auto name = src_dir.filename().string() + "_sizes";
+        return true;
+    }
 
-        return internal::write_file_sizes(data, dst_dir, name);        
+
+    inline bool append_file_dir(AssetFiles& af, fs::path const& dir)
+    {
+        if (!fs::is_directory(dir))
+        {
+            return false;
+        }
+
+        af.file_sizes.push_back(internal::read_files(dir, af.bin_file));
+
+        return true;
+    }
+
+
+    inline bool append_image_dir(AssetFiles& af, fs::path const& dir, fn<u8(p32)> const& encode)
+    {
+        if (!fs::is_directory(dir))
+        {
+            return false;
+        }
+
+        af.file_sizes.push_back(internal::read_image32_files(dir, af.bin_file, encode));
+
+        return true;
+    }
+
+
+    inline bool save_and_close(AssetFiles& af, cstr size_file_name)
+    {
+        af.bin_file.close();
+
+        return internal::write_file_sizes(af.file_sizes, af.out_dir, size_file_name);
     }
 }
