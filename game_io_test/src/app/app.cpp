@@ -383,22 +383,20 @@ namespace game_io_test
         state.data = state_data;
 
         auto& data = get_data(state);
-
-        // TEST
+        
         assets::AssetMemory am;
         if (!assets::load_asset_memory(am))
         {
             assert(" *** ASSET MEMORY ERROR *** " && false);
         }
-        assets::destroy_asset_memory(am);
 
-        data.buffer8 = img::create_buffer8(assets::draw_mask_size(), "buffer8");
+        data.buffer8 = img::create_buffer8(assets::draw_mask_size(am), "buffer8");
         if (!data.buffer8.ok)
         {
             return false;
         }
 
-        data.masks = assets::create_draw_mask_data(data.buffer8);
+        data.masks = assets::create_draw_mask_data(am, data.buffer8);
 
         auto dim = app_screen_dimensions(data.masks);
         data.buffer32 = img::create_buffer32(dim.x * dim.y, "buffer32");
@@ -411,6 +409,8 @@ namespace game_io_test
         set_mask_views(data.masks, data.out_src, data.mask_views);
 
         clear_input_list(data.inputs);
+
+        assets::destroy_asset_memory(am);
 
         return true;
     }

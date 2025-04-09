@@ -85,6 +85,8 @@ namespace assets
         img::Image keyboard;
         img::Image mouse;
 
+        
+
         MemoryBuffer<u8> buffer;
     };
 
@@ -162,11 +164,8 @@ namespace assets
     }
 
 
-    static img::GrayView make_mask(ByteView const& data, img::Buffer8& buffer)
+    static img::GrayView make_mask(img::Image const& img32, img::Buffer8& buffer)
     {
-        img::Image img32;
-        img::read_image_from_memory(data, img32);
-
         auto w = img32.width;
         auto h = img32.height;
 
@@ -174,8 +173,6 @@ namespace assets
         auto view = img::make_view(img32);
 
         img::transform(view, mask, to_u8_mask);
-
-        img::destroy_image(img32);
 
         return mask;
     }
@@ -264,45 +261,6 @@ namespace controller
     }
 
 
-    static img::GrayView make_mask(img::Buffer8& buffer)
-    {
-    #include "../res/masks/controller.cpp"
-
-        auto w = controller.width;
-        auto h = controller.height;
-
-        auto src = span::make_view((u8*)controller.data, w * h);
-        
-        auto mask = img::make_view(w, h, buffer);
-
-        span::copy(src, img::to_span(mask));
-
-        return mask;
-    }
-
-
-    static img::GrayView make_mask(ByteView const& data, img::Buffer8& buffer)
-    {
-    #include "../res/masks/controller.cpp"
-
-        auto w = controller.width;
-        auto h = controller.height;
-
-        img::Image img32;
-        img::read_image_from_memory(data, img32);
-
-        assert(img32.width == w);
-        assert(img32.height == h);
-
-        auto mask = img::make_view(w, h, buffer);
-        auto view = img::make_view(img32);
-
-        img::transform(view, mask, to_u8_mask);
-
-        img::destroy_image(img32);
-
-        return mask;
-    }
 }
 
 }
@@ -368,47 +326,6 @@ namespace keyboard
 
         return r;
     }
-
-
-    static img::GrayView make_mask(img::Buffer8& buffer)
-    {
-    #include "../res/masks/keyboard.cpp"
-
-        auto w = keyboard.width;
-        auto h = keyboard.height;
-
-        auto src = span::make_view((u8*)keyboard.data, w * h);
-
-        auto mask = img::make_view(w, h, buffer);
-
-        span::copy(src, img::to_span(mask));
-
-        return mask;
-    }
-
-
-    static img::GrayView make_mask(ByteView const& data, img::Buffer8& buffer)
-    {
-    #include "../res/masks/keyboard.cpp"
-
-        auto w = keyboard.width;
-        auto h = keyboard.height;
-
-        img::Image img32;
-        img::read_image_from_memory(data, img32);
-
-        assert(img32.width == w);
-        assert(img32.height == h);
-
-        auto mask = img::make_view(w, h, buffer);
-        auto view = img::make_view(img32);
-
-        img::transform(view, mask, to_u8_mask);
-
-        img::destroy_image(img32);
-
-        return mask;
-    }
     
 }
 }
@@ -462,24 +379,6 @@ namespace mouse
         return r;
     }
 
-
-    static img::GrayView make_mask(img::Buffer8& buffer)
-    {
-    #include "../res/masks/mouse.cpp"
-
-        auto w = mouse.width;
-        auto h = mouse.height;
-
-        auto src = span::make_view((u8*)mouse.data, w * h);
-
-        auto mask = img::make_view(w, h, buffer);
-
-        span::copy(src, img::to_span(mask));
-
-        return mask;
-    }
-
-
     
 }
 
@@ -503,13 +402,11 @@ namespace assets
     };
 
 
-    static u32 draw_mask_size()
+    static u32 draw_mask_size(AssetMemory const& am)
     {
-    #include "../res/masks/mask_sizes.cpp"
-
-        auto c = mask_sizes.controller;
-        auto k = mask_sizes.keyboard;
-        auto m = mask_sizes.mouse;        
+        auto c = am.controller;
+        auto k = am.keyboard;
+        auto m = am.mouse;        
 
         auto cn = c.width * c.height;
         auto kn = k.width * k.height;
@@ -519,7 +416,7 @@ namespace assets
     }
 
 
-    static DrawMaskData create_draw_mask_data(img::Buffer8& buffer)
+    static DrawMaskData create_draw_mask_data(AssetMemory const& am, img::Buffer8& buffer)
     {
         auto cr = controller::get_region_rects();
         auto kr = keyboard::get_region_rects();
@@ -527,9 +424,9 @@ namespace assets
 
         DrawMaskData data;
 
-        auto cmv = controller::make_mask(buffer);
-        auto kmv = keyboard::make_mask(buffer);
-        auto mmv = mouse::make_mask(buffer);
+        auto cmv = make_mask(am.controller, buffer);
+        auto kmv = make_mask(am.keyboard, buffer);
+        auto mmv = make_mask(am.mouse, buffer);
 
         auto const set_mask_regions = [](auto const& view, auto const& reg, auto& mask)
         {
