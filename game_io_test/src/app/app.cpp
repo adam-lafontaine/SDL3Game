@@ -342,7 +342,12 @@ namespace game_io_test
     class StateData
     {
     public:
+
+        assets::SoundList sound_list;
+        assets::MusicList music_list;
+        
         assets::DrawMaskData masks;
+
         MaskViewList mask_views;
         InputList inputs;
 
@@ -408,6 +413,18 @@ namespace game_io_test
         data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
         set_mask_views(data.masks, data.out_src, data.mask_views);
 
+        data.sound_list = assets::create_sound_list(am);
+        if (!data.sound_list.ok)
+        {
+            return false;
+        }
+
+        data.music_list = assets::create_music_list(am);
+        if (!data.music_list.ok)
+        {
+            return false;
+        }
+
         clear_input_list(data.inputs);
 
         assets::destroy_asset_memory(am);
@@ -430,9 +447,14 @@ namespace game_io_test
     AppResult init(AppState& state)
     {
         AppResult res{};
-        res.success = create_state_data(state);
+        res.success = false;
+
+        if (!audio::init_audio())
+        {
+            return res;
+        }
         
-        if (!res.success)
+        if (!create_state_data(state))
         {
             return res;
         }
@@ -440,6 +462,8 @@ namespace game_io_test
         auto& data = get_data(state);
 
         res.screen_dimensions = app_screen_dimensions(data.masks);
+
+        res.success = true;
 
         return res;
     }

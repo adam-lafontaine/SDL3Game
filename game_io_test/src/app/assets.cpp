@@ -81,11 +81,31 @@ namespace assets
     {
     public:
 
-        img::Image controller;
-        img::Image keyboard;
-        img::Image mouse;
+        struct
+        {
+            img::Image controller;
+            img::Image keyboard;
+            img::Image mouse;
 
-        
+        } image;
+
+        struct
+        {
+            ByteView A;
+            ByteView B;
+            ByteView C;
+            ByteView D;
+
+        } music;
+
+        struct
+        {
+            ByteView laser;
+            ByteView explosion;
+            ByteView confirm;
+            ByteView select;
+
+        } sound;
 
         MemoryBuffer<u8> buffer;
     };
@@ -93,9 +113,9 @@ namespace assets
 
     static void destroy_asset_memory(AssetMemory& memory)
     {
-        img::destroy_image(memory.controller);
-        img::destroy_image(memory.keyboard);
-        img::destroy_image(memory.mouse);
+        img::destroy_image(memory.image.controller);
+        img::destroy_image(memory.image.keyboard);
+        img::destroy_image(memory.image.mouse);
 
         mb::destroy_buffer(memory.buffer);
     }
@@ -111,28 +131,41 @@ namespace assets
             return false;
         }
 
-        auto const make_view = [&](auto const& d) { return span::make_view(buffer.data_ + d.offset, d.size); };        
+        auto const make_view = [&](auto const& s) { return span::make_view(buffer.data_ + s.offset, s.size); };
+
+        auto const read_image = [&](auto const& s, auto& im)
+        {
+            return img::read_image_from_memory(make_view(s), im);
+        };
 
         bool res = false;
-        res = img::read_image_from_memory(make_view(asset_sizes.masks.controller), memory.controller);
+        res = read_image(asset_sizes.masks.controller, memory.image.controller);
         if (!res)
         {
             return false;
         }
 
-        res = img::read_image_from_memory(make_view(asset_sizes.masks.keyboard), memory.keyboard);
+        res = read_image(asset_sizes.masks.keyboard, memory.image.keyboard);
         if (!res)
         {
             return false;
         }
 
-        res = img::read_image_from_memory(make_view(asset_sizes.masks.mouse), memory.mouse);
+        res = read_image(asset_sizes.masks.mouse, memory.image.mouse);
         if (!res)
         {
             return false;
         }
 
+        memory.music.A = make_view(asset_sizes.music.game_00);
+        memory.music.B = make_view(asset_sizes.music.game_01);
+        memory.music.C = make_view(asset_sizes.music.game_02);
+        memory.music.D = make_view(asset_sizes.music.game_03);
 
+        memory.sound.confirm = make_view(asset_sizes.sfx.confirmation_002);
+        memory.sound.explosion = make_view(asset_sizes.sfx.explosionCrunch_003);
+        memory.sound.laser = make_view(asset_sizes.sfx.laserRetro_000);
+        memory.sound.select = make_view(asset_sizes.sfx.open_001);
 
         return true;
     }
@@ -271,7 +304,6 @@ namespace controller
 namespace assets
 {
 
-
 namespace keyboard
 {
     template <class T>
@@ -382,7 +414,6 @@ namespace mouse
     
 }
 
-
 }
 
 
@@ -404,9 +435,9 @@ namespace assets
 
     static u32 draw_mask_size(AssetMemory const& am)
     {
-        auto c = am.controller;
-        auto k = am.keyboard;
-        auto m = am.mouse;        
+        auto c = am.image.controller;
+        auto k = am.image.keyboard;
+        auto m = am.image.mouse;        
 
         auto cn = c.width * c.height;
         auto kn = k.width * k.height;
@@ -424,9 +455,9 @@ namespace assets
 
         DrawMaskData data;
 
-        auto cmv = make_mask(am.controller, buffer);
-        auto kmv = make_mask(am.keyboard, buffer);
-        auto mmv = make_mask(am.mouse, buffer);
+        auto cmv = make_mask(am.image.controller, buffer);
+        auto kmv = make_mask(am.image.keyboard, buffer);
+        auto mmv = make_mask(am.image.mouse, buffer);
 
         auto const set_mask_regions = [](auto const& view, auto const& reg, auto& mask)
         {
@@ -463,6 +494,8 @@ namespace assets
     public:
         static constexpr u32 count = 4;
 
+        bool ok = false;
+
         union
         {
             Sound list[count];
@@ -478,15 +511,37 @@ namespace assets
     };
 
 
-namespace sound
-{
-    static inline bool load_sound(auto const& src, audio::Sound& sound, cstr mem_tag)
+    static void destroy_sound_list(SoundList& s)
     {
-        auto bytes = span::make_view((u8*)src.data, src.length);
-
-        return audio::load_sound_from_bytes(bytes, sound, mem_tag);
+        for (u32 i = 0; i < s.count; i++)
+        {
+            audio::destroy_sound(s.list[i]);
+        }
     }
-}
+
+
+    static SoundList create_sound_list(AssetMemory const& am)
+    {
+        SoundList sounds;
+        sounds.ok = false;
+
+        bool res = true;
+        res &= audio::load_sound_from_bytes(am.sound.laser, sounds.laser);
+        assert(res && " *** laser sound *** ");
+
+        res &= audio::load_sound_from_bytes(am.sound.explosion, sounds.explosion);
+        assert(res && " *** explosion sound *** ");
+
+        res &= audio::load_sound_from_bytes(am.sound.confirm, sounds.ui_confirm);
+        assert(res && " *** confirm sound *** ");
+
+        res &= audio::load_sound_from_bytes(am.sound.select, sounds.ui_select);
+        assert(res && " *** select sound *** ");
+
+        sounds.ok = res;       
+
+        return sounds;
+    }
 
 }
 
@@ -503,6 +558,8 @@ namespace assets
     public:
         static constexpr u32 count = 4;
 
+        bool ok = false;
+
         union
         {
             Music list[count];
@@ -516,6 +573,39 @@ namespace assets
             };
         };
     };
+
+
+    static void destroy_music_list(MusicList& m)
+    {
+        for (u32 i = 0; i < m.count; i++)
+        {
+            audio::destroy_music(m.list[i]);
+        }
+    }
+
+
+    static MusicList create_music_list(AssetMemory const& am)
+    {
+        MusicList music;
+        music.ok = false;
+
+        bool res = true;
+
+        res &= audio::load_music_from_bytes(am.music.A, music.game_00);
+        assert(res && " *** music A *** ");
+
+        res &= audio::load_music_from_bytes(am.music.B, music.game_01);
+        assert(res && " *** music B *** ");
+
+        res &= audio::load_music_from_bytes(am.music.C, music.game_02);
+        assert(res && " *** music C *** ");
+
+        res &= audio::load_music_from_bytes(am.music.D, music.game_03);
+        assert(res && " *** music D *** ");
+
+        music.ok = true;
+        return music;
+    }
 }
 
 

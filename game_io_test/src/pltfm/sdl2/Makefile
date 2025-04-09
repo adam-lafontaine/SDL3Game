@@ -8,7 +8,8 @@ GPP += -mavx -mavx2 -mfma
 #GPP += -DALLOC_COUNT
 
 NO_FLAGS := 
-SDL2   := `sdl2-config --cflags --libs`
+#SDL2   := `sdl2-config --cflags --libs`
+SDL2 := -lSDL2 -lSDL2_mixer
 
 ALL_LFLAGS := $(SDL2) -lpthread
 
@@ -193,10 +194,8 @@ app_c += $(ascii_image_h)
 
 # assets.cpp
 app_c += $(app)/assets.cpp
-app_c += $(res)/masks/controller.cpp
-app_c += $(res)/masks/keyboard.cpp
-app_c += $(res)/masks/mouse.cpp
-app_c += $(res)/masks/mask_sizes.cpp
+app_c += $(audio_h)
+app_c += $(res)/asset_sizes.cpp
 
 #************
 
@@ -222,6 +221,7 @@ main_dep += $(stb_libs_c)
 main_dep += $(ascii_image_c)
 main_dep += $(sdl_input_c)
 main_dep += $(sdl_window_c)
+main_dep += $(sdl_audio_c)
 
 #*************
 
