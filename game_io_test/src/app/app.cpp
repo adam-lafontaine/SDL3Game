@@ -191,6 +191,20 @@ namespace game_io_test
     }
 
 
+    static void map_button_music(input::ButtonState const& btn, audio::Music& music)
+    {
+        if (btn.pressed)
+        {
+            audio::stop_music();
+            audio::play_music(music);
+        }
+        else if (btn.raised)
+        {
+            audio::stop_music();
+        }
+    }
+
+
     static void map_controller_input(input::ControllerInput const& src, ControllerDef<b8>& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
@@ -258,6 +272,15 @@ namespace game_io_test
         map_button_sound(src.keyboard.kbd_A, sounds.laser);
         map_button_sound(src.keyboard.kbd_S, sounds.ui_confirm);
         map_button_sound(src.keyboard.kbd_D, sounds.ui_select);
+    }
+
+
+    static void update_music(Input const& src, assets::MusicList& music)
+    {
+        map_button_music(src.keyboard.kbd_1, music.game_00);
+        map_button_music(src.keyboard.kbd_2, music.game_01);
+        map_button_music(src.keyboard.kbd_3, music.game_02);
+        map_button_music(src.keyboard.kbd_4, music.game_03);
     }
 }
 
@@ -447,7 +470,8 @@ namespace game_io_test
 
         assets::destroy_asset_memory(am);
 
-        audio::set_master_volume(0.5f);
+        audio::set_sound_volume(0.5f);
+        audio::set_music_volume(1.0f);
 
         return true;
     }
@@ -525,6 +549,7 @@ namespace game_io_test
 
         update_visual(input, data.inputs);
         update_sound(input, data.sound_list);
+        update_music(input, data.music_list);
 
         img::fill(data.out_src, COLOR_BACKGROUND);
 
