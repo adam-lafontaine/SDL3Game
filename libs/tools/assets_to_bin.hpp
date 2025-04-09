@@ -144,7 +144,6 @@ namespace internal
             return true;
         }
     };
-
 }
 }
 

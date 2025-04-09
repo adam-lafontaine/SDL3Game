@@ -384,6 +384,14 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
+        // TEST
+        assets::AssetMemory am;
+        if (!assets::load_asset_memory(am))
+        {
+            assert(" *** ASSET MEMORY ERROR *** " && false);
+        }
+        assets::destroy_asset_memory(am);
+
         data.buffer8 = img::create_buffer8(assets::draw_mask_size(), "buffer8");
         if (!data.buffer8.ok)
         {

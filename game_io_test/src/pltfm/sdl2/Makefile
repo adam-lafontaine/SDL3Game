@@ -213,6 +213,7 @@ main_dep += $(stopwatch_h)
 main_dep += $(app_h)
 
 # main_o.cpp
+main_dep += $(pltfm)/main_o.cpp
 main_dep += $(app_c)
 main_dep += $(alloc_type_c)
 main_dep += $(span_c)

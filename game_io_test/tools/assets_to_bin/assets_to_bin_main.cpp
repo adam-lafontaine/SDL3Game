@@ -25,8 +25,6 @@ u8 to_mask(p32 p)
 
 int main()
 {
-    //a2b::files_to_binary(SRC_ROOT, DST_ROOT, "io_test");
-
     auto root = fs::path(SRC_ROOT);
 
     a2b::AssetFiles af;

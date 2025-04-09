@@ -3,17 +3,191 @@
 #include "app.hpp"
 #include "../../../libs/output/audio.hpp"
 
+//#define __EMSCRIPTEN__ 1
 
-/* images */
+#ifdef __EMSCRIPTEN__
+
+#include <emscripten/fetch.h>
+
+#else
+
+#include <filesystem>
+#include <fstream>
+
+#endif
+
+
+
 
 namespace game_io_test
 {
+
+    namespace fs = std::filesystem;
+
+/* bin data */
+
+namespace assets
+{
+#ifdef NDEBUG
+
+    constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
+
+#else
+
+    constexpr auto BIN_DATA_PATH = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+
+#endif
+
+    static cstr get_file_name(cstr full_path)
+    {
+        auto str = span::to_string_view(full_path);
+        auto c = str.begin + str.length;
+
+        for (; c >= str.begin && *c != '/'; c--)
+        { }
+
+        //return (cstr)(c + 1); // no leading '/'
+        return (cstr)c; // keep leading '/'
+    }
+
+
+    static MemoryBuffer<u8> read_bytes(cstr path)
+    {
+        MemoryBuffer<u8> buffer;
+
+        auto size = fs::file_size(path);
+        if (size == 0 || !mb::create_buffer(buffer, size, get_file_name(path)))
+        {
+            assert(false && " *** no file memory *** ");
+            return buffer;
+        }
+
+        std::ifstream file(path, std::ios::binary);
+        if (!file.is_open())
+        {
+            assert(false && " *** file error *** ");
+            mb::destroy_buffer(buffer);
+            return buffer;
+        }
+
+        file.read((char*)buffer.data_, size);
+
+        file.close();
+        return buffer;
+    }
+
+
+    class AssetMemory
+    {
+    public:
+
+        img::Image controller;
+        img::Image keyboard;
+        img::Image mouse;
+
+        MemoryBuffer<u8> buffer;
+    };
+
+
+    static void destroy_asset_memory(AssetMemory& memory)
+    {
+        img::destroy_image(memory.controller);
+        img::destroy_image(memory.keyboard);
+        img::destroy_image(memory.mouse);
+
+        mb::destroy_buffer(memory.buffer);
+    }
+
+
+    static bool load_asset_memory(AssetMemory& memory)
+    {
+    #include "../res/asset_sizes.cpp"
+
+        auto buffer = read_bytes(BIN_DATA_PATH);
+        if (!buffer.ok)
+        {
+            return false;
+        }
+
+        auto const make_view = [&](auto const& d) { return span::make_view(buffer.data_ + d.offset, d.size); };        
+
+        bool res = false;
+        res = img::read_image_from_memory(make_view(asset_sizes.masks.controller), memory.controller);
+        if (!res)
+        {
+            return false;
+        }
+
+        res = img::read_image_from_memory(make_view(asset_sizes.masks.keyboard), memory.keyboard);
+        if (!res)
+        {
+            return false;
+        }
+
+        res = img::read_image_from_memory(make_view(asset_sizes.masks.mouse), memory.mouse);
+        if (!res)
+        {
+            return false;
+        }
+
+
+
+        return true;
+    }
+}
+
+
+/* images */
+
+namespace assets
+{
+
+    using p32 = img::Pixel;
+
+
+    static u8 to_u8_mask(p32 p)
+    {
+        if (!p.alpha) // transparent
+        {
+            return 0;
+        }
+
+        auto sum = p.red + p.green + p.blue;
+        if (!sum) // black
+        {
+            return 1;
+        }
+
+        return 2;
+    }
+
+
+    static img::GrayView make_mask(ByteView const& data, img::Buffer8& buffer)
+    {
+        img::Image img32;
+        img::read_image_from_memory(data, img32);
+
+        auto w = img32.width;
+        auto h = img32.height;
+
+        auto mask = img::make_view(w, h, buffer);
+        auto view = img::make_view(img32);
+
+        img::transform(view, mask, to_u8_mask);
+
+        img::destroy_image(img32);
+
+        return mask;
+    }
+
+}
 
 
 /* controller */
 
 namespace assets
 {
+
 namespace controller
 {
     template <class T>
@@ -105,7 +279,32 @@ namespace controller
 
         return mask;
     }
+
+
+    static img::GrayView make_mask(ByteView const& data, img::Buffer8& buffer)
+    {
+    #include "../res/masks/controller.cpp"
+
+        auto w = controller.width;
+        auto h = controller.height;
+
+        img::Image img32;
+        img::read_image_from_memory(data, img32);
+
+        assert(img32.width == w);
+        assert(img32.height == h);
+
+        auto mask = img::make_view(w, h, buffer);
+        auto view = img::make_view(img32);
+
+        img::transform(view, mask, to_u8_mask);
+
+        img::destroy_image(img32);
+
+        return mask;
+    }
 }
+
 }
 
 
@@ -113,6 +312,8 @@ namespace controller
 
 namespace assets
 {
+
+
 namespace keyboard
 {
     template <class T>
@@ -181,6 +382,30 @@ namespace keyboard
         auto mask = img::make_view(w, h, buffer);
 
         span::copy(src, img::to_span(mask));
+
+        return mask;
+    }
+
+
+    static img::GrayView make_mask(ByteView const& data, img::Buffer8& buffer)
+    {
+    #include "../res/masks/keyboard.cpp"
+
+        auto w = keyboard.width;
+        auto h = keyboard.height;
+
+        img::Image img32;
+        img::read_image_from_memory(data, img32);
+
+        assert(img32.width == w);
+        assert(img32.height == h);
+
+        auto mask = img::make_view(w, h, buffer);
+        auto view = img::make_view(img32);
+
+        img::transform(view, mask, to_u8_mask);
+
+        img::destroy_image(img32);
 
         return mask;
     }
@@ -253,7 +478,12 @@ namespace mouse
 
         return mask;
     }
+
+
+    
 }
+
+
 }
 
 
@@ -320,15 +550,13 @@ namespace assets
 
         return data;
     }
+
 }
-
-
-} // game_io_test
 
 
 /* sounds */
 
-namespace game_io_test
+namespace assets
 {
     using Sound = audio::Sound;    
 
@@ -361,14 +589,14 @@ namespace sound
 
         return audio::load_sound_from_bytes(bytes, sound, mem_tag);
     }
-}    
+}
 
-} // game_io_test
+}
 
 
 /* music */
 
-namespace game_io_test
+namespace assets
 {
     using Music = audio::Music;
 
@@ -392,3 +620,6 @@ namespace game_io_test
         };
     };
 }
+
+
+} // game_io_test

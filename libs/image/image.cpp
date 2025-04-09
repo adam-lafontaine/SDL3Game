@@ -1896,7 +1896,7 @@ namespace image
 
     bool read_image_from_file(const char* img_path_src, Image& image_dst)
 	{
-#ifdef IMAGE_READ
+    #ifdef IMAGE_READ
         auto is_valid_file = is_valid_image_file(img_path_src);
         assert(is_valid_file && "invalid image file");
 
@@ -1910,7 +1910,7 @@ namespace image
 		int image_channels = 0;
 		int desired_channels = 4;
 
-		auto data = (Pixel*)stbi_load(img_path_src, &width, &height, &image_channels, desired_channels);
+		auto data = stbi_load(img_path_src, &width, &height, &image_channels, desired_channels);
 
 		assert(data && "stbi_load() - no image data");
 		assert(width && "stbi_load() - no image width");
@@ -1921,20 +1921,59 @@ namespace image
 			return false;
 		}
 
-		image_dst.data_ = data;
+		image_dst.data_ = (Pixel*)data;
 		image_dst.width = width;
 		image_dst.height = height;
 
         mem::tag(data, image_dst.width * image_dst.height, "stbi_load");
 
 		return true;
-#else
+    #else
 
         assert(false && " *** IMAGE_READ not enabled *** ");
         return false;
 
-#endif
+    #endif
 	}
+
+
+    bool read_image_from_memory(ByteView const& bytes, Image& image_dst)
+    {
+    #ifdef IMAGE_READ
+
+        auto buffer = (unsigned char*)bytes.data;
+        int len = (int)bytes.length;
+        int width = 0;
+		int height = 0;
+		int image_channels = 0;
+		int desired_channels = 4;
+
+        auto data = stbi_load_from_memory(buffer, len, &width, &height, &image_channels, desired_channels);
+
+        assert(data && "stbi_load_from_memory() - no image data");
+		assert(width && "stbi_load_from_memory() - no image width");
+		assert(height && "stbi_load_from_memory() - no image height");
+
+		if (!data)
+		{
+			return false;
+		}
+
+		image_dst.data_ = (Pixel*)data;
+		image_dst.width = width;
+		image_dst.height = height;
+
+        mem::tag(data, image_dst.width * image_dst.height, "stbi_load");
+
+		return true;
+
+    #else
+
+        assert(false && " *** IMAGE_READ not enabled *** ");
+        return false;
+
+    #endif
+    }
 
 
     bool write_image(Image const& image_src, const char* file_path_dst)
