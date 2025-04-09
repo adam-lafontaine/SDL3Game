@@ -182,6 +182,15 @@ namespace game_io_test
     }
 
 
+    static void map_button_sound(input::ButtonState const& btn, audio::Sound& sound)
+    {
+        if (btn.pressed)
+        {
+            audio::play_sound(sound);
+        }
+    }
+
+
     static void map_controller_input(input::ControllerInput const& src, ControllerDef<b8>& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
@@ -232,7 +241,7 @@ namespace game_io_test
     }
 
 
-    static void update(Input const& src, InputList& dst)
+    static void update_visual(Input const& src, InputList& dst)
     {
         map_controller_input(src.controllers[0], dst.controller1);
         map_controller_input(src.controllers[1], dst.controller2);
@@ -240,6 +249,15 @@ namespace game_io_test
         map_mouse_input(src.mouse, dst.mouse);
 
         dst.mouse_pos = src.mouse.window_pos;
+    }
+
+
+    static void update_sound(Input const& src, assets::SoundList& sounds)
+    {
+        map_button_sound(src.keyboard.kbd_W, sounds.explosion);
+        map_button_sound(src.keyboard.kbd_A, sounds.laser);
+        map_button_sound(src.keyboard.kbd_S, sounds.ui_confirm);
+        map_button_sound(src.keyboard.kbd_D, sounds.ui_select);
     }
 }
 
@@ -429,6 +447,8 @@ namespace game_io_test
 
         assets::destroy_asset_memory(am);
 
+        audio::set_master_volume(0.5f);
+
         return true;
     }
 
@@ -503,7 +523,8 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        update(input, data.inputs);
+        update_visual(input, data.inputs);
+        update_sound(input, data.sound_list);
 
         img::fill(data.out_src, COLOR_BACKGROUND);
 
