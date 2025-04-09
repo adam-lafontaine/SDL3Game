@@ -10,8 +10,12 @@ namespace game = game_io_test;
 namespace img = image;
 
 
+#ifndef APP_FULLSCREEN
+
 constexpr u32 WINDOW_WIDTH = 800;
 constexpr u32 WINDOW_HEIGHT = 600;
+
+#endif
 
 
 constexpr f64 NANO = 1'000'000'000;
@@ -57,6 +61,37 @@ namespace mn
 }
 
 
+bool create_window()
+{
+#include "../../../../res/icon/icon_64.cpp"
+    window::Icon64 icon{};
+
+    static_assert(sizeof(icon_64.pixel_data) >= icon.min_data_size);
+    assert(icon_64.width == icon.width);
+    assert(icon_64.height == icon.height);
+
+    icon.pixel_data = (u8*)icon_64.pixel_data;
+
+#ifndef APP_FULLSCREEN
+
+    if (!window::create(mn::window, game::APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT, icon))
+    {
+        return false;
+    }
+
+#else
+
+    if (!window::create_fullscreen(mn::window, game::APP_TITLE, icon))
+    {
+        return false;
+    }
+
+#endif
+
+    return true;
+}
+
+
 img::ImageView make_window_view()
 {
     static_assert(window::PIXEL_SIZE == sizeof(img::Pixel));
@@ -83,7 +118,7 @@ static bool is_running()
 
 
 static bool main_init()
-{
+{    
     if (!window::init())
     {
         return false;
@@ -101,34 +136,10 @@ static bool main_init()
         return false;
     }
 
-    auto title = game::APP_TITLE;
-    
-    /*u32 width = result.screen_dimensions.x;
-    u32 height = result.screen_dimensions.y;
-
-    if (width > WINDOW_WIDTH || height > WINDOW_HEIGHT)
+    if (!create_window())
     {
         return false;
-    }*/
-
-    #include "../../../../res/icon/icon_64.cpp"
-    window::Icon64 icon{};
-
-    static_assert(sizeof(icon_64.pixel_data) >= icon.min_data_size);
-    assert(icon_64.width == icon.width);
-    assert(icon_64.height == icon.height);
-
-    icon.pixel_data = (u8*)icon_64.pixel_data;
-
-    /*if (!window::create(mn::window, title, WINDOW_WIDTH, WINDOW_HEIGHT, icon))
-    {
-        return false;
-    }*/
-
-    if (!window::create_fullscreen(mn::window, title, icon))
-    {
-        return false;
-    }
+    }    
 
     if (!game::set_screen_memory(mn::app_state, make_window_view()))
     {

@@ -7,6 +7,8 @@ GPP += -mavx -mavx2 -mfma
 
 #GPP += -DALLOC_COUNT
 
+#GPP += -DAPP_FULLSCREEN
+
 NO_FLAGS := 
 #SDL2   := `sdl2-config --cflags --libs`
 SDL2 := -lSDL2 -lSDL2_mixer

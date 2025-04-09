@@ -519,12 +519,17 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        auto dim = app_screen_dimensions(data.masks);
+        auto dim = app_screen_dimensions(data.masks);        
 
         auto scale_w = screen.width / dim.x;
         auto scale_h = screen.height / dim.y;
 
         auto scale = num::min(scale_w, scale_h);
+
+        if (!scale)
+        {
+            return false; // down scaling not supported
+        }
 
         auto w = dim.x * scale;
         auto h = dim.y * scale;
