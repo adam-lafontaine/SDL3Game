@@ -103,13 +103,13 @@ static bool main_init()
 
     auto title = game::APP_TITLE;
     
-    u32 width = result.screen_dimensions.x;
+    /*u32 width = result.screen_dimensions.x;
     u32 height = result.screen_dimensions.y;
 
     if (width > WINDOW_WIDTH || height > WINDOW_HEIGHT)
     {
         return false;
-    }
+    }*/
 
     #include "../../../../res/icon/icon_64.cpp"
     window::Icon64 icon{};
@@ -120,7 +120,12 @@ static bool main_init()
 
     icon.pixel_data = (u8*)icon_64.pixel_data;
 
-    if (!window::create(mn::window, title, WINDOW_WIDTH, WINDOW_HEIGHT, icon))
+    /*if (!window::create(mn::window, title, WINDOW_WIDTH, WINDOW_HEIGHT, icon))
+    {
+        return false;
+    }*/
+
+    if (!window::create_fullscreen(mn::window, title, icon))
     {
         return false;
     }
