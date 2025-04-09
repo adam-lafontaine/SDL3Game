@@ -11,10 +11,11 @@
 
 using ByteBuffer = MemoryBuffer<u8>;
 namespace mb = memory_buffer;
+namespace fs = std::filesystem;
 
 namespace i2c
 {
-    namespace fs = std::filesystem;
+    
     namespace img = image;
 
     using p32 = img::Pixel;
@@ -87,7 +88,7 @@ namespace internal
     }
 
 
-    static bool write_cpp_file(std::string code_str, cstr dst_dir, std::string const& name)
+    static bool write_cpp_file(std::string code_str, fs::path const& dst_dir, std::string const& name)
     {
         auto filename = name + ".cpp";
         auto filepath = fs::path(dst_dir) / filename;
@@ -108,7 +109,7 @@ namespace internal
     }
 
 
-    static bool validate_directories(cstr src_dir, cstr dst_dir)
+    static bool validate_directories(fs::path const& src_dir, fs::path const& dst_dir)
     {
         printf("check src directory: ");
         if (!fs::exists(src_dir) || !fs::is_directory(src_dir))
@@ -130,7 +131,7 @@ namespace internal
     }
 
 
-    static bool image_to_code(fs::path const& filepath, cstr dst_dir, fn<u8(p32)> const& encode)
+    static bool image_to_code(fs::path const& filepath, fs::path const& dst_dir, fn<u8(p32)> const& encode)
     {
         auto name = filepath.stem().string();
 
@@ -183,7 +184,7 @@ namespace internal
     }
 
 
-    static bool images_to_code(cstr src_dir, cstr dst_dir, fn<u8(p32)> const& encode)
+    static bool images_to_code(fs::path const& src_dir, fs::path const& dst_dir, fn<u8(p32)> const& encode)
     {  
         for (auto const& entry : fs::directory_iterator(src_dir))
         {
@@ -202,7 +203,7 @@ namespace internal
     }
 
 
-    static bool image_dimensions_to_code(cstr src_dir, cstr dst_dir, std::string const& name)
+    static bool image_dimensions_to_code(fs::path const& src_dir, fs::path const& dst_dir, std::string const& name)
     {
         auto tab = "    ";
 
@@ -263,7 +264,7 @@ namespace internal
 
 namespace i2c
 {
-    inline bool image_to_code(fs::path const& filepath, cstr dst_dir, fn<u8(p32)> const& encode)
+    inline bool image_to_code(fs::path const& filepath, fs::path const& dst_dir, fn<u8(p32)> const& encode)
     {
         printf("check dst directory: ");
         if (!fs::exists(dst_dir) || !fs::is_directory(dst_dir))
@@ -277,7 +278,7 @@ namespace i2c
     }
     
     
-    inline bool images_to_code(cstr src_dir, cstr dst_dir, fn<u8(p32)> const& encode)
+    inline bool images_to_code(fs::path const& src_dir, fs::path const& dst_dir, fn<u8(p32)> const& encode)
     {
         if (!internal::validate_directories(src_dir, dst_dir))
         {
@@ -288,7 +289,7 @@ namespace i2c
     }
 
 
-    inline bool image_dimensions_to_code(cstr src_dir, cstr dst_dir, cstr name)
+    inline bool image_dimensions_to_code(fs::path const& src_dir, fs::path const& dst_dir, cstr name)
     {
         if (!internal::validate_directories(src_dir, dst_dir))
         {

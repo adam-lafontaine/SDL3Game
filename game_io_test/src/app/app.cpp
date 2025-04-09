@@ -182,6 +182,29 @@ namespace game_io_test
     }
 
 
+    static void map_button_sound(input::ButtonState const& btn, audio::Sound& sound)
+    {
+        if (btn.pressed)
+        {
+            audio::play_sound(sound);
+        }
+    }
+
+
+    static void map_button_music(input::ButtonState const& btn, audio::Music& music)
+    {
+        if (btn.pressed)
+        {
+            audio::stop_music();
+            audio::play_music(music);
+        }
+        else if (btn.raised)
+        {
+            audio::stop_music();
+        }
+    }
+
+
     static void map_controller_input(input::ControllerInput const& src, ControllerDef<b8>& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
@@ -232,7 +255,7 @@ namespace game_io_test
     }
 
 
-    static void update(Input const& src, InputList& dst)
+    static void update_visual(Input const& src, InputList& dst)
     {
         map_controller_input(src.controllers[0], dst.controller1);
         map_controller_input(src.controllers[1], dst.controller2);
@@ -240,6 +263,24 @@ namespace game_io_test
         map_mouse_input(src.mouse, dst.mouse);
 
         dst.mouse_pos = src.mouse.window_pos;
+    }
+
+
+    static void update_sound(Input const& src, assets::SoundList& sounds)
+    {
+        map_button_sound(src.keyboard.kbd_W, sounds.explosion);
+        map_button_sound(src.keyboard.kbd_A, sounds.laser);
+        map_button_sound(src.keyboard.kbd_S, sounds.ui_confirm);
+        map_button_sound(src.keyboard.kbd_D, sounds.ui_select);
+    }
+
+
+    static void update_music(Input const& src, assets::MusicList& music)
+    {
+        map_button_music(src.keyboard.kbd_1, music.game_00);
+        map_button_music(src.keyboard.kbd_2, music.game_01);
+        map_button_music(src.keyboard.kbd_3, music.game_02);
+        map_button_music(src.keyboard.kbd_4, music.game_03);
     }
 }
 
@@ -342,7 +383,12 @@ namespace game_io_test
     class StateData
     {
     public:
+
+        assets::SoundList sound_list;
+        assets::MusicList music_list;
+        
         assets::DrawMaskData masks;
+
         MaskViewList mask_views;
         InputList inputs;
 
@@ -383,14 +429,20 @@ namespace game_io_test
         state.data = state_data;
 
         auto& data = get_data(state);
+        
+        assets::AssetMemory am;
+        if (!assets::load_asset_memory(am))
+        {
+            assert(" *** ASSET MEMORY ERROR *** " && false);
+        }
 
-        data.buffer8 = img::create_buffer8(assets::draw_mask_size(), "buffer8");
+        data.buffer8 = img::create_buffer8(assets::draw_mask_size(am), "buffer8");
         if (!data.buffer8.ok)
         {
             return false;
         }
 
-        data.masks = assets::create_draw_mask_data(data.buffer8);
+        data.masks = assets::create_draw_mask_data(am, data.buffer8);
 
         auto dim = app_screen_dimensions(data.masks);
         data.buffer32 = img::create_buffer32(dim.x * dim.y, "buffer32");
@@ -402,7 +454,24 @@ namespace game_io_test
         data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
         set_mask_views(data.masks, data.out_src, data.mask_views);
 
+        data.sound_list = assets::create_sound_list(am);
+        if (!data.sound_list.ok)
+        {
+            return false;
+        }
+
+        data.music_list = assets::create_music_list(am);
+        if (!data.music_list.ok)
+        {
+            return false;
+        }
+
         clear_input_list(data.inputs);
+
+        assets::destroy_asset_memory(am);
+
+        audio::set_sound_volume(0.5f);
+        audio::set_music_volume(1.0f);
 
         return true;
     }
@@ -422,9 +491,14 @@ namespace game_io_test
     AppResult init(AppState& state)
     {
         AppResult res{};
-        res.success = create_state_data(state);
+        res.success = false;
+
+        if (!audio::init_audio())
+        {
+            return res;
+        }
         
-        if (!res.success)
+        if (!create_state_data(state))
         {
             return res;
         }
@@ -432,6 +506,8 @@ namespace game_io_test
         auto& data = get_data(state);
 
         res.screen_dimensions = app_screen_dimensions(data.masks);
+
+        res.success = true;
 
         return res;
     }
@@ -443,12 +519,17 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        auto dim = app_screen_dimensions(data.masks);
+        auto dim = app_screen_dimensions(data.masks);        
 
         auto scale_w = screen.width / dim.x;
         auto scale_h = screen.height / dim.y;
 
         auto scale = num::min(scale_w, scale_h);
+
+        if (!scale)
+        {
+            return false; // down scaling not supported
+        }
 
         auto w = dim.x * scale;
         auto h = dim.y * scale;
@@ -471,7 +552,9 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        update(input, data.inputs);
+        update_visual(input, data.inputs);
+        update_sound(input, data.sound_list);
+        update_music(input, data.music_list);
 
         img::fill(data.out_src, COLOR_BACKGROUND);
 

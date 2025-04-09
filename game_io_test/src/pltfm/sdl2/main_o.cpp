@@ -1,5 +1,7 @@
 #pragma once
 
+#define IMAGE_READ
+
 #include "../../../src/app/app.cpp"
 
 #include "../../../../libs/alloc_type/alloc_type.cpp"
@@ -10,3 +12,4 @@
 
 #include "../../../../libs/sdl2/sdl_input.cpp"
 #include "../../../../libs/sdl2/sdl_window.cpp"
+#include "../../../../libs/sdl2/sdl_audio.cpp"

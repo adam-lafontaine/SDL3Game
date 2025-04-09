@@ -15,6 +15,9 @@ namespace sdl
         SDL_Window* window = 0;
         SDL_Renderer* renderer = 0;
         SDL_Texture* texture = 0;
+
+        u32 width_px = 0;
+        u32 height_px = 0;
     };
 
 
@@ -48,6 +51,29 @@ namespace sdl
             (int)width,
             (int)height,
             SDL_WINDOW_RESIZABLE);
+
+        if(!screen.window)
+        {
+            display_error("SDL_CreateWindow failed");
+            return false;
+        }
+
+        screen.width_px = width;
+        screen.height_px = height;
+
+        return true;
+    }
+
+
+    static bool create_window_fullscreen(ScreenMemory& screen, cstr title)
+    {
+        screen.window = SDL_CreateWindow(
+            title,
+            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED,
+            0,
+            0,
+            SDL_WINDOW_FULLSCREEN_DESKTOP);
 
         if(!screen.window)
         {
@@ -109,6 +135,48 @@ namespace sdl
             destroy_screen_memory(screen);
             return false;
         }
+
+        screen.width_px = width;
+        screen.height_px = height;
+
+        if (!create_texture(screen, width, height))
+        {
+            destroy_screen_memory(screen);
+            return false;
+        }
+
+        return true;
+    }
+
+
+    static bool create_screen_memory_fullscreen(ScreenMemory& screen, cstr title)
+    {
+        destroy_screen_memory(screen);
+
+        if (!create_window_fullscreen(screen, title))
+        {
+            destroy_screen_memory(screen);
+            return false;
+        }
+        
+        if (!create_renderer(screen))
+        {
+            destroy_screen_memory(screen);
+            return false;
+        }
+
+        int width = 0;
+        int height = 0;
+
+        auto err = SDL_GetRendererOutputSize(screen.renderer, &width, &height);
+        if (err)
+        {
+            destroy_screen_memory(screen);
+            return false;
+        }
+
+        screen.width_px = (u32)width;
+        screen.height_px = (u32)height;
 
         if (!create_texture(screen, width, height))
         {
@@ -190,7 +258,7 @@ namespace sdl
 
 namespace window
 {    
-    bool create_screen(Window& window, cstr title, u32 width, u32 height)
+    static bool create_window_memory(Window& window, cstr title, u32 width, u32 height)
     {
         auto data = sdl::allocate_screen_memory();
         if (!data)
@@ -213,7 +281,30 @@ namespace window
     }
 
 
-    sdl::ScreenMemory& get_screen(Window const& window)
+    static bool create_window_memory_fullscreen(Window& window, cstr title)
+    {
+        auto data = sdl::allocate_screen_memory();
+        if (!data)
+        {
+            return false;
+        }
+
+        auto& screen = *data;
+
+        if (!sdl::create_screen_memory_fullscreen(screen, title))
+        {
+            return false;
+        }
+
+        window.handle = (u64)data;
+        window.width = screen.width_px;
+        window.height = screen.height_px;
+
+        return true;
+    }
+
+
+    static sdl::ScreenMemory& get_screen(Window const& window)
     {
         return *(sdl::ScreenMemory*)window.handle;
     }
@@ -250,7 +341,7 @@ namespace window
     {
         SDL_zero(window);
         
-        if (!create_screen(window, title, width, height))
+        if (!create_window_memory(window, title, width, height))
         {
             return false;
         }
@@ -278,12 +369,72 @@ namespace window
     {
         SDL_zero(window);
         
-        if (!create_screen(window, title, width, height))
+        if (!create_window_memory(window, title, width, height))
         {
             return false;
         }
 
         auto& screen = get_screen(window);
+
+        auto buffer = mem::alloc<u32>(width * height, "window.pixel_buffer");
+        if (!buffer)
+        {
+            sdl::destroy_screen_memory(screen);
+            SDL_zero(window);
+            return false;
+        }
+
+        window.pixel_buffer = buffer;
+
+        return true;
+    }
+
+
+    bool create_fullscreen(Window& window, cstr title, Icon64 const& icon)
+    {
+        SDL_zero(window);
+        
+        if (!create_window_memory_fullscreen(window, title))
+        {
+            return false;
+        }
+
+        auto& screen = get_screen(window);
+
+        auto width = screen.width_px;
+        auto height = screen.height_px;
+
+        sdl::set_window_icon(screen.window, icon);
+
+        auto buffer = mem::alloc<u32>(width * height, "window.pixel_buffer");
+        if (!buffer)
+        {
+            sdl::destroy_screen_memory(screen);
+            SDL_zero(window);
+            return false;
+        }
+
+        SDL_memset(buffer, 0, width * height * sizeof(u32));
+
+        window.pixel_buffer = buffer;
+
+        return true;
+    }
+
+
+    bool create_fullscreen(Window& window, cstr title)
+    {
+        SDL_zero(window);
+        
+        if (!create_window_memory_fullscreen(window, title))
+        {
+            return false;
+        }
+
+        auto& screen = get_screen(window);
+
+        auto width = screen.width_px;
+        auto height = screen.height_px;
 
         auto buffer = mem::alloc<u32>(width * height, "window.pixel_buffer");
         if (!buffer)

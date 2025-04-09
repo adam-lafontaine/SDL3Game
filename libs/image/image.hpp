@@ -151,6 +151,10 @@ namespace image
 
 namespace image
 {
+    ImageView make_view(u32 width, u32 height, Pixel* data);
+
+    GrayView make_view(u32 width, u32 height, u8* data);
+    
     ImageView make_view(Image const& image);
 
     GrayView make_view(ImageGray const& image);
@@ -490,6 +494,8 @@ namespace image
 namespace image
 {
     bool read_image_from_file(const char* img_path_src, Image& image_dst);
+
+    bool read_image_from_memory(ByteView const& data, Image& image_dst);
 
     bool write_image(Image const& image_src, const char* file_path_dst);
 }

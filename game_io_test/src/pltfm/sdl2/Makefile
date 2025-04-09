@@ -7,8 +7,11 @@ GPP += -mavx -mavx2 -mfma
 
 #GPP += -DALLOC_COUNT
 
+#GPP += -DAPP_FULLSCREEN
+
 NO_FLAGS := 
-SDL2   := `sdl2-config --cflags --libs`
+#SDL2   := `sdl2-config --cflags --libs`
+SDL2 := -lSDL2 -lSDL2_mixer
 
 ALL_LFLAGS := $(SDL2) -lpthread
 
@@ -153,6 +156,7 @@ input_state_h += $(input_h)
 output := $(libs)/output
 
 window_h := $(output)/window.hpp
+audio_h := $(output)/audio.hpp
 
 #*************
 
@@ -173,6 +177,8 @@ sdl_window_c += $(window_h)
 sdl_window_c += $(alloc_type_h)
 sdl_window_c += $(sdl_include_h)
 
+sdl_audio_c := $(sdl2)/sdl_audio.cpp
+
 #************
 
 
@@ -190,10 +196,8 @@ app_c += $(ascii_image_h)
 
 # assets.cpp
 app_c += $(app)/assets.cpp
-app_c += $(res)/controller.cpp
-app_c += $(res)/keyboard.cpp
-app_c += $(res)/mouse.cpp
-app_c += $(res)/mask_sizes.cpp
+app_c += $(audio_h)
+app_c += $(res)/asset_sizes.cpp
 
 #************
 
@@ -210,6 +214,7 @@ main_dep += $(stopwatch_h)
 main_dep += $(app_h)
 
 # main_o.cpp
+main_dep += $(pltfm)/main_o.cpp
 main_dep += $(app_c)
 main_dep += $(alloc_type_c)
 main_dep += $(span_c)
@@ -218,6 +223,7 @@ main_dep += $(stb_libs_c)
 main_dep += $(ascii_image_c)
 main_dep += $(sdl_input_c)
 main_dep += $(sdl_window_c)
+main_dep += $(sdl_audio_c)
 
 #*************
 

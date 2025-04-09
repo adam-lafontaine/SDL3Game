@@ -1,4 +1,5 @@
-#include "../util/memory_buffer.hpp"
+#define IMAGE_READ
+#include "../image/image.hpp"
 
 #include <filesystem>
 #include <vector>
@@ -13,17 +14,18 @@
 
 using ByteBuffer = MemoryBuffer<u8>;
 namespace mb = memory_buffer;
+namespace fs = std::filesystem;
 
 
 namespace a2b
 {
-    namespace fs = std::filesystem;
+    
+    namespace img = image;
+    using p32 = img::Pixel;
     
 
     template <typename T>
     using fn = std::function<T>;
-
-    using convert = fn<ByteBuffer(ByteBuffer const&)>;
 }
 
 
@@ -31,27 +33,6 @@ namespace a2b
 {
 namespace internal
 {
-    static fs::path out_bin_path(cstr out_dir, cstr tag)
-    {
-        return fs::path(out_dir) / (std::string(tag) + ".bin");
-    }
-
-
-    static bool is_file(fs::path const& entry)
-    {
-        return fs::is_regular_file(entry) && entry.has_filename() && entry.has_extension();
-    }
-
-
-    static std::string file_to_var(fs::path const& filepath)
-    {
-        auto str = std::string(filepath.filename());
-        std::replace(str.begin(), str.end(), '.', '_');
-
-        return str;
-    }
-
-
     static ByteBuffer read_bytes(fs::path const& path)
     {
         ByteBuffer buffer;
@@ -77,58 +58,11 @@ namespace internal
         file.close();
         return buffer;
     }
-    
 
-    class DataSize    
+
+    static bool write_cpp_file(std::string code_str, fs::path const& dst_dir, std::string const& tag)
     {
-    public:
-        std::string name;
-        u32 size;
-
-        DataSize(std::string&& n, u32 s)
-        {
-            name = std::move(n);
-            size = s;
-        }
-    };
-
-
-    std::string to_struct_str(std::vector<DataSize> const& data, cstr tag)
-    {
-        cstr tab = "    ";
-        auto name = std::string(tag) + "_sizes";
-
-        std::ostringstream oss;
-
-        oss
-        << "static constexpr struct\n"
-        << "{\n";
-
-        for (auto const& item : data)
-        {
-            oss << tab << "unsigned " << item.name << ";\n";
-        }
-
-        oss
-        << "}\n"
-        << name << " = \n"
-        << "{\n";
-
-        for (auto const& item : data)
-        {
-            oss << tab << item.size << ",\n";
-        }
-
-        oss
-        << "};\n";
-
-        return oss.str();
-    }
-
-
-    static bool write_cpp_file(std::string code_str, cstr dst_dir, cstr tag)
-    {
-        auto filename = std::string(tag) + "_sizes.cpp";
+        auto filename = tag + ".cpp";
         auto filepath = fs::path(dst_dir) / filename;
     
         std::ofstream file(filepath);
@@ -145,165 +79,168 @@ namespace internal
     
         return true;
     }
+    
 
-
-    static bool validate_directories(cstr src_dir, cstr dst_dir)
+    class DataSize    
     {
-        printf("check src directory: ");
-        if (!fs::exists(src_dir) || !fs::is_directory(src_dir))
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
+    public:
+        std::string name;
+        u32 size;
 
-        printf("check dst directory: ");
-        if (!fs::exists(dst_dir) || !fs::is_directory(dst_dir))
+        DataSize(std::string&& n, u32 s)
         {
-            printf("FAIL\n");
-            return false;
+            name = std::move(n);
+            size = s;
         }
-        printf("OK\n");
-        
-        return true;
+    };
+}
+}
+
+
+/* files */
+
+namespace a2b
+{
+namespace internal
+{
+    class DirFiles
+    {
+    public:
+        std::string dir_name;
+
+        std::vector<DataSize> files;
+    };
+
+
+    static DirFiles read_files(fs::path const& dir, std::ofstream& bin)
+    {
+        DirFiles df;
+
+        df.dir_name = dir.filename().string();
+
+        for (auto const& entry : fs::directory_iterator(dir))
+        {            
+            auto p = entry.path();
+            if (!fs::is_regular_file(p))
+            {
+                continue;
+            }
+
+            auto buffer = read_bytes(p);
+
+            df.files.emplace_back(p.stem().string(), buffer.size_);
+            
+            bin.write((char*)buffer.data_, buffer.size_);
+
+            mb::destroy_buffer(buffer);
+        }
+
+        return df;
     }
 
+
+    static bool write_file_sizes(std::vector<DirFiles> const& data, fs::path const& dst_dir, std::string const& name)
+    {
+        auto tab = "    ";
+        auto tabtab = "        ";
+        std::ostringstream oss;
+
+        oss
+        << "const struct {\n\n";
+
+        for (auto const& item : data)
+        {
+            oss
+            << tab << "struct {\n";
+
+            for (auto const& f : item.files)
+            {
+                oss
+                << tabtab << "struct { " << "unsigned size; unsigned offset; } " << f.name << ";\n";
+            }
+
+            oss
+            << tab << "} " << item.dir_name << ";\n\n";
+        }
+
+        u32 offset = 0;
+
+        oss
+        << "}\n"
+        << name << " = \n"
+        << "{\n";
+
+        for (auto const& item : data)
+        {
+            oss
+            << tab << "{\n";
+
+            for (auto const& f : item.files)
+            {
+                oss
+                << tabtab << "{ " << f.size << ", " << offset << " },\n";
+
+                offset += f.size;
+            }
+
+            oss
+            << tab << "},\n";
+        }
+
+        oss
+        << "};\n";
+
+        return internal::write_cpp_file(oss.str(), dst_dir, name);
+    }
 }
 }
 
 
 namespace a2b
 {
-    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag)
+    class AssetFiles
     {
-        if (!internal::validate_directories(src_dir, dst_dir))
+    public:
+
+        std::vector<internal::DirFiles> file_sizes;
+        std::ofstream bin_file;
+        fs::path out_dir;
+    };
+
+
+    inline bool create(AssetFiles& af, fs::path const& out_dir, cstr bin_name)
+    {
+        auto bin_out = out_dir / (std::string(bin_name) + ".bin");
+
+        af.bin_file = std::ofstream(bin_out);
+        if (!af.bin_file.is_open())
         {
             return false;
         }
 
-        printf("open bin file: ");
-        auto bin_path = internal::out_bin_path(dst_dir, tag);
-        std::ofstream bin_file(bin_path);
-        if (!bin_file.is_open())
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-
-        std::vector<internal::DataSize> data;
-        u32 total = 0;
-        for (auto const& entry : fs::directory_iterator(src_dir))
-        {
-            if (!internal::is_file(entry))
-            {
-                continue;
-            }
-
-            auto buffer = internal::read_bytes(entry);
-            
-            bin_file.write((char*)buffer.data_, buffer.size_);
-            total += buffer.size_;
-
-            data.emplace_back(internal::file_to_var(entry), buffer.size_);
-
-            printf("read %s \n", data.back().name.c_str());
-
-            mb::destroy_buffer(buffer);
-        }
-
-        bin_file.close();
-
-        auto file_size = fs::file_size(bin_path);
-
-        printf("bin size: ");
-        if (file_size != total)
-        {
-            printf("FAIL\n");
-        }
-        else
-        {
-            printf("OK | %u bytes\n", total);
-        }
-
-        auto struct_str = to_struct_str(data, tag);
-
-        printf("sizes: ");
-        if (!internal::write_cpp_file(struct_str, dst_dir, tag))
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
+        af.out_dir = out_dir;
 
         return true;
     }
 
 
-    inline bool assets_to_binary(cstr src_dir, cstr dst_dir, cstr tag, convert const& convert_bytes)
+    inline bool append_file_dir(AssetFiles& af, fs::path const& dir)
     {
-        if (!internal::validate_directories(src_dir, dst_dir))
+        if (!fs::is_directory(dir))
         {
             return false;
         }
 
-        printf("open bin file: ");
-        auto bin_path = internal::out_bin_path(dst_dir, tag);
-        std::ofstream bin_file(bin_path);
-        if (!bin_file.is_open())
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
-
-        std::vector<internal::DataSize> data;
-        u32 total = 0;
-        for (auto const& entry : fs::directory_iterator(src_dir))
-        {
-            if (!internal::is_file(entry))
-            {
-                continue;
-            }
-
-            auto raw = internal::read_bytes(entry);
-            auto buffer = convert_bytes(raw);
-            
-            bin_file.write((char*)buffer.data_, buffer.size_);
-            total += buffer.size_;
-
-            data.emplace_back(internal::file_to_var(entry), buffer.size_);
-
-            printf("read %s \n", data.back().name.c_str());
-
-            mb::destroy_buffer(raw);
-            mb::destroy_buffer(buffer);
-        }
-
-        bin_file.close();
-
-        auto file_size = fs::file_size(bin_path);
-
-        printf("bin size: ");
-        if (file_size != total)
-        {
-            printf("FAIL\n");
-        }
-        else
-        {
-            printf("OK | %u bytes\n", total);
-        }
-
-        auto struct_str = to_struct_str(data, tag);
-
-        printf("sizes: ");
-        if (!internal::write_cpp_file(struct_str, dst_dir, tag))
-        {
-            printf("FAIL\n");
-            return false;
-        }
-        printf("OK\n");
+        af.file_sizes.push_back(internal::read_files(dir, af.bin_file));
 
         return true;
+    }
+
+
+    inline bool save_and_close(AssetFiles& af, cstr size_file_name)
+    {
+        af.bin_file.close();
+
+        return internal::write_file_sizes(af.file_sizes, af.out_dir, size_file_name);
     }
 }
