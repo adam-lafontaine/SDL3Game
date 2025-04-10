@@ -28,13 +28,15 @@ namespace game_io_test
 
 namespace assets
 {
+    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+
 #ifdef NDEBUG
 
     constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
 
 #else
 
-    constexpr auto BIN_DATA_PATH = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+    constexpr auto BIN_DATA_PATH = BIN_DATA_FALLBACK;
 
 #endif
 
@@ -125,7 +127,20 @@ namespace assets
     {
     #include "../res/asset_sizes.cpp"
 
-        auto buffer = read_bytes(BIN_DATA_PATH);
+        img::Buffer8 buffer;
+        if (fs::exists(BIN_DATA_PATH))
+        {
+            buffer = read_bytes(BIN_DATA_PATH);
+        }
+        if (fs::exists(BIN_DATA_FALLBACK))
+        {
+            buffer = read_bytes(BIN_DATA_FALLBACK);
+        }
+        else
+        {
+            return false;
+        }
+        
         if (!buffer.ok)
         {
             return false;

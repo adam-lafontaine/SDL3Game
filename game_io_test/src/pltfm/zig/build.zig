@@ -14,10 +14,10 @@ const cpp_flags = &[_][]const u8 {
     "-mavx",
     "-mavx2",
     "-mfma",
-    //"-O3",
-    //"-DNDEBUG",
+    "-O3",
+    "-DNDEBUG",
     //"-DALLOC_COUNT",
-    //"-DAPP_FULLSCREEN"
+    "-DAPP_FULLSCREEN"
 };
 
 
