@@ -71,6 +71,28 @@ namespace game_io_test
     }
 
 
+    template <class M, class MV>
+    static void set_mask_regions(M const& m, MV& mv)
+    {
+        static_assert(M::count == MV::count);
+        for (u32 i = 0; i < mv.count; i++)
+        {
+            mv.list[i].mask = m.list[i];
+        }
+    }
+
+
+    template <class V, class R, class MV>
+    static void set_out_regions(V const& view, R const& reg, MV& mv)
+    {
+        static_assert(R::count == MV::count);
+        for (u32 i = 0; i < mv.count; i++)
+        {
+            mv.list[i].out = img::sub_view(view, reg.list[i]);
+        }
+    }
+
+
     static void set_mask_views(assets::DrawMaskData const& masks, img::ImageView const& out, MaskViewList& mv)
     {
         auto& c_mask = masks.controller_view;
@@ -108,24 +130,6 @@ namespace game_io_test
         auto creg = assets::controller::get_region_rects();
         auto kreg = assets::keyboard::get_region_rects();
         auto mreg = assets::mouse::get_region_rects();
-
-        auto const set_mask_regions = [](auto const& m, auto& mv)
-        {
-            static_assert(m.count == mv.count);
-            for (u32 i = 0; i < mv.count; i++)
-            {
-                mv.list[i].mask = m.list[i];
-            }
-        };
-
-        auto const set_out_regions = [](auto const& view, auto const& reg, auto& mv)
-        {
-            static_assert(reg.count == mv.count);
-            for (u32 i = 0; i < mv.count; i++)
-            {
-                mv.list[i].out = img::sub_view(view, reg.list[i]);
-            }
-        };
 
         set_mask_regions(masks.controller, mv.controller1_in);
         set_mask_regions(masks.controller, mv.controller2_in);
@@ -350,21 +354,23 @@ namespace game_io_test
     }
 
 
+    template <class M, class I>
+    static void draw_masks(M const& m, I const& in)
+    {
+        static_assert(M::count == I::count);
+        for (u32 i = 0; i < m.count; i++)
+        {
+            draw(m.list[i], in.list[i]);
+        }
+    }
+
+
     static void draw(MaskViewList const& mv, InputList const& input)
     {
         draw(mv.controller1, 0);
         draw(mv.controller2, 0);
         draw(mv.keyboard, 0);
         draw(mv.mouse, 0);
-
-        auto const draw_masks = [](auto const& m, auto const& in)
-        {
-            static_assert(m.count == in.count);
-            for (u32 i = 0; i < m.count; i++)
-            {
-                draw(m.list[i], in.list[i]);
-            }
-        };
 
         draw_masks(mv.controller1_in, input.controller1);
         draw_masks(mv.controller2_in, input.controller2);

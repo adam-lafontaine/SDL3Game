@@ -447,6 +447,17 @@ namespace assets
     }
 
 
+    template <class V, class R, class M>
+    static void set_mask_regions(V const& view, R const& reg, M& mask)
+    {
+        static_assert(R::count == M::count);
+        for (u32 i = 0; i < reg.count; i++)
+        {
+            mask.list[i] = img::sub_view(view, reg.list[i]);
+        }
+    }
+
+
     static DrawMaskData create_draw_mask_data(AssetMemory const& am, img::Buffer8& buffer)
     {
         auto cr = controller::get_region_rects();
@@ -458,15 +469,6 @@ namespace assets
         auto cmv = make_mask(am.image.controller, buffer);
         auto kmv = make_mask(am.image.keyboard, buffer);
         auto mmv = make_mask(am.image.mouse, buffer);
-
-        auto const set_mask_regions = [](auto const& view, auto const& reg, auto& mask)
-        {
-            static_assert(reg.count == mask.count);
-            for (u32 i = 0; i < reg.count; i++)
-            {
-                mask.list[i] = img::sub_view(view, reg.list[i]);
-            }
-        };
 
         set_mask_regions(cmv, cr, data.controller);
         set_mask_regions(kmv, kr, data.keyboard);
