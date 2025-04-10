@@ -29,16 +29,7 @@ namespace game_io_test
 namespace assets
 {
     constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
-
-#ifdef NDEBUG
-
     constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
-
-#else
-
-    constexpr auto BIN_DATA_PATH = BIN_DATA_FALLBACK;
-
-#endif
 
     static cstr get_file_name(cstr full_path)
     {
@@ -132,7 +123,7 @@ namespace assets
         {
             buffer = read_bytes(BIN_DATA_PATH);
         }
-        if (fs::exists(BIN_DATA_FALLBACK))
+        else if (fs::exists(BIN_DATA_FALLBACK))
         {
             buffer = read_bytes(BIN_DATA_FALLBACK);
         }

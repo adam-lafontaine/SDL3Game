@@ -1,11 +1,11 @@
 const std = @import("std");
 
-const root = "../../../../../..";
+const root = "../../../../../.."; // ~/
 const repo = root ++ "/Repos/SDL3Game";
 const app = repo ++ "/game_io_test";
 const out = app ++ "/build/rpi";
 
-const name = "io_test";
+const name = "io_test_rpi";
 
 const main_cpp = "io_test_zig_main.cpp";
 //const main_cpp = "main.cpp";
@@ -24,15 +24,10 @@ const cpp_flags = &[_][]const u8 {
     "-march=armv8-a",       // ARMv8-A architecture
     //"-mfpu=neon-fp-armv8",  // NEON and FP for ARMv8
     "-DPLATFORM_RPI",
-    //"-O3",
-    //"-DNDEBUG",
+    "-O3",
+    "-DNDEBUG",
     //"-DALLOC_COUNT",
     "-DAPP_FULLSCREEN",
-
-    //"-I~/raspberrypi/sysroot/usr/include",
-    //"-L~/raspberrypi/sysroot/usr/lib",
-    //"-rpath=~/raspberrypi/sysroot/usr/lib"
-
 };
 
 
@@ -80,16 +75,20 @@ pub fn build(b: *std.Build) void
     exe.linkLibCpp();              // Link C++ standard library
 
     // Install the executable
-    //b.installArtifact(exe);
+    b.installArtifact(exe);
+
+
     // Customize the install directory
-    const install_step = b.addInstallArtifact(exe, .{
-        .dest_dir = .{ .override = .{ .custom = out } }, // Relative to project root
-    });
-    b.getInstallStep().dependOn(&install_step.step);
+    //const install_step = b.addInstallArtifact(exe, .{
+    //    .dest_dir = .{ .override = .{ .custom = out } }, // Relative to project root
+    //});
+    //b.getInstallStep().dependOn(&install_step.step);
 
     // Run step
     const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
+
+    std.debug.print("{s}\n", .{out});
 
     if (b.args) |args| 
     {

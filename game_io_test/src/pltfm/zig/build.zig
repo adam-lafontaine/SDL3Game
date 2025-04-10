@@ -44,7 +44,6 @@ pub fn build(b: *std.Build) void
     // Link SDL2 using pkg-config
     exe.linkSystemLibrary("SDL2"); // This uses pkg-config implicitly
     exe.linkSystemLibrary("SDL2_mixer");
-    exe.linkSystemLibrary("pthread");
 
     exe.linkLibCpp();              // Link C++ standard library
 
