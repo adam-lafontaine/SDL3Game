@@ -18,13 +18,11 @@ const sdl_lib = root ++ "/raspberrypi/sysroot/usr/lib/aarch64-linux-gnu";
 
 const cpp_flags = &[_][]const u8 {
     "-std=c++20",
-    //"-mavx",
-    //"-mavx2",
-    //"-mfma",
     "-march=armv8-a",       // ARMv8-A architecture
     //"-mfpu=neon-fp-armv8",  // NEON and FP for ARMv8
+    //"-mfpu=neon-vfpv4",
     "-DPLATFORM_RPI",
-    "-O3",
+    "-O2",
     "-DNDEBUG",
     //"-DALLOC_COUNT",
     "-DAPP_FULLSCREEN",
@@ -41,6 +39,7 @@ pub fn build(b: *std.Build) void
             .v8a,                   // ARMv8-A architecture
             .neon,                  // Enable NEON for SIMD (optional)
             .fp_armv8,              // Floating-point support
+            //.vfp4,
         }),
     });
 
@@ -79,6 +78,7 @@ pub fn build(b: *std.Build) void
 
 
     // Customize the install directory
+    // DOES NOT WORK FOR RPI
     //const install_step = b.addInstallArtifact(exe, .{
     //    .dest_dir = .{ .override = .{ .custom = out } }, // Relative to project root
     //});

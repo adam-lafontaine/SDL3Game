@@ -36,6 +36,10 @@ namespace numeric
     }
 }
 
+#else
+
+#include <cmath>
+
 #endif
 
 namespace numeric
@@ -292,7 +296,7 @@ namespace numeric
     }
     
     
-    inline f32 q_rsqrt(f32 number)
+    /*inline f32 q_rsqrt(f32 number)
     {
         long i;
         float x2, y;
@@ -307,10 +311,10 @@ namespace numeric
         // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
 
         return y;
-    }
+    }*/
 
 
-    inline f32 q_sqrt(f32 number)
+    /*inline f32 q_sqrt(f32 number)
     {
         if (number <= 0.0f)
         {
@@ -330,13 +334,13 @@ namespace numeric
         y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration
 
         return 1.0f / y;
-    }
+    }*/
 
 
-    inline f32 q_hypot(f32 a, f32 b)
+    /*inline f32 q_hypot(f32 a, f32 b)
     {
         return q_sqrt(a * a + b * b);
-    }
+    }*/
     
     
     inline f32 rsqrt(f32 number)
@@ -346,7 +350,7 @@ namespace numeric
         auto res = _mm_rsqrt_ss(num128);
         return to_f32(res);
 #else
-        return q_rsqrt(number);
+        return 1.0f / std::sqrt(number);
 #endif
     }
 
@@ -364,7 +368,7 @@ namespace numeric
 
         return to_f32(sqrt);        
 #else
-        return q_sqrt(number);
+        return std::sqrt(number);
 #endif
     }
 
