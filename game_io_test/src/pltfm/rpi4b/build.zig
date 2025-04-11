@@ -23,10 +23,11 @@ const cpp_flags = &[_][]const u8 {
     "-std=c++20",
     "-march=armv8-a",       // ARMv8-A architecture
     "-DPLATFORM_RPI",
-    "-O2",
-    "-DNDEBUG",
+    //"-O2",
+    //"-DNDEBUG",
+    //"-DAPP_FULLSCREEN",
+    
     //"-DALLOC_COUNT",
-    "-DAPP_FULLSCREEN",
 };
 
 
