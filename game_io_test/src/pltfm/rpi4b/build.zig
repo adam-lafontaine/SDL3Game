@@ -1,7 +1,7 @@
 const std = @import("std");
 
-// scp zig-out/bin/io_test_rpi adam@192.168.50.13:~/Downloads
-// scp zig-out/bin/io_test_rpi adam@192.168.50.13:~/Downloads
+// scp game_io_test/src/res/io_test_data.bin adam@192.168.50.14:~/Downloads
+// scp zig-out/bin/io_test_rpi adam@192.168.50.14:~/Downloads
 
 const root = "../../../../../.."; // ~/
 const repo = root ++ "/Repos/SDL3Game";
@@ -12,7 +12,7 @@ const name = "io_test_rpi";
 
 const main_cpp = "../sdl2/io_test_sdl2_main.cpp";
 
-const sysroot = root ++ "/raspberrypi/3bp/sysroot";
+const sysroot = root ++ "/raspberrypi/4b/sysroot";
 
 const sdl_include = sysroot ++ "/usr/include";
 const sdl_include_arch = sdl_include ++ "/aarch64-linux-gnu";
