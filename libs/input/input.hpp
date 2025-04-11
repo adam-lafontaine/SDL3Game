@@ -433,6 +433,8 @@ namespace input
 			#endif
 			};
 		};
+
+		VectorState<i32> vec_joy;
 		
 	};
 }

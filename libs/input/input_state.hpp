@@ -313,6 +313,9 @@ namespace input
 		{
 			jsk.is_active |= jsk.buttons[i].is_down;
 		}
+
+		jsk.is_active |= jsk.vec_joy.vec.x;
+		jsk.is_active |= jsk.vec_joy.vec.y;
 	}
 
 
@@ -322,6 +325,8 @@ namespace input
 		{
 			copy_button_state(src.buttons[i], dst.buttons[i]);
 		}
+
+		copy_vector_state(src.vec_joy, dst.vec_joy);
 
 		set_is_active(dst);
 	}
@@ -333,6 +338,8 @@ namespace input
 		{
 			reset_button_state(jsk.buttons[i]);
 		}
+
+		reset_vector_state(jsk.vec_joy);
 
 		jsk.is_active = false;
 	}

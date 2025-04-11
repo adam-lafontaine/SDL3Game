@@ -6,8 +6,8 @@
 #define JOYSTICK_BTN_3 1
 #define JOYSTICK_BTN_4 1
 #define JOYSTICK_BTN_5 1
-#define JOYSTICK_BTN_6 1
-#define JOYSTICK_BTN_7 1
+#define JOYSTICK_BTN_6 0
+#define JOYSTICK_BTN_7 0
 #define JOYSTICK_BTN_8 1
 #define JOYSTICK_BTN_9 1
 #define JOYSTICK_AXIS_STICK_LEFT 1

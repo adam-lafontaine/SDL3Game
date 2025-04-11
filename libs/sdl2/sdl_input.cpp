@@ -124,11 +124,11 @@ namespace sdl
     static GamepadDevice gamepad;
 
 
-    i32 map_joystick_id(SDL_JoystickID id)
+    i32 map_joystick_id(SDL_JoystickID joystick_id)
     {
         for (u32 i = 0; i < gamepad.n_joysticks; i++)
         {
-            if (SDL_JoystickInstanceID(gamepad.joysticks[i]) == i)
+            if (SDL_JoystickInstanceID(gamepad.joysticks[i]) == joystick_id)
             {
                 return i;
             }
@@ -765,10 +765,60 @@ namespace input
     }
 
 
+    static void record_joystick_axis_input(Uint8 axis_id, JoystickInput& jsk, Sint16 value)
+    {
+        auto s = num::sign<i32>(value);
+        auto v = s * (i32)value;
+        
+        auto val = v > 3000 ? s : 0;
+
+        i32 x = 0;
+        i32 y = 0;
+
+        switch (axis_id)
+        {
+        case 0:
+            x = val;
+            break;
+
+        case 1:
+            y = val;
+            break;
+
+        default:
+            break;
+        }
+
+        auto& vec = jsk.vec_joy;
+        auto& unit = vec.unit_direction;
+
+        vec.vec.x = x;
+        vec.vec.y = y;
+
+        unit.x = (f32)x;
+        unit.y = (f32)y;
+
+        constexpr f32 hypot = 1.4142135f;
+        constexpr f32 i_hypot = 1.0f / hypot;
+        
+        auto mag = (x || y) ? 1.0f : 0.0f;
+        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
+
+        vec.magnitude = mag;
+        unit.x *= i_mag;
+        unit.y *= i_mag;
+    }
+
+
     static void record_joystick_input(SDL_Event const& event, Input const& pre, Input& cur, u32 n_joysticks)
     {
         int id = -1;
+
+        Uint8 btn = 255;
         bool is_down = false;
+        
+        Uint8 axis = 255;
+        Sint16 value = 0;
 
         switch (event.type)
         {
@@ -776,7 +826,7 @@ namespace input
         case SDL_JOYBUTTONUP:
         {
             is_down = event.type == SDL_JOYBUTTONDOWN;
-            auto btn = event.jbutton.button;
+            btn = event.jbutton.button;
 
             id = sdl::map_joystick_id(event.jbutton.which);
             if (id >= 0)
@@ -788,10 +838,13 @@ namespace input
 
         case SDL_JOYAXISMOTION:
         {
+            axis = event.jaxis.axis;
+            value = event.jaxis.value;
+
             id = sdl::map_joystick_id(event.jaxis.which);
             if (id >= 0)
             {
-                
+                record_joystick_axis_input(axis, cur.joysticks[id], value);
             }
 
         } break;
@@ -897,7 +950,7 @@ namespace input
         vec.vec.y = y;
 
         unit.x = (f32)x;
-        unit.y = (f32)y;        
+        unit.y = (f32)y;
 
         constexpr f32 hypot = 1.4142135f;
         constexpr f32 i_hypot = 1.0f / hypot;

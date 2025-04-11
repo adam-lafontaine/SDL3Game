@@ -182,7 +182,7 @@ namespace game_io_test
 
     static inline void map_button(input::ButtonState const& btn, b8& dst)
     {
-        dst = btn.is_down;
+        dst |= btn.is_down;
     }
 
 
@@ -237,7 +237,37 @@ namespace game_io_test
 
     static void map_joystick_input(input::JoystickInput const& src, ControllerDef<b8>& dst)
     {
-        map_button(src.btn_0, dst.a);
+        map_button(src.btn_0, dst.x);
+        map_button(src.btn_1, dst.a);
+        map_button(src.btn_2, dst.b);
+        map_button(src.btn_3, dst.y);
+        map_button(src.btn_4, dst.shoulder_left);
+        map_button(src.btn_5, dst.shoulder_right);
+        map_button(src.btn_8, dst.back);
+        map_button(src.btn_9, dst.start);
+
+        auto& vec = src.vec_joy.vec;
+
+        dst.dpad_left |= vec.x < 0;
+        dst.dpad_right |= vec.x > 0;
+        dst.dpad_up |= vec.y < 0;
+        dst.dpad_down |= vec.y > 0;
+
+        /*
+        Iconic Arcade
+
+        0:X
+        1:A
+        2:B
+        3:Y
+        4:L
+        5:R
+        6:
+        7:
+        8:Select
+        9:Start
+                
+        */
     }
 
 
@@ -267,10 +297,15 @@ namespace game_io_test
 
     static void update_visual(Input const& src, InputList& dst)
     {
-        //map_controller_input(src.controllers[0], dst.controller1);
+        clear_input_list(dst);
+
+        map_controller_input(src.controllers[0], dst.controller1);
         map_controller_input(src.controllers[1], dst.controller2);
+
         map_joystick_input(src.joysticks[0], dst.controller1);
-        map_keyboard_input(src.keyboard, dst.keyboard);
+        map_joystick_input(src.joysticks[1], dst.controller2);
+
+        map_keyboard_input(src.keyboard, dst.keyboard);        
         map_mouse_input(src.mouse, dst.mouse);
 
         dst.mouse_pos = src.mouse.window_pos;
