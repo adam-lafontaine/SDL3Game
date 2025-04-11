@@ -765,7 +765,7 @@ namespace input
     }
 
 
-    static void record_joystick_input(SDL_Event const& event, Input const& pre, Input& cur)
+    static void record_joystick_input(SDL_Event const& event, Input const& pre, Input& cur, u32 n_joysticks)
     {
         int id = -1;
         bool is_down = false;
@@ -798,6 +798,11 @@ namespace input
 
         default:
             break;
+        }
+
+        for (u32 i = 0; i < n_joysticks; i++)
+        {
+            set_is_active(cur.joysticks[i]);
         }
     }
 }
@@ -1022,7 +1027,7 @@ namespace input
             sdl::handle_sdl_event(event);
             record_keyboard_input(event, pre.keyboard, cur.keyboard);
             record_mouse_input(event, pre.mouse, cur.mouse);
-            record_joystick_input(event, pre, cur);
+            record_joystick_input(event, pre, cur, input.n_joysticks);
         }
 
         record_gamepad_input(pre, cur, input.n_controllers);

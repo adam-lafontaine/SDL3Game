@@ -235,6 +235,12 @@ namespace game_io_test
     }
 
 
+    static void map_joystick_input(input::JoystickInput const& src, ControllerDef<b8>& dst)
+    {
+        map_button(src.btn_0, dst.a);
+    }
+
+
     static void map_keyboard_input(input::KeyboardInput const& src, KeyboardDef<b8>& dst)
     {
         map_button(src.kbd_1, dst.n_1);
@@ -261,8 +267,9 @@ namespace game_io_test
 
     static void update_visual(Input const& src, InputList& dst)
     {
-        map_controller_input(src.controllers[0], dst.controller1);
+        //map_controller_input(src.controllers[0], dst.controller1);
         map_controller_input(src.controllers[1], dst.controller2);
+        map_joystick_input(src.joysticks[0], dst.controller1);
         map_keyboard_input(src.keyboard, dst.keyboard);
         map_mouse_input(src.mouse, dst.mouse);
 
