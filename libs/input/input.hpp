@@ -447,6 +447,8 @@ namespace input
 	constexpr u32 MAX_CONTROLLERS = 4;
 #endif
 
+	constexpr u32 MAX_JOYSTICKS = 4;
+
 
 	class Input
 	{
@@ -466,9 +468,10 @@ namespace input
 		};		
 		
 	#else
-		ControllerInput controllers[MAX_CONTROLLERS];
-		
+		ControllerInput controllers[MAX_CONTROLLERS];		
 	#endif
+
+		JoystickInput joysticks[MAX_JOYSTICKS];
 	};
 
 
@@ -483,6 +486,7 @@ namespace input
 	public:	
 		
 		u32 n_controllers;
+		u32 n_joysticks;
 
 		Input& pre() { return inputs[p]; }
 
