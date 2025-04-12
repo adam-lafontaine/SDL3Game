@@ -186,12 +186,11 @@ namespace sdl
         vec.y = normalize_axis_value(y);
 
         vs.magnitude = num::magnitude(vec);
-        
-        if (vs.magnitude > 0.0f)
-        {
-            unit.x = vec.x / vs.magnitude;
-            unit.y = vec.y / vs.magnitude;
-        }   
+
+        auto mag = vs.magnitude > 0.0f ? vs.magnitude : 1.0f;
+
+        unit.x = vec.x / mag;
+        unit.y = vec.y / mag;
     }
 
 
@@ -811,6 +810,8 @@ namespace input
         Sint16 x = 0;
         Sint16 y = 0;
 
+        value /= 3200;
+
         switch (axis_id)
         {
         case 0:
@@ -1045,6 +1046,9 @@ namespace input
             sdl::print_error("Init Input failed");
             return false;
         }
+
+        reset_input_state(input.pre());
+        reset_input_state(input.cur());
 
         sdl::open_gamepad_device(sdl::gamepad, input);
 
