@@ -378,7 +378,7 @@ namespace input
 
 	#if CONTROLLER_BTN_DPAD_ALL
 
-		VectorState<i32> vec_dpad;
+		VectorState<i8> vec_dpad;
 
 	#endif
 
@@ -434,7 +434,7 @@ namespace input
 			};
 		};
 
-		VectorState<i32> vec_joy;
+		VectorState<i8> vec_joy;
 		
 	};
 }

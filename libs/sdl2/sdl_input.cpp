@@ -122,9 +122,14 @@ namespace sdl
 namespace sdl
 {
     static GamepadDevice gamepad;
+}
 
 
-    i32 map_joystick_id(SDL_JoystickID joystick_id)
+/* helpers */
+
+namespace sdl
+{
+    static i32 map_joystick_id(SDL_JoystickID joystick_id)
     {
         for (u32 i = 0; i < gamepad.n_joysticks; i++)
         {
@@ -136,13 +141,8 @@ namespace sdl
 
         return -1;
     }
-}
-
-
-/* helpers */
-
-namespace sdl
-{
+    
+    
     static f32 normalize_axis_value(Sint16 axis)
     {
         constexpr f32 min = -1.0f;
@@ -151,6 +151,47 @@ namespace sdl
         f32 norm = (f32)axis / 32767;
 
         return num::abs(norm) < 0.3f ? 0.0f : num::clamp(norm, min, max);
+    }
+
+
+    static void set_unit_vector_state(input::VectorState<i8>& vs, Sint16 x, Sint16 y)
+    {
+        auto& vec = vs.vec;
+        auto& unit = vs.unit_direction;
+
+        vec.x = num::sign_i8(x);
+        vec.y = num::sign_i8(y);
+
+        unit.x = (f32)vec.x;
+        unit.y = (f32)vec.y;
+
+        constexpr f32 hypot = 1.4142135f;
+        constexpr f32 i_hypot = 1.0f / hypot;
+        
+        auto mag = (x || y) ? 1.0f : 0.0f;
+        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
+
+        vs.magnitude = mag;
+        unit.x *= i_mag;
+        unit.y *= i_mag;
+    }
+
+
+    static void set_vector_state(input::VectorState<f32>& vs, Sint16 x, Sint16 y)
+    {
+        auto& vec = vs.vec;
+        auto& unit = vs.unit_direction;
+
+        vec.x = normalize_axis_value(x);
+        vec.y = normalize_axis_value(y);
+
+        vs.magnitude = num::magnitude(vec);
+        
+        if (vs.magnitude > 0.0f)
+        {
+            unit.x = vec.x / vs.magnitude;
+            unit.y = vec.y / vs.magnitude;
+        }   
     }
 
 
@@ -767,46 +808,24 @@ namespace input
 
     static void record_joystick_axis_input(Uint8 axis_id, JoystickInput& jsk, Sint16 value)
     {
-        auto s = num::sign<i32>(value);
-        auto v = s * (i32)value;
-        
-        auto val = v > 3000 ? s : 0;
-
-        i32 x = 0;
-        i32 y = 0;
+        Sint16 x = 0;
+        Sint16 y = 0;
 
         switch (axis_id)
         {
         case 0:
-            x = val;
+            x = value;
             break;
 
         case 1:
-            y = val;
+            y = value;
             break;
 
         default:
             break;
         }
 
-        auto& vec = jsk.vec_joy;
-        auto& unit = vec.unit_direction;
-
-        vec.vec.x = x;
-        vec.vec.y = y;
-
-        unit.x = (f32)x;
-        unit.y = (f32)y;
-
-        constexpr f32 hypot = 1.4142135f;
-        constexpr f32 i_hypot = 1.0f / hypot;
-        
-        auto mag = (x || y) ? 1.0f : 0.0f;
-        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
-
-        vec.magnitude = mag;
-        unit.x *= i_mag;
-        unit.y *= i_mag;
+        sdl::set_unit_vector_state(jsk.vec_joy, x, y);
     }
 
 
@@ -940,28 +959,11 @@ namespace input
     {
     #if CONTROLLER_BTN_DPAD_ALL
 
-        i32 x = (i32)controller.btn_dpad_right.is_down - (i32)controller.btn_dpad_left.is_down;
-        i32 y = (i32)controller.btn_dpad_down.is_down - (i32)controller.btn_dpad_up.is_down;
+        Sint16 x = (Sint16)controller.btn_dpad_right.is_down - (Sint16)controller.btn_dpad_left.is_down;
+        Sint16 y = (Sint16)controller.btn_dpad_down.is_down - (Sint16)controller.btn_dpad_up.is_down;
 
-        auto& vec = controller.vec_dpad;
-        auto& unit = vec.unit_direction;
+        sdl::set_unit_vector_state(controller.vec_dpad, x, y);
 
-        vec.vec.x = x;
-        vec.vec.y = y;
-
-        unit.x = (f32)x;
-        unit.y = (f32)y;
-
-        constexpr f32 hypot = 1.4142135f;
-        constexpr f32 i_hypot = 1.0f / hypot;
-
-        //auto mag = (x && y) ? hypot : (x || y) ? 1.0f : 0.0f;
-        auto mag = (x || y) ? 1.0f : 0.0f;
-        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
-
-        vec.magnitude = mag;
-        unit.x *= i_mag;
-        unit.y *= i_mag;
     #endif
     }
 
@@ -981,31 +983,23 @@ namespace input
 
     static void record_controller_axis_input(SDL_GameController* sdl_controller, ControllerInput& controller)
     {
+        Sint16 x = 0;
+        Sint16 y = 0;
 
     #if CONTROLLER_AXIS_STICK_LEFT
-        auto& left = controller.stick_left;
-        left.vec.x = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTX);
-        left.vec.y = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTY);
 
-        left.magnitude = num::magnitude(left.vec);
-        if (left.magnitude > 0.0f)
-        {
-            left.unit_direction.x = left.vec.x / left.magnitude;
-            left.unit_direction.y = left.vec.y / left.magnitude;
-        }        
+        x = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTX);
+        y = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTY);
+
+        sdl::set_vector_state(controller.stick_left, x, y);
 
     #endif
     #if CONTROLLER_AXIS_STICK_RIGHT
-        auto& right = controller.stick_right;
-        right.vec.x = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTX);
-        right.vec.y = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTY);
+        
+        x = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTX);
+        y = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTY);
 
-        right.magnitude = num::magnitude(right.vec);
-        if (right.magnitude > 0.0f)
-        {
-            right.unit_direction.x = right.vec.x / right.magnitude;
-            right.unit_direction.y = right.vec.y / right.magnitude;
-        }
+        sdl::set_vector_state(controller.stick_right, x, y);
         
     #endif
     }
