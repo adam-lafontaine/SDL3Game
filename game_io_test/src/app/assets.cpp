@@ -274,6 +274,15 @@ namespace controller
     };
 
 
+    template <class T>
+    class ControllerStickDef
+    {
+    public:
+        T stick_left;
+        T stick_right;
+    };
+
+
     using MaskList = ControllerDef<img::GraySubView>;
     using RectList = ControllerDef<Rect2Du32>;
 

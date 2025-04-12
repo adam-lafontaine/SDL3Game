@@ -18,6 +18,9 @@ namespace game_io_test
     using ControllerDef = assets::controller::ControllerDef<T>;
 
     template <typename T>
+    using ControllerStickDef = assets::controller::ControllerStickDef<T>;
+
+    template <typename T>
     using KeyboardDef = assets::keyboard::KeyboardDef<T>;
 
     template <typename T>
@@ -39,14 +42,7 @@ namespace game_io_test
     using ControllerMaskViewMap = ControllerDef<MaskViewMap>;
     using KeyboardMaskViewMap = KeyboardDef<MaskViewMap>;
     using MouseMaskViewMap = MouseDef<MaskViewMap>;
-
-
-    class ControllerStickMaskViewMap
-    {
-    public:
-        MaskViewMap stick_left;
-        MaskViewMap stick_right;
-    };
+    using ControllerStickMaskViewMap = ControllerStickDef<MaskViewMap>;
 
 
     class MaskViewMapList
@@ -184,16 +180,25 @@ namespace game_io_test
 
 namespace game_io_test
 {
+    using ControllerBtnOnOff = ControllerDef<b8>;
+    using KeyboardOnOff = KeyboardDef<b8>;
+    using MouseBtnOnOff = MouseDef<b8>;
+    using ControllerStickRotation = ControllerStickDef<Vec2Df32>;
+    
+
     class InputList
     {
     public:
 
-        ControllerDef<b8> controller1;
-        ControllerDef<b8> controller2;
-        KeyboardDef<b8> keyboard;
-        MouseDef<b8> mouse;
+        ControllerBtnOnOff controller1;
+        ControllerBtnOnOff controller2;
+        KeyboardOnOff keyboard;
+        MouseBtnOnOff mouse;
 
         Vec2Di32 mouse_pos;
+
+        ControllerStickRotation sticks1;
+        ControllerStickRotation sticks2;
     };
 
 
@@ -245,7 +250,7 @@ namespace game_io_test
     }
 
 
-    static void map_controller_input(input::ControllerInput const& src, ControllerDef<b8>& dst)
+    static void map_controller_input(input::ControllerInput const& src, ControllerBtnOnOff& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
         map_button(src.btn_dpad_down, dst.dpad_down);
@@ -271,7 +276,7 @@ namespace game_io_test
     }
 
 
-    static void map_joystick_input(input::JoystickInput const& src, ControllerDef<b8>& dst)
+    static void map_joystick_input(input::JoystickInput const& src, ControllerBtnOnOff& dst)
     {
         map_button(src.btn_0, dst.x);
         map_button(src.btn_1, dst.a);
@@ -307,7 +312,7 @@ namespace game_io_test
     }
 
 
-    static void map_keyboard_inputsput(input::KeyboardInput const& src, KeyboardDef<b8>& dst)
+    static void map_keyboard_inputsput(input::KeyboardInput const& src, KeyboardOnOff& dst)
     {
         map_button(src.kbd_1, dst.n_1);
         map_button(src.kbd_2, dst.n_2);
@@ -323,11 +328,18 @@ namespace game_io_test
     }
 
 
-    static void map_mouse_inputsput(input::MouseInput const& src, MouseDef<b8>& dst)
+    static void map_mouse_inputsput(input::MouseInput const& src, MouseBtnOnOff& dst)
     {
         map_button(src.btn_left, dst.left);
         map_button(src.btn_right, dst.right);
         map_button(src.btn_middle, dst.middle);
+    }
+
+
+    static void map_thumbstick_input(input::ControllerInput const& src, ControllerStickRotation& dst)
+    {
+        dst.stick_left = src.stick_left.unit_direction;
+        dst.stick_right = src.stick_right.unit_direction;
     }
 
 
@@ -345,6 +357,9 @@ namespace game_io_test
         map_mouse_inputsput(src.mouse, dst.mouse);
 
         dst.mouse_pos = src.mouse.window_pos;
+
+        map_thumbstick_input(src.controllers[0], dst.sticks1);
+        map_thumbstick_input(src.controllers[1], dst.sticks2);
     }
 
 
@@ -404,16 +419,32 @@ namespace game_io_test
 
     static void draw(MaskViewMap const& view, b8 is_on)
     {
-        constexpr p32 on = img::to_pixel(50, 255, 50);
-        constexpr p32 off = img::to_pixel(127);
-
         auto f = is_on ? mask_set_on : mask_set_off;
 
         img::transform(view.mask, view.out, f);
     }
 
 
-    static void draw_mouse_coords(MouseDef<MaskViewMap>const& mv, Vec2Di32 pos)
+    static void draw_thumstick_directions(ControllerStickMaskViewMap const& m, ControllerStickRotation const& rot)
+    {
+        auto const is_on = [](Vec2Df32 v) { return num::abs((v.x * v.x + v.y * v.y) - 1.0f) < 0.001f; };
+
+        auto const f = [](u8 s) { return s ? COLOR_BLACK : COLOR_TRANSPARENT; };
+
+        if (is_on(rot.stick_left))
+        {
+            img::rotate_blend_transform(m.stick_left.mask, m.stick_left.out, rot.stick_left, f);
+        }
+
+        if (is_on(rot.stick_right))
+        {
+            img::rotate_blend_transform(m.stick_right.mask, m.stick_right.out, rot.stick_right, f);
+        }        
+
+    }
+
+
+    static void draw_mouse_coords(MouseMaskViewMap const& mv, Vec2Di32 pos)
     {
         auto font = ascii::Font::Joystick8;
         auto color = COLOR_BLACK;
@@ -443,13 +474,6 @@ namespace game_io_test
     }
 
 
-    static void draw_masks(ControllerStickMaskViewMap const& m)
-    {
-        draw(m.stick_left, 1);
-        draw(m.stick_right, 1);
-    }
-
-
     static void draw(MaskViewMapList const& mv, InputList const& input)
     {
         draw(mv.controller1, 0);
@@ -462,8 +486,8 @@ namespace game_io_test
         draw_masks(mv.keyboard_inputs, input.keyboard);
         draw_masks(mv.mouse_inputs, input.mouse);
 
-        draw_masks(mv.controller1_thumbsticks);
-        draw_masks(mv.controller2_thumbsticks);
+        draw_thumstick_directions(mv.controller1_thumbsticks, input.sticks1);
+        draw_thumstick_directions(mv.controller2_thumbsticks, input.sticks2);
 
         draw_mouse_coords(mv.mouse_inputs, input.mouse_pos);
     }

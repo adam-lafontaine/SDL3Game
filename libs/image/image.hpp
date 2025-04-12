@@ -443,9 +443,12 @@ namespace image
     
     void rotate(ImageView const& src, ImageView const& dst, Point2Du32 src_pivot, Point2Du32 dst_pivot, uangle rot);
 
-    void rotate_blend(ImageView const& src, ImageView const& dst, Point2Du32 src_pivot, Point2Di32 dst_pivot, uangle rot);
+    void rotate_blend(ImageView const& src, ImageView const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot);
 
     void rotate_blend(ImageView const& src, SubView const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot);
+
+
+    void rotate_blend_transform(GraySubView const& src, SubView const& dst, Vec2Df32 cos_sin, fn<Pixel(u8)> const& func);
 }
 
 
