@@ -268,8 +268,11 @@ namespace game_io_test
         map_button(src.btn_shoulder_left, dst.shoulder_left);
         map_button(src.btn_shoulder_right, dst.shoulder_right);
 
-        dst.stick_left = src.stick_left.magnitude > 0.0f;
-        dst.stick_right = src.stick_right.magnitude > 0.0f;
+        map_button(src.btn_stick_left, dst.stick_left);
+        map_button(src.btn_stick_right, dst.stick_right);
+
+        dst.stick_left |= src.stick_left.magnitude > 0.0f;
+        dst.stick_right |= src.stick_right.magnitude > 0.0f;
 
         dst.trigger_left = src.trigger_left > 0.0f;
         dst.trigger_right = src.trigger_right > 0.0f;
