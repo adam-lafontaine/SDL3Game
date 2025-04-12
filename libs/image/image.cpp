@@ -1292,15 +1292,20 @@ namespace image
                 sxf += cos;
                 syf -= sin;
 
-                sx = num::round_to_unsigned<u32>(sxf);
-                sy = num::round_to_unsigned<u32>(syf);
-
-                if (sxf < 0.0f || sx >= sw || syf < 0.0f || sy >= sh)
+                if (sxf < 0.0f || syf < 0.0f)
                 {
                     continue;
                 }
 
-                d[x] =  *xy_at(src, sx, sy);
+                sx = num::round_to_unsigned<u32>(sxf);
+                sy = num::round_to_unsigned<u32>(syf);
+
+                if (sx >= sw || sy >= sh)
+                {
+                    continue;
+                }
+
+                d[x] = *xy_at(src, sx, sy);
             }
 
             dysin += sin;
@@ -1357,10 +1362,15 @@ namespace image
                 sxf += cos;
                 syf -= sin;
 
+                if (sxf < 0.0f || syf < 0.0f)
+                {
+                    continue;
+                }
+
                 sx = num::round_to_unsigned<u32>(sxf);
                 sy = num::round_to_unsigned<u32>(syf);
 
-                if (sxf < 0.0f || sx >= sw || syf < 0.0f || sy >= sh)
+                if (sx >= sw || sy >= sh)
                 {
                     continue;
                 }
@@ -1421,10 +1431,15 @@ namespace image
                 sxf += cos;
                 syf -= sin;
 
+                if (sxf < 0.0f || syf < 0.0f)
+                {
+                    continue;
+                }
+
                 sx = num::round_to_unsigned<u32>(sxf);
                 sy = num::round_to_unsigned<u32>(syf);
 
-                if (sxf < 0.0f || sx >= sw || syf < 0.0f || sy >= sh)
+                if (sx >= sw || sy >= sh)
                 {
                     continue;
                 }
