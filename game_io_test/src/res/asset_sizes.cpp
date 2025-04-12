@@ -6,6 +6,7 @@ const struct {
         struct { unsigned size; unsigned offset; } keyboard;
         struct { unsigned size; unsigned offset; } controller;
         struct { unsigned size; unsigned offset; } mouse;
+        struct { unsigned size; unsigned offset; } arrow;
     } masks;
 
     struct {
@@ -29,17 +30,18 @@ asset_sizes =
         { 2588, 0 },
         { 2094, 2588 },
         { 807, 4682 },
+        { 154, 5489 },
     },
     {
-        { 924117, 5489 },
-        { 2214212, 929606 },
-        { 2923535, 3143818 },
-        { 609497, 6067353 },
+        { 924117, 5643 },
+        { 2214212, 929760 },
+        { 2923535, 3143972 },
+        { 609497, 6067507 },
     },
     {
-        { 14169, 6676850 },
-        { 12588, 6691019 },
-        { 9834, 6703607 },
-        { 54824, 6713441 },
+        { 14169, 6677004 },
+        { 12588, 6691173 },
+        { 9834, 6703761 },
+        { 54824, 6713595 },
     },
 };

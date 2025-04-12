@@ -79,6 +79,7 @@ namespace assets
             img::Image controller;
             img::Image keyboard;
             img::Image mouse;
+            img::Image arrow;
 
         } image;
 
@@ -109,6 +110,7 @@ namespace assets
         img::destroy_image(memory.image.controller);
         img::destroy_image(memory.image.keyboard);
         img::destroy_image(memory.image.mouse);
+        img::destroy_image(memory.image.arrow);
 
         mb::destroy_buffer(memory.buffer);
     }
@@ -158,6 +160,12 @@ namespace assets
         }
 
         res = read_image(asset_sizes.masks.mouse, memory.image.mouse);
+        if (!res)
+        {
+            return false;
+        }
+
+        res = read_image(asset_sizes.masks.arrow, memory.image.arrow);
         if (!res)
         {
             return false;
@@ -436,6 +444,8 @@ namespace assets
         img::GrayView controller_view;
         img::GrayView keyboard_view;
         img::GrayView mouse_view;
+
+        img::GrayView arrow_view;
     };
 
 
@@ -443,13 +453,15 @@ namespace assets
     {
         auto c = am.image.controller;
         auto k = am.image.keyboard;
-        auto m = am.image.mouse;        
+        auto m = am.image.mouse;
+        auto a = am.image.arrow;
 
         auto cn = c.width * c.height;
         auto kn = k.width * k.height;
         auto mn = m.width * m.height;
+        auto an = a.width * a.height;
 
-        return cn + kn + mn;
+        return cn + kn + mn + an;
     }
 
 
@@ -475,6 +487,7 @@ namespace assets
         auto cmv = make_mask(am.image.controller, buffer);
         auto kmv = make_mask(am.image.keyboard, buffer);
         auto mmv = make_mask(am.image.mouse, buffer);
+        auto amv = make_mask(am.image.arrow, buffer);
 
         set_mask_regions(cmv, cr, data.controller);
         set_mask_regions(kmv, kr, data.keyboard);
@@ -483,6 +496,7 @@ namespace assets
         data.controller_view = cmv;
         data.keyboard_view = kmv;
         data.mouse_view = mmv;
+        data.arrow_view = amv;
 
         return data;
     }

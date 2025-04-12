@@ -29,27 +29,42 @@ namespace game_io_test
 
 namespace game_io_test
 {
-    class MaskView
+    class MaskViewMap
     {
     public:
         img::GraySubView mask;
         img::SubView out;
     };
 
+    using ControllerMaskViewMap = ControllerDef<MaskViewMap>;
+    using KeyboardMaskViewMap = KeyboardDef<MaskViewMap>;
+    using MouseMaskViewMap = MouseDef<MaskViewMap>;
 
-    class MaskViewList
+
+    class ControllerStickMaskViewMap
+    {
+    public:
+        MaskViewMap stick_left;
+        MaskViewMap stick_right;
+    };
+
+
+    class MaskViewMapList
     {
     public:
         
-        MaskView controller1;
-        MaskView controller2;
-        MaskView keyboard;
-        MaskView mouse;
+        MaskViewMap controller1;
+        MaskViewMap controller2;
+        MaskViewMap keyboard;
+        MaskViewMap mouse;
 
-        ControllerDef<MaskView> controller1_in;
-        ControllerDef<MaskView> controller2_in;
-        KeyboardDef<MaskView> keyboard_in;
-        MouseDef<MaskView> mouse_in;
+        ControllerMaskViewMap controller1_inputs;
+        ControllerMaskViewMap controller2_inputs;
+        KeyboardMaskViewMap keyboard_inputs;
+        MouseMaskViewMap mouse_inputs;
+
+        ControllerStickMaskViewMap controller1_thumbsticks;
+        ControllerStickMaskViewMap controller2_thumbsticks;
     };    
 
 
@@ -72,7 +87,7 @@ namespace game_io_test
 
 
     template <class M, class MV>
-    static void set_mask_regions(M const& m, MV& mv)
+    static void set_map_masks(M const& m, MV& mv)
     {
         static_assert(M::count == MV::count);
         for (u32 i = 0; i < mv.count; i++)
@@ -83,7 +98,7 @@ namespace game_io_test
 
 
     template <class V, class R, class MV>
-    static void set_out_regions(V const& view, R const& reg, MV& mv)
+    static void set_map_out(V const& view, R const& reg, MV& mv)
     {
         static_assert(R::count == MV::count);
         for (u32 i = 0; i < mv.count; i++)
@@ -93,7 +108,22 @@ namespace game_io_test
     }
 
 
-    static void set_mask_views(assets::DrawMaskData const& masks, img::ImageView const& out, MaskViewList& mv)
+    static void set_map_masks(img::GrayView const& view, ControllerStickMaskViewMap& mv)
+    {
+        auto sub_full = img::sub_view(view, img::make_rect(view.width, view.height));
+        mv.stick_left.mask = sub_full;
+        mv.stick_right.mask = sub_full;
+    }
+    
+
+    static void set_map_out(img::SubView const& view, assets::controller::RectList reg, ControllerStickMaskViewMap& mv)
+    {
+        mv.stick_left.out = img::sub_view(view, reg.stick_left);
+        mv.stick_right.out = img::sub_view(view, reg.stick_right);
+    }
+
+
+    static void set_mask_views(assets::DrawMaskData const& masks, img::ImageView const& out, MaskViewMapList& mv)
     {
         auto& c_mask = masks.controller_view;
         auto& k_mask = masks.keyboard_view;
@@ -131,15 +161,21 @@ namespace game_io_test
         auto kreg = assets::keyboard::get_region_rects();
         auto mreg = assets::mouse::get_region_rects();
 
-        set_mask_regions(masks.controller, mv.controller1_in);
-        set_mask_regions(masks.controller, mv.controller2_in);
-        set_mask_regions(masks.keyboard, mv.keyboard_in);
-        set_mask_regions(masks.mouse, mv.mouse_in);
+        set_map_masks(masks.controller, mv.controller1_inputs);
+        set_map_masks(masks.controller, mv.controller2_inputs);
+        set_map_masks(masks.keyboard, mv.keyboard_inputs);
+        set_map_masks(masks.mouse, mv.mouse_inputs);
 
-        set_out_regions(c_out1, creg, mv.controller1_in);
-        set_out_regions(c_out2, creg, mv.controller2_in);
-        set_out_regions(k_out, kreg, mv.keyboard_in);
-        set_out_regions(m_out, mreg, mv.mouse_in);
+        set_map_out(c_out1, creg, mv.controller1_inputs);
+        set_map_out(c_out2, creg, mv.controller2_inputs);
+        set_map_out(k_out, kreg, mv.keyboard_inputs);
+        set_map_out(m_out, mreg, mv.mouse_inputs);
+
+        set_map_masks(masks.arrow_view, mv.controller1_thumbsticks);
+        set_map_masks(masks.arrow_view, mv.controller2_thumbsticks);
+
+        set_map_out(c_out1, creg, mv.controller1_thumbsticks);
+        set_map_out(c_out2, creg, mv.controller2_thumbsticks);
     }
 }
 
@@ -271,7 +307,7 @@ namespace game_io_test
     }
 
 
-    static void map_keyboard_input(input::KeyboardInput const& src, KeyboardDef<b8>& dst)
+    static void map_keyboard_inputsput(input::KeyboardInput const& src, KeyboardDef<b8>& dst)
     {
         map_button(src.kbd_1, dst.n_1);
         map_button(src.kbd_2, dst.n_2);
@@ -287,7 +323,7 @@ namespace game_io_test
     }
 
 
-    static void map_mouse_input(input::MouseInput const& src, MouseDef<b8>& dst)
+    static void map_mouse_inputsput(input::MouseInput const& src, MouseDef<b8>& dst)
     {
         map_button(src.btn_left, dst.left);
         map_button(src.btn_right, dst.right);
@@ -305,8 +341,8 @@ namespace game_io_test
         map_joystick_input(src.joysticks[0], dst.controller1);
         map_joystick_input(src.joysticks[1], dst.controller2);
 
-        map_keyboard_input(src.keyboard, dst.keyboard);        
-        map_mouse_input(src.mouse, dst.mouse);
+        map_keyboard_inputsput(src.keyboard, dst.keyboard);        
+        map_mouse_inputsput(src.mouse, dst.mouse);
 
         dst.mouse_pos = src.mouse.window_pos;
     }
@@ -366,7 +402,7 @@ namespace game_io_test
     }
 
 
-    static void draw(MaskView const& view, b8 is_on)
+    static void draw(MaskViewMap const& view, b8 is_on)
     {
         constexpr p32 on = img::to_pixel(50, 255, 50);
         constexpr p32 off = img::to_pixel(127);
@@ -377,7 +413,7 @@ namespace game_io_test
     }
 
 
-    static void draw_mouse_coords(MouseDef<MaskView>const& mv, Vec2Di32 pos)
+    static void draw_mouse_coords(MouseDef<MaskViewMap>const& mv, Vec2Di32 pos)
     {
         auto font = ascii::Font::Joystick8;
         auto color = COLOR_BLACK;
@@ -407,19 +443,29 @@ namespace game_io_test
     }
 
 
-    static void draw(MaskViewList const& mv, InputList const& input)
+    static void draw_masks(ControllerStickMaskViewMap const& m)
+    {
+        draw(m.stick_left, 1);
+        draw(m.stick_right, 1);
+    }
+
+
+    static void draw(MaskViewMapList const& mv, InputList const& input)
     {
         draw(mv.controller1, 0);
         draw(mv.controller2, 0);
         draw(mv.keyboard, 0);
         draw(mv.mouse, 0);
 
-        draw_masks(mv.controller1_in, input.controller1);
-        draw_masks(mv.controller2_in, input.controller2);
-        draw_masks(mv.keyboard_in, input.keyboard);
-        draw_masks(mv.mouse_in, input.mouse);
+        draw_masks(mv.controller1_inputs, input.controller1);
+        draw_masks(mv.controller2_inputs, input.controller2);
+        draw_masks(mv.keyboard_inputs, input.keyboard);
+        draw_masks(mv.mouse_inputs, input.mouse);
 
-        draw_mouse_coords(mv.mouse_in, input.mouse_pos);
+        draw_masks(mv.controller1_thumbsticks);
+        draw_masks(mv.controller2_thumbsticks);
+
+        draw_mouse_coords(mv.mouse_inputs, input.mouse_pos);
     }
 }
 
@@ -437,7 +483,7 @@ namespace game_io_test
         
         assets::DrawMaskData masks;
 
-        MaskViewList mask_views;
+        MaskViewMapList mask_views;
         InputList inputs;
 
         img::ImageView out_src;
