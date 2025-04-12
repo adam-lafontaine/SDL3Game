@@ -220,7 +220,7 @@ namespace sdl
 
     static void set_window_icon(SDL_Window* window, window::Icon64 const& icon_64)
     {
-        static_assert(window::PIXEL_SIZE == icon_64.bytes_per_pixel);
+        static_assert(window::PIXEL_SIZE == window::Icon64::bytes_per_pixel);
 
         // these masks are needed to tell SDL_CreateRGBSurface(From)
         // to assume the data it gets is byte-wise RGB(A) data

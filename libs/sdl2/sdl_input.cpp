@@ -14,76 +14,104 @@ namespace sdl
     class GamepadDevice
     {
     public:
-        u32 n_gamepads = 0;
+        u32 n_controllers = 0;
 
         SDL_GameController* controllers[input::MAX_CONTROLLERS];
         SDL_Haptic* rumbles[input::MAX_CONTROLLERS];
-    };    
+
+        u32 n_joysticks = 0;
+
+        SDL_Joystick* joysticks[input::MAX_JOYSTICKS];
+    };
 
 
     static void open_gamepad_device(GamepadDevice& device, input::InputArray& input)
     {
-#ifndef NO_CONTROLLER
+    #ifndef NO_CONTROLLER
         int num_joysticks = SDL_NumJoysticks();
-#else
+    #else
         int num_joysticks = 0;
-#endif
+    #endif
         
         int c = 0;
-        for(int j = 0; j < num_joysticks; ++j)
+        int j = 0;
+        for(int i = 0; i < num_joysticks; ++i)
         {
-            if (!SDL_IsGameController(j))
+            if (SDL_IsGameController(i))
             {
-                continue;
-            }
+                sdl::print_message("found a controller");
+                if (c >= input::MAX_CONTROLLERS)
+                {
+                    continue;
+                }
 
-            sdl::print_message("found a controller");
+                device.controllers[c] = SDL_GameControllerOpen(i);
+                auto joystick = SDL_GameControllerGetJoystick(device.controllers[c]);
+                if(!joystick)
+                {
+                    sdl::print_message("no joystick");
+                }
 
-            device.controllers[c] = SDL_GameControllerOpen(j);
-            auto joystick = SDL_GameControllerGetJoystick(device.controllers[c]);
-            if(!joystick)
-            {
-                sdl::print_message("no joystick");
-            }
+                device.rumbles[c] = SDL_HapticOpenFromJoystick(joystick);
+                if(!device.rumbles[c])
+                {
+                    sdl::print_message("no rumble from joystick");
+                }
+                else if(SDL_HapticRumbleInit(device.rumbles[c]) != 0)
+                {
+                    sdl::print_error("SDL_HapticRumbleInit failed");
+                    SDL_HapticClose(device.rumbles[c]);
+                    device.rumbles[c] = 0;
+                }
+                else
+                {
+                    sdl::print_message("found a rumble");
+                }
 
-            device.rumbles[c] = SDL_HapticOpenFromJoystick(joystick);
-            if(!device.rumbles[c])
-            {
-                sdl::print_message("no rumble from joystick");
-            }
-            else if(SDL_HapticRumbleInit(device.rumbles[c]) != 0)
-            {
-                sdl::print_error("SDL_HapticRumbleInit failed");
-                SDL_HapticClose(device.rumbles[c]);
-                device.rumbles[c] = 0;
+                ++c;
             }
             else
             {
-                sdl::print_message("found a rumble");
-            }
+                sdl::print_message("found a joystick");
+                if (j >= input::MAX_JOYSTICKS)
+                {
+                    continue;
+                }
 
-            ++c;
+                auto joystick = SDL_JoystickOpen(j);
+                device.joysticks[j] = joystick;
 
-            if (c >= input::MAX_CONTROLLERS)
-            {
-                break;
-            }
+                //auto name = SDL_JoystickName(joystick);
+                //auto axes = SDL_JoystickNumAxes(joystick);
+                //auto buttons = SDL_JoystickNumButtons(joystick);
+                //printf("%s | %d | %d\n", name, axes, buttons);
+
+                ++j;
+            }            
         }
 
-        device.n_gamepads = c;
+        device.n_controllers = c;
+        device.n_joysticks = j;
+
         input.n_controllers = c;
+        input.n_joysticks = j;
     }
 
 
     static void close_gamepad_device(GamepadDevice& device)
     {
-        for(u32 c = 0; c < device.n_gamepads; ++c)
+        for(u32 c = 0; c < device.n_controllers; ++c)
         {
             if(device.rumbles[c])
             {
                 SDL_HapticClose(device.rumbles[c]);
             }
             SDL_GameControllerClose(device.controllers[c]);
+        }
+
+        for (u32 j = 0; j < device.n_joysticks; j++)
+        {
+            SDL_JoystickClose(device.joysticks[j]);
         }
     }
 }
@@ -101,6 +129,20 @@ namespace sdl
 
 namespace sdl
 {
+    static i32 map_joystick_id(SDL_JoystickID joystick_id)
+    {
+        for (u32 i = 0; i < gamepad.n_joysticks; i++)
+        {
+            if (SDL_JoystickInstanceID(gamepad.joysticks[i]) == joystick_id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+    
+    
     static f32 normalize_axis_value(Sint16 axis)
     {
         constexpr f32 min = -1.0f;
@@ -109,6 +151,46 @@ namespace sdl
         f32 norm = (f32)axis / 32767;
 
         return num::abs(norm) < 0.3f ? 0.0f : num::clamp(norm, min, max);
+    }
+
+
+    static void set_unit_vector_state(input::VectorState<i8>& vs, Sint16 x, Sint16 y)
+    {
+        auto& vec = vs.vec;
+        auto& unit = vs.unit_direction;
+
+        vec.x = num::sign_i8(x);
+        vec.y = num::sign_i8(y);
+
+        unit.x = (f32)vec.x;
+        unit.y = (f32)vec.y;
+
+        constexpr f32 hypot = 1.4142135f;
+        constexpr f32 i_hypot = 1.0f / hypot;
+        
+        auto mag = (x || y) ? 1.0f : 0.0f;
+        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
+
+        vs.magnitude = mag;
+        unit.x *= i_mag;
+        unit.y *= i_mag;
+    }
+
+
+    static void set_vector_state(input::VectorState<f32>& vs, Sint16 x, Sint16 y)
+    {
+        auto& vec = vs.vec;
+        auto& unit = vs.unit_direction;
+
+        vec.x = normalize_axis_value(x);
+        vec.y = normalize_axis_value(y);
+
+        vs.magnitude = num::magnitude(vec);
+
+        auto mag = vs.magnitude > 0.0f ? vs.magnitude : 1.0f;
+
+        unit.x = vec.x / mag;
+        unit.y = vec.y / mag;
     }
 
 
@@ -226,309 +308,308 @@ namespace input
     {
         switch (key_code)
         {
-#if KEYBOARD_A
+        #if KEYBOARD_A
         case SDLK_a:
             record_button_input(old_keyboard.kbd_A, new_keyboard.kbd_A, is_down);
             break;
-#endif
-#if KEYBOARD_B
+        #endif
+        #if KEYBOARD_B
         case SDLK_b:
             record_button_input(old_keyboard.kbd_B, new_keyboard.kbd_B, is_down);
             break;
-#endif
-#if KEYBOARD_C
+        #endif
+        #if KEYBOARD_C
         case SDLK_c:
             record_button_input(old_keyboard.kbd_C, new_keyboard.kbd_C, is_down);
             break;
-#endif
-#if KEYBOARD_D
+        #endif
+        #if KEYBOARD_D
         case SDLK_d:
             record_button_input(old_keyboard.kbd_D, new_keyboard.kbd_D, is_down);
             break;
-#endif
-#if KEYBOARD_E
+        #endif
+        #if KEYBOARD_E
         case SDLK_e:
             record_button_input(old_keyboard.kbd_E, new_keyboard.kbd_E, is_down);
             break;
-#endif
-#if KEYBOARD_F
+        #endif
+        #if KEYBOARD_F
         case SDLK_f:
             record_button_input(old_keyboard.kbd_F, new_keyboard.kbd_F, is_down);
             break;
-#endif
-#if KEYBOARD_G
+        #endif
+        #if KEYBOARD_G
         case SDLK_g:
             record_button_input(old_keyboard.kbd_G, new_keyboard.kbd_G, is_down);
             break;
-#endif
-#if KEYBOARD_H
+        #endif
+        #if KEYBOARD_H
         case SDLK_h:
             record_button_input(old_keyboard.kbd_H, new_keyboard.kbd_H, is_down);
             break;
-#endif
-#if KEYBOARD_I
+        #endif
+        #if KEYBOARD_I
         case SDLK_i:
             record_button_input(old_keyboard.kbd_I, new_keyboard.kbd_I, is_down);
             break;
-#endif
-#if KEYBOARD_J
+        #endif
+        #if KEYBOARD_J
         case SDLK_j:
             record_button_input(old_keyboard.kbd_J, new_keyboard.kbd_J, is_down);
             break;
-#endif
-#if KEYBOARD_K
+        #endif
+        #if KEYBOARD_K
         case SDLK_k:
             record_button_input(old_keyboard.kbd_K, new_keyboard.kbd_K, is_down);
             break;
-#endif
-#if KEYBOARD_L
+        #endif
+        #if KEYBOARD_L
         case SDLK_l:
             record_button_input(old_keyboard.kbd_L, new_keyboard.kbd_L, is_down);
             break;
-#endif
-#if KEYBOARD_M
+        #endif
+        #if KEYBOARD_M
         case SDLK_m:
             record_button_input(old_keyboard.kbd_M, new_keyboard.kbd_M, is_down);
             break;
-#endif
-#if KEYBOARD_N
+        #endif
+        #if KEYBOARD_N
         case SDLK_n:
             record_button_input(old_keyboard.kbd_N, new_keyboard.kbd_N, is_down);
             break;
-#endif
-#if KEYBOARD_O
+        #endif
+        #if KEYBOARD_O
         case SDLK_o:
             record_button_input(old_keyboard.kbd_O, new_keyboard.kbd_O, is_down);
             break;
-#endif
-#if KEYBOARD_P
+        #endif
+        #if KEYBOARD_P
         case SDLK_p:
             record_button_input(old_keyboard.kbd_P, new_keyboard.kbd_P, is_down);
             break;
-#endif
-#if KEYBOARD_Q
+        #endif
+        #if KEYBOARD_Q
         case SDLK_q:
             record_button_input(old_keyboard.kbd_Q, new_keyboard.kbd_Q, is_down);
             break;
-#endif
-#if KEYBOARD_R
+        #endif
+        #if KEYBOARD_R
         case SDLK_r:
             record_button_input(old_keyboard.kbd_R, new_keyboard.kbd_R, is_down);
             break;
-#endif
-#if KEYBOARD_S
+        #endif
+        #if KEYBOARD_S
         case SDLK_s:
             record_button_input(old_keyboard.kbd_S, new_keyboard.kbd_S, is_down);
             break;
-#endif
-#if KEYBOARD_T
+        #endif
+        #if KEYBOARD_T
         case SDLK_t:
             record_button_input(old_keyboard.kbd_T, new_keyboard.kbd_T, is_down);
             break;
-#endif
-#if KEYBOARD_U
+        #endif
+        #if KEYBOARD_U
         case SDLK_u:
             record_button_input(old_keyboard.kbd_U, new_keyboard.kbd_U, is_down);
             break;
-#endif
-#if KEYBOARD_V
+        #endif
+        #if KEYBOARD_V
         case SDLK_v:
             record_button_input(old_keyboard.kbd_V, new_keyboard.kbd_V, is_down);
             break;
-#endif
-#if KEYBOARD_W
+        #endif
+        #if KEYBOARD_W
         case SDLK_w:
             record_button_input(old_keyboard.kbd_W, new_keyboard.kbd_W, is_down);
             break;
-#endif
-#if KEYBOARD_X
+        #endif
+        #if KEYBOARD_X
         case SDLK_x:
             record_button_input(old_keyboard.kbd_X, new_keyboard.kbd_X, is_down);
             break;
-#endif
-#if KEYBOARD_Y
+        #endif
+        #if KEYBOARD_Y
         case SDLK_y:
             record_button_input(old_keyboard.kbd_Y, new_keyboard.kbd_Y, is_down);
             break;
-#endif
-#if KEYBOARD_Z
+        #endif
+        #if KEYBOARD_Z
         case SDLK_z:
             record_button_input(old_keyboard.kbd_Z, new_keyboard.kbd_Z, is_down);
             break;
-#endif
-#if KEYBOARD_0
+        #endif
+        #if KEYBOARD_0
         case SDLK_0:
             record_button_input(old_keyboard.kbd_0, new_keyboard.kbd_0, is_down);
             break;
-#endif
-#if KEYBOARD_1
+        #endif
+        #if KEYBOARD_1
         case SDLK_1:
             record_button_input(old_keyboard.kbd_1, new_keyboard.kbd_1, is_down);
             break;
-#endif
-#if KEYBOARD_2
+        #endif
+        #if KEYBOARD_2
         case SDLK_2:
             record_button_input(old_keyboard.kbd_2, new_keyboard.kbd_2, is_down);
             break;
-#endif
-#if KEYBOARD_3
+        #endif
+        #if KEYBOARD_3
         case SDLK_3:
             record_button_input(old_keyboard.kbd_3, new_keyboard.kbd_3, is_down);
             break;
-#endif
-#if KEYBOARD_4
+        #endif
+        #if KEYBOARD_4
         case SDLK_4:
             record_button_input(old_keyboard.kbd_4, new_keyboard.kbd_4, is_down);
             break;
-#endif
-#if KEYBOARD_5
+        #endif
+        #if KEYBOARD_5
         case SDLK_5:
             record_button_input(old_keyboard.kbd_5, new_keyboard.kbd_5, is_down);
             break;
-#endif
-#if KEYBOARD_6
+        #endif
+        #if KEYBOARD_6
         case SDLK_6:
             record_button_input(old_keyboard.kbd_6, new_keyboard.kbd_6, is_down);
             break;
-#endif
-#if KEYBOARD_7
+        #endif
+        #if KEYBOARD_7
         case SDLK_7:
             record_button_input(old_keyboard.kbd_7, new_keyboard.kbd_7, is_down);
             break;
-#endif
-#if KEYBOARD_8
+        #endif
+        #if KEYBOARD_8
         case SDLK_8:
             record_button_input(old_keyboard.kbd_8, new_keyboard.kbd_8, is_down);
             break;
-#endif
-#if KEYBOARD_9
+        #endif
+        #if KEYBOARD_9
         case SDLK_9:
             record_button_input(old_keyboard.kbd_9, new_keyboard.kbd_9, is_down);
             break;
-#endif
-#if KEYBOARD_UP
+        #endif
+        #if KEYBOARD_UP
         case SDLK_UP:
             record_button_input(old_keyboard.kbd_up, new_keyboard.kbd_up, is_down);
             break;
-#endif
-#if KEYBOARD_DOWN
+        #endif
+        #if KEYBOARD_DOWN
         case SDLK_DOWN:
             record_button_input(old_keyboard.kbd_down, new_keyboard.kbd_down, is_down);
             break;
-#endif
-#if KEYBOARD_LEFT
+        #endif
+        #if KEYBOARD_LEFT
         case SDLK_LEFT:
             record_button_input(old_keyboard.kbd_left, new_keyboard.kbd_left, is_down);
             break;
-#endif
-#if KEYBOARD_RIGHT
+        #endif
+        #if KEYBOARD_RIGHT
         case SDLK_RIGHT:
             record_button_input(old_keyboard.kbd_right, new_keyboard.kbd_right, is_down);
             break;
-#endif
-#if KEYBOARD_RETURN
+        #endif
+        #if KEYBOARD_RETURN
         case SDLK_RETURN:
         case SDLK_KP_ENTER:
             record_button_input(old_keyboard.kbd_return, new_keyboard.kbd_return, is_down);
             break;
-#endif
-#if KEYBOARD_ESCAPE
+        #endif
+        #if KEYBOARD_ESCAPE
         case SDLK_ESCAPE:
             record_button_input(old_keyboard.kbd_escape, new_keyboard.kbd_escape, is_down);
             break;
-#endif
-#if KEYBOARD_SPACE
+        #endif
+        #if KEYBOARD_SPACE
         case SDLK_SPACE:
             record_button_input(old_keyboard.kbd_space, new_keyboard.kbd_space, is_down);
             break;
-#endif
-#if KEYBOARD_LSHIFT
+        #endif
+        #if KEYBOARD_LSHIFT
         case SDLK_LSHIFT:
             record_button_input(old_keyboard.kbd_left_shift, new_keyboard.kbd_left_shift, is_down);
             break;
-#endif
-#if KEYBOARD_RSHIFT
+        #endif
+        #if KEYBOARD_RSHIFT
         case SDLK_RSHIFT:
             record_button_input(old_keyboard.kbd_right_shift, new_keyboard.kbd_right_shift, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_0
+        #endif
+        #if KEYBOARD_NUMPAD_0
         case SDLK_KP_0:
             record_button_input(old_keyboard.npd_0, new_keyboard.npd_0, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_1
+        #endif
+        #if KEYBOARD_NUMPAD_1
         case SDLK_KP_1:
             record_button_input(old_keyboard.npd_1, new_keyboard.npd_1, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_2
+        #endif
+        #if KEYBOARD_NUMPAD_2
         case SDLK_KP_2:
             record_button_input(old_keyboard.npd_2, new_keyboard.npd_2, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_3
+        #endif
+        #if KEYBOARD_NUMPAD_3
         case SDLK_KP_3:
             record_button_input(old_keyboard.npd_3, new_keyboard.npd_3, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_4
+        #endif
+        #if KEYBOARD_NUMPAD_4
         case SDLK_KP_4:
             record_button_input(old_keyboard.npd_4, new_keyboard.npd_4, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_5
+        #endif
+        #if KEYBOARD_NUMPAD_5
         case SDLK_KP_5:
             record_button_input(old_keyboard.npd_5, new_keyboard.npd_5, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_6
+        #endif
+        #if KEYBOARD_NUMPAD_6
         case SDLK_KP_6:
             record_button_input(old_keyboard.npd_6, new_keyboard.npd_6, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_7
+        #endif
+        #if KEYBOARD_NUMPAD_7
         case SDLK_KP_7:
             record_button_input(old_keyboard.npd_7, new_keyboard.npd_7, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_8
+        #endif
+        #if KEYBOARD_NUMPAD_8
         case SDLK_KP_8:
             record_button_input(old_keyboard.npd_8, new_keyboard.npd_8, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_9
+        #endif
+        #if KEYBOARD_NUMPAD_9
         case SDLK_KP_9:
             record_button_input(old_keyboard.npd_9, new_keyboard.npd_9, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_PLUS
+        #endif
+        #if KEYBOARD_NUMPAD_PLUS
         case SDLK_KP_PLUS:
             record_button_input(old_keyboard.npd_plus, new_keyboard.npd_plus, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_MINUS
+        #endif
+        #if KEYBOARD_NUMPAD_MINUS
         case SDLK_KP_MINUS:
             record_button_input(old_keyboard.npd_minus, new_keyboard.npd_minus, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_MULTIPLY
+        #endif
+        #if KEYBOARD_NUMPAD_MULTIPLY
         case SDLK_KP_MULTIPLY:
             record_button_input(old_keyboard.npd_mult, new_keyboard.npd_mult, is_down);
             break;
-#endif
-#if KEYBOARD_NUMPAD_DIVIDE
+        #endif
+        #if KEYBOARD_NUMPAD_DIVIDE
         case SDLK_KP_DIVIDE:
             record_button_input(old_keyboard.npd_div, new_keyboard.npd_div, is_down);
             break;
-#endif
-#if KEYBOARD_CTRL
+        #endif
+        #if KEYBOARD_CTRL
         case SDLK_LCTRL:
         case SDLK_RCTRL:
             record_button_input(old_keyboard.kbd_ctrl, new_keyboard.kbd_ctrl, is_down);
             break;
-#endif
-
+        #endif
         
         default:
             break;
@@ -570,55 +651,55 @@ namespace input
     {
         switch(button_code)
         {		
-#if MOUSE_LEFT
+        #if MOUSE_LEFT
             case SDL_BUTTON_LEFT:
             {
                 record_button_input(old_mouse.btn_left, new_mouse.btn_left, is_down);
             } break;
-#endif
-#if MOUSE_RIGHT
+        #endif
+        #if MOUSE_RIGHT
             case SDL_BUTTON_RIGHT:
             {
                 record_button_input(old_mouse.btn_right, new_mouse.btn_right, is_down);
             } break;
-#endif
-#if MOUSE_MIDDLE
+        #endif
+        #if MOUSE_MIDDLE
             case SDL_BUTTON_MIDDLE:
             {
                 record_button_input(old_mouse.btn_middle, new_mouse.btn_middle, is_down);
             } break;
-#endif
-#if MOUSE_X1
+        #endif
+        #if MOUSE_X1
             case SDL_BUTTON_X1:
             {
                 record_button_input(old_mouse.btn_x1, new_mouse.btn_x1, is_down);
             } break;
-#endif
-#if MOUSE_X2
+        #endif
+        #if MOUSE_X2
             case SDL_BUTTON_X2:
             {
                 record_button_input(old_mouse.btn_x1, new_mouse.btn_x1, is_down);
             } break;
-#endif
+        #endif
         }
     }
 
 
     static void record_mouse_position_input(MouseInput& mouse, SDL_MouseMotionEvent const& motion)
     {
-#if MOUSE_POSITION
+    #if MOUSE_POSITION
         mouse.window_pos.x = motion.x;
         mouse.window_pos.y = motion.y;
-#endif
+    #endif
     }
 
 
     static void record_mouse_wheel_input(MouseInput& mouse, SDL_MouseWheelEvent const& wheel)
     {
-#if MOUSE_WHEEL
+    #if MOUSE_WHEEL
         mouse.wheel.x = wheel.x;
         mouse.wheel.y = wheel.y;
-#endif
+    #endif
     }
 
 
@@ -637,7 +718,7 @@ namespace input
             record_mouse_button_input(button_code, old_mouse, mouse, is_down);
         } break;
 
-#if MOUSE_POSITION
+        #if MOUSE_POSITION
 
         case SDL_MOUSEMOTION:
         {
@@ -645,19 +726,157 @@ namespace input
             mouse.is_active = true;
         } break;
 
-#endif
+        #endif
 
-#if MOUSE_WHEEL
+        #if MOUSE_WHEEL
 
         case SDL_MOUSEWHEEL:
         {
             record_mouse_wheel_input(mouse, event.wheel);
             mouse.is_active = true;
         } break;
-#endif
+        #endif
         }
 
         set_is_active(mouse);
+    }
+}
+
+
+/* joystick */
+
+namespace input
+{
+    void record_joystic_button_input(Uint8 btn_id, JoystickInput const& old_jsk, JoystickInput& new_jsk, bool is_down)
+    {
+        switch (btn_id)
+        {
+        #if JOYSTICK_BTN_0
+        case 0:
+            record_button_input(old_jsk.btn_0, new_jsk.btn_0, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_1
+        case 1:
+            record_button_input(old_jsk.btn_1, new_jsk.btn_1, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_2
+        case 2:
+            record_button_input(old_jsk.btn_2, new_jsk.btn_2, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_3
+        case 3:
+            record_button_input(old_jsk.btn_3, new_jsk.btn_3, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_4
+        case 4:
+            record_button_input(old_jsk.btn_4, new_jsk.btn_4, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_5
+        case 5:
+            record_button_input(old_jsk.btn_5, new_jsk.btn_5, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_6
+        case 6:
+            record_button_input(old_jsk.btn_6, new_jsk.btn_6, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_7
+        case 7:
+            record_button_input(old_jsk.btn_7, new_jsk.btn_7, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_8
+        case 8:
+            record_button_input(old_jsk.btn_8, new_jsk.btn_8, is_down);
+            break;
+        #endif
+        #if JOYSTICK_BTN_9
+        case 9:
+            record_button_input(old_jsk.btn_9, new_jsk.btn_9, is_down);
+            break;
+        #endif
+        }
+    }
+
+
+    static void record_joystick_axis_input(Uint8 axis_id, JoystickInput& jsk, Sint16 value)
+    {
+        Sint16 x = 0;
+        Sint16 y = 0;
+
+        value /= 3200;
+
+        switch (axis_id)
+        {
+        case 0:
+            x = value;
+            break;
+
+        case 1:
+            y = value;
+            break;
+
+        default:
+            break;
+        }
+
+        sdl::set_unit_vector_state(jsk.vec_joy, x, y);
+    }
+
+
+    static void record_joystick_input(SDL_Event const& event, Input const& pre, Input& cur, u32 n_joysticks)
+    {
+        int id = -1;
+
+        Uint8 btn = 255;
+        bool is_down = false;
+        
+        Uint8 axis = 255;
+        Sint16 value = 0;
+
+        switch (event.type)
+        {
+        case SDL_JOYBUTTONDOWN:
+        case SDL_JOYBUTTONUP:
+        {
+            is_down = event.type == SDL_JOYBUTTONDOWN;
+            btn = event.jbutton.button;
+
+            id = sdl::map_joystick_id(event.jbutton.which);
+            if (id >= 0)
+            {
+                record_joystic_button_input(btn, pre.joysticks[id], cur.joysticks[id], is_down);
+            }
+
+        } break;
+
+        case SDL_JOYAXISMOTION:
+        {
+            axis = event.jaxis.axis;
+            value = event.jaxis.value;
+
+            id = sdl::map_joystick_id(event.jaxis.which);
+            if (id >= 0)
+            {
+                record_joystick_axis_input(axis, cur.joysticks[id], value);
+            }
+
+        } break;
+
+        default:
+            break;
+        }
+
+        for (u32 i = 0; i < n_joysticks; i++)
+        {
+            set_is_active(cur.joysticks[i]);
+        }
     }
 }
 
@@ -691,124 +910,99 @@ namespace input
     static void record_controller_button_input(SDL_GameController* sdl_controller, ControllerInput const& old_controller, ControllerInput& new_controller)
     {
 
-#if CONTROLLER_BTN_DPAD_UP
+    #if CONTROLLER_BTN_DPAD_UP
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_DPAD_UP, old_controller.btn_dpad_up, new_controller.btn_dpad_up);
-#endif
-#if CONTROLLER_BTN_DPAD_DOWN
+    #endif
+    #if CONTROLLER_BTN_DPAD_DOWN
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_DPAD_DOWN, old_controller.btn_dpad_down, new_controller.btn_dpad_down);
-#endif
-#if CONTROLLER_BTN_DPAD_LEFT
+    #endif
+    #if CONTROLLER_BTN_DPAD_LEFT
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_DPAD_LEFT, old_controller.btn_dpad_left, new_controller.btn_dpad_left);
-#endif
-#if CONTROLLER_BTN_DPAD_RIGHT
+    #endif
+    #if CONTROLLER_BTN_DPAD_RIGHT
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_DPAD_RIGHT, old_controller.btn_dpad_right, new_controller.btn_dpad_right);
-#endif
-#if CONTROLLER_BTN_START
+    #endif
+    #if CONTROLLER_BTN_START
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_START, old_controller.btn_start, new_controller.btn_start);
-#endif
-#if CONTROLLER_BTN_BACK
+    #endif
+    #if CONTROLLER_BTN_BACK
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_BACK, old_controller.btn_back, new_controller.btn_back);
-#endif
-#if CONTROLLER_BTN_A
+    #endif
+    #if CONTROLLER_BTN_A
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_A, old_controller.btn_a, new_controller.btn_a);
-#endif
-#if CONTROLLER_BTN_B
+    #endif
+    #if CONTROLLER_BTN_B
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_B, old_controller.btn_b, new_controller.btn_b);
-#endif
-#if CONTROLLER_BTN_X
+    #endif
+    #if CONTROLLER_BTN_X
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_X, old_controller.btn_x, new_controller.btn_x);
-#endif
-#if CONTROLLER_BTN_Y
+    #endif
+    #if CONTROLLER_BTN_Y
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_Y, old_controller.btn_y, new_controller.btn_y);
-#endif
-#if CONTROLLER_BTN_SHOULDER_LEFT
+    #endif
+    #if CONTROLLER_BTN_SHOULDER_LEFT
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, old_controller.btn_shoulder_left, new_controller.btn_shoulder_left);
-#endif
-#if CONTROLLER_BTN_SHOULDER_RIGHT
+    #endif
+    #if CONTROLLER_BTN_SHOULDER_RIGHT
         record_controller_button(sdl_controller, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, old_controller.btn_shoulder_right, new_controller.btn_shoulder_right);
-#endif
-#if CONTROLLER_BTN_STICK_LEFT
+    #endif
+    #if CONTROLLER_BTN_STICK_LEFT
         record_controller_stick_button(sdl_controller, SDL_CONTROLLER_BUTTON_LEFTSTICK, old_controller.btn_stick_left, new_controller.btn_stick_left, new_controller.stick_left);
-#endif
-#if CONTROLLER_BTN_STICK_RIGHT
+    #endif
+    #if CONTROLLER_BTN_STICK_RIGHT
         record_controller_stick_button(sdl_controller, SDL_CONTROLLER_BUTTON_RIGHTSTICK, old_controller.btn_stick_right, new_controller.btn_stick_right, new_controller.stick_right);        
-#endif
+    #endif
 
     }
 
 
     static void record_controller_dpad_vector(ControllerInput& controller)
     {
-#if CONTROLLER_BTN_DPAD_ALL
+    #if CONTROLLER_BTN_DPAD_ALL
 
-        i32 x = (i32)controller.btn_dpad_right.is_down - (i32)controller.btn_dpad_left.is_down;
-        i32 y = (i32)controller.btn_dpad_down.is_down - (i32)controller.btn_dpad_up.is_down;
+        Sint16 x = (Sint16)controller.btn_dpad_right.is_down - (Sint16)controller.btn_dpad_left.is_down;
+        Sint16 y = (Sint16)controller.btn_dpad_down.is_down - (Sint16)controller.btn_dpad_up.is_down;
 
-        auto& vec = controller.vec_dpad;
-        auto& unit = vec.unit_direction;
+        sdl::set_unit_vector_state(controller.vec_dpad, x, y);
 
-        vec.vec.x = x;
-        vec.vec.y = y;
-
-        unit.x = (f32)x;
-        unit.y = (f32)y;        
-
-        constexpr f32 hypot = 1.4142135f;
-        constexpr f32 i_hypot = 1.0f / hypot;
-
-        //auto mag = (x && y) ? hypot : (x || y) ? 1.0f : 0.0f;
-        auto mag = (x || y) ? 1.0f : 0.0f;
-        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
-
-        vec.magnitude = mag;
-        unit.x *= i_mag;
-        unit.y *= i_mag;
-#endif
+    #endif
     }
 
 
     static void record_controller_trigger_input(SDL_GameController* sdl_controller, ControllerInput& controller)
     {
 
-#if CONTROLLER_TRIGGER_LEFT
+    #if CONTROLLER_TRIGGER_LEFT
         controller.trigger_left = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-#endif
-#if CONTROLLER_TRIGGER_RIGHT
+    #endif
+    #if CONTROLLER_TRIGGER_RIGHT
         controller.trigger_right = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
-#endif
+    #endif
 
     }
 
 
     static void record_controller_axis_input(SDL_GameController* sdl_controller, ControllerInput& controller)
     {
+        Sint16 x = 0;
+        Sint16 y = 0;
 
-#if CONTROLLER_AXIS_STICK_LEFT
-        auto& left = controller.stick_left;
-        left.vec.x = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTX);
-        left.vec.y = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTY);
+    #if CONTROLLER_AXIS_STICK_LEFT
 
-        left.magnitude = num::magnitude(left.vec);
-        if (left.magnitude > 0.0f)
-        {
-            left.unit_direction.x = left.vec.x / left.magnitude;
-            left.unit_direction.y = left.vec.y / left.magnitude;
-        }        
+        x = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTX);
+        y = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_LEFTY);
 
-#endif
-#if CONTROLLER_AXIS_STICK_RIGHT
-        auto& right = controller.stick_right;
-        right.vec.x = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTX);
-        right.vec.y = get_controller_axis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTY);
+        sdl::set_vector_state(controller.stick_left, x, y);
 
-        right.magnitude = num::magnitude(right.vec);
-        if (right.magnitude > 0.0f)
-        {
-            right.unit_direction.x = right.vec.x / right.magnitude;
-            right.unit_direction.y = right.vec.y / right.magnitude;
-        }
+    #endif
+    #if CONTROLLER_AXIS_STICK_RIGHT
         
-#endif
+        x = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTX);
+        y = SDL_GameControllerGetAxis(sdl_controller, SDL_CONTROLLER_AXIS_RIGHTY);
+
+        sdl::set_vector_state(controller.stick_right, x, y);
+        
+    #endif
     }
 
 
@@ -841,7 +1035,7 @@ namespace input
 
 namespace input
 {
-	constexpr auto subsystem_flags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC;
+	constexpr auto subsystem_flags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_JOYSTICK;
 
 
     bool init(InputArray& input)
@@ -852,6 +1046,9 @@ namespace input
             sdl::print_error("Init Input failed");
             return false;
         }
+
+        reset_input_state(input.pre());
+        reset_input_state(input.cur());
 
         sdl::open_gamepad_device(sdl::gamepad, input);
 
@@ -871,7 +1068,7 @@ namespace input
         auto& pre = input.pre();
         auto& cur = input.cur();
 
-        copy_input_state(pre, cur, input.n_controllers);
+        copy_input_state(pre, cur);
         cur.frame = pre.frame + 1;
         cur.dt_frame = 1.0f / 60.0f; // TODO
 
@@ -881,6 +1078,7 @@ namespace input
             sdl::handle_sdl_event(event);
             record_keyboard_input(event, pre.keyboard, cur.keyboard);
             record_mouse_input(event, pre.mouse, cur.mouse);
+            record_joystick_input(event, pre, cur, input.n_joysticks);
         }
 
         record_gamepad_input(pre, cur, input.n_controllers);

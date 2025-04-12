@@ -1260,11 +1260,8 @@ namespace image
 
 
     template <class VIEW_S, class VIEW_D>
-    static void rotate_view_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot)
+    static void rotate_view_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, f32 cos, f32 sin)
     {
-        auto const cos = num::cos(rot);
-        auto const sin = num::sin(rot);
-
         u32 const sw = src.width;
         u32 const sh = src.height;
 
@@ -1295,15 +1292,20 @@ namespace image
                 sxf += cos;
                 syf -= sin;
 
-                sx = num::round_to_unsigned<u32>(sxf);
-                sy = num::round_to_unsigned<u32>(syf);
-
-                if (sxf < 0.0f || sx >= sw || syf < 0.0f || sy >= sh)
+                if (sxf < 0.0f || syf < 0.0f)
                 {
                     continue;
                 }
 
-                d[x] =  *xy_at(src, sx, sy);
+                sx = num::round_to_unsigned<u32>(sxf);
+                sy = num::round_to_unsigned<u32>(syf);
+
+                if (sx >= sw || sy >= sh)
+                {
+                    continue;
+                }
+
+                d[x] = *xy_at(src, sx, sy);
             }
 
             dysin += sin;
@@ -1311,8 +1313,15 @@ namespace image
         }
     }
 
-   
-    
+
+    template <class VIEW_S, class VIEW_D>
+    static void rotate_view_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot)
+    {
+        auto const cos = num::cos(rot);
+        auto const sin = num::sin(rot);
+
+        rotate_view_any(src, dst, src_pivot, dst_pivot, cos, sin);
+    }    
 }
 
 
@@ -1321,11 +1330,8 @@ namespace image
 namespace image
 {
     template <class VIEW_S, class VIEW_D>
-    static void rotate_blend_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot)
+    static void rotate_blend_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, f32 cos, f32 sin)
     {
-        auto const cos = num::cos(rot);
-        auto const sin = num::sin(rot);
-
         u32 const sw = src.width;
         u32 const sh = src.height;
 
@@ -1356,10 +1362,15 @@ namespace image
                 sxf += cos;
                 syf -= sin;
 
+                if (sxf < 0.0f || syf < 0.0f)
+                {
+                    continue;
+                }
+
                 sx = num::round_to_unsigned<u32>(sxf);
                 sy = num::round_to_unsigned<u32>(syf);
 
-                if (sxf < 0.0f || sx >= sw || syf < 0.0f || sy >= sh)
+                if (sx >= sw || sy >= sh)
                 {
                     continue;
                 }
@@ -1371,10 +1382,82 @@ namespace image
             dycos += cos;
         }
     }
+
+
+    template <class VIEW_S, class VIEW_D>
+    static void rotate_blend_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot)
+    {
+        auto const cos = num::cos(rot);
+        auto const sin = num::sin(rot);
+
+        rotate_blend_any(src, dst, src_pivot, dst_pivot, cos, sin);
+    }
+
+
+    template <class VIEW_S, class VIEW_D, class FUNC>
+    static void rotate_blend_transform_any(
+        VIEW_S const& src, VIEW_D const& dst, 
+        Point2Di32 src_pivot, Point2Di32 dst_pivot, 
+        f32 cos, f32 sin, 
+        FUNC const& func)
+    {
+        u32 const sw = src.width;
+        u32 const sh = src.height;
+
+        i32 const spx = src_pivot.x;
+        i32 const spy = src_pivot.y;
+
+        i32 const dpx = dst_pivot.x;
+        i32 const dpy = dst_pivot.y;
+        
+        f32 dysin = spx - dpy * sin - dpx * cos - cos;
+        f32 dycos = spy - dpy * cos + dpx * sin + sin;
+        
+        u32 sx = 0;
+        u32 sy = 0;
+
+        f32 sxf = 0.0f;
+        f32 syf = 0.0f;
+
+        for (u32 y = 0; y < dst.height; y++)
+        {
+            auto d = row_begin(dst, y);
+            
+            sxf = dysin;
+            syf = dycos;
+            
+            for (u32 x = 0; x < dst.width; x++)
+            {
+                sxf += cos;
+                syf -= sin;
+
+                if (sxf < 0.0f || syf < 0.0f)
+                {
+                    continue;
+                }
+
+                sx = num::round_to_unsigned<u32>(sxf);
+                sy = num::round_to_unsigned<u32>(syf);
+
+                if (sx >= sw || sy >= sh)
+                {
+                    continue;
+                }
+
+                auto sp = *xy_at(src, sx, sy);
+                auto fp = func(sp);
+
+                alpha_blend(fp, d + x);
+            }
+
+            dysin += sin;
+            dycos += cos;
+        }
+    }
 }
 
 
-/* rotate */
+/* rotate 90 */
 
 namespace image
 {
@@ -1476,7 +1559,13 @@ namespace image
         rotate_view_270(src, dst);
     }
     
+}
 
+
+/* rotate */
+
+namespace image
+{
     void rotate(GrayView const& src, GrayView const& dst, Point2Du32 src_pivot, Point2Du32 dst_pivot, uangle rot)
     {
         assert(src.matrix_data_);
@@ -1516,6 +1605,18 @@ namespace image
         assert(dst.matrix_data_);
 
         rotate_blend_any(src, dst, src_pivot, dst_pivot, rot);
+    }
+
+
+    void rotate_blend_transform(GraySubView const& src, SubView const& dst, Vec2Df32 cos_sin, fn<Pixel(u8)> const& func)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+
+        Point2Di32 sp = { (i32)src.width / 2, (i32)src.height / 2 };
+        Point2Di32 dp = { (i32)dst.width / 2, (i32)dst.height / 2 };
+
+        rotate_blend_transform_any(src, dst, sp, dp, cos_sin.x, cos_sin.y, func);
     }
 }
 

@@ -13,7 +13,7 @@ NO_FLAGS :=
 #SDL2   := `sdl2-config --cflags --libs`
 SDL2 := -lSDL2 -lSDL2_mixer
 
-ALL_LFLAGS := $(SDL2) -lpthread
+ALL_LFLAGS := $(SDL2)
 
 
 root       := ../../../..
@@ -144,6 +144,7 @@ input_h += $(types_h)
 input_h += $(input)/keyboard_input.hpp
 input_h += $(input)/mouse_input.hpp
 input_h += $(input)/controller_input.hpp
+input_h += $(input)/joystick_input.hpp
 
 input_state_h := $(input)/input_state.hpp
 input_state_h += $(input_h)

@@ -28,15 +28,8 @@ namespace game_io_test
 
 namespace assets
 {
-#ifdef NDEBUG
-
+    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
     constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
-
-#else
-
-    constexpr auto BIN_DATA_PATH = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
-
-#endif
 
     static cstr get_file_name(cstr full_path)
     {
@@ -86,6 +79,7 @@ namespace assets
             img::Image controller;
             img::Image keyboard;
             img::Image mouse;
+            img::Image arrow;
 
         } image;
 
@@ -116,6 +110,7 @@ namespace assets
         img::destroy_image(memory.image.controller);
         img::destroy_image(memory.image.keyboard);
         img::destroy_image(memory.image.mouse);
+        img::destroy_image(memory.image.arrow);
 
         mb::destroy_buffer(memory.buffer);
     }
@@ -125,7 +120,20 @@ namespace assets
     {
     #include "../res/asset_sizes.cpp"
 
-        auto buffer = read_bytes(BIN_DATA_PATH);
+        img::Buffer8 buffer;
+        if (fs::exists(BIN_DATA_PATH))
+        {
+            buffer = read_bytes(BIN_DATA_PATH);
+        }
+        else if (fs::exists(BIN_DATA_FALLBACK))
+        {
+            buffer = read_bytes(BIN_DATA_FALLBACK);
+        }
+        else
+        {
+            return false;
+        }
+        
         if (!buffer.ok)
         {
             return false;
@@ -152,6 +160,12 @@ namespace assets
         }
 
         res = read_image(asset_sizes.masks.mouse, memory.image.mouse);
+        if (!res)
+        {
+            return false;
+        }
+
+        res = read_image(asset_sizes.masks.arrow, memory.image.arrow);
         if (!res)
         {
             return false;
@@ -257,6 +271,15 @@ namespace controller
                 T trigger_right;
             };
         };
+    };
+
+
+    template <class T>
+    class ControllerStickDef
+    {
+    public:
+        T stick_left;
+        T stick_right;
     };
 
 
@@ -430,6 +453,8 @@ namespace assets
         img::GrayView controller_view;
         img::GrayView keyboard_view;
         img::GrayView mouse_view;
+
+        img::GrayView arrow_view;
     };
 
 
@@ -437,13 +462,26 @@ namespace assets
     {
         auto c = am.image.controller;
         auto k = am.image.keyboard;
-        auto m = am.image.mouse;        
+        auto m = am.image.mouse;
+        auto a = am.image.arrow;
 
         auto cn = c.width * c.height;
         auto kn = k.width * k.height;
         auto mn = m.width * m.height;
+        auto an = a.width * a.height;
 
-        return cn + kn + mn;
+        return cn + kn + mn + an;
+    }
+
+
+    template <class V, class R, class M>
+    static void set_mask_regions(V const& view, R const& reg, M& mask)
+    {
+        static_assert(R::count == M::count);
+        for (u32 i = 0; i < reg.count; i++)
+        {
+            mask.list[i] = img::sub_view(view, reg.list[i]);
+        }
     }
 
 
@@ -458,15 +496,7 @@ namespace assets
         auto cmv = make_mask(am.image.controller, buffer);
         auto kmv = make_mask(am.image.keyboard, buffer);
         auto mmv = make_mask(am.image.mouse, buffer);
-
-        auto const set_mask_regions = [](auto const& view, auto const& reg, auto& mask)
-        {
-            static_assert(reg.count == mask.count);
-            for (u32 i = 0; i < reg.count; i++)
-            {
-                mask.list[i] = img::sub_view(view, reg.list[i]);
-            }
-        };
+        auto amv = make_mask(am.image.arrow, buffer);
 
         set_mask_regions(cmv, cr, data.controller);
         set_mask_regions(kmv, kr, data.keyboard);
@@ -475,6 +505,7 @@ namespace assets
         data.controller_view = cmv;
         data.keyboard_view = kmv;
         data.mouse_view = mmv;
+        data.arrow_view = amv;
 
         return data;
     }

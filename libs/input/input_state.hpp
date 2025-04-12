@@ -198,19 +198,19 @@ namespace input
     {
         controller.is_active = false ||
 
-#if CONTROLLER_TRIGGER_LEFT
+	#if CONTROLLER_TRIGGER_LEFT
         controller.trigger_left > 0.0f ||
-#endif
-#if CONTROLLER_TRIGGER_RIGHT
+	#endif
+	#if CONTROLLER_TRIGGER_RIGHT
         controller.trigger_right > 0.0f ||
-#endif
+	#endif
 
-#if CONTROLLER_AXIS_STICK_LEFT
+	#if CONTROLLER_AXIS_STICK_LEFT
         controller.stick_left.magnitude > 0.0f ||
-#endif
-#if CONTROLLER_AXIS_STICK_RIGHT
+	#endif
+	#if CONTROLLER_AXIS_STICK_RIGHT
         controller.stick_right.magnitude > 0.0f ||
-#endif
+	#endif
         false;
 
 		if (!controller.is_active)
@@ -225,49 +225,49 @@ namespace input
 
 	inline void copy_controller_axes(ControllerInput const& src, ControllerInput& dst)
 	{
-#if CONTROLLER_AXIS_STICK_LEFT
+	#if CONTROLLER_AXIS_STICK_LEFT
 		copy_vector_state(src.stick_left, dst.stick_left);
-#endif
+	#endif
 
-#if CONTROLLER_AXIS_STICK_RIGHT
+	#if CONTROLLER_AXIS_STICK_RIGHT
 		copy_vector_state(src.stick_right, dst.stick_right);
-#endif
+	#endif
 	}
 
 
 	inline void reset_controller_axes(ControllerInput& controller)
 	{
-#if CONTROLLER_AXIS_STICK_LEFT
+	#if CONTROLLER_AXIS_STICK_LEFT
 		reset_vector_state(controller.stick_left);
-#endif
+	#endif
 
-#if CONTROLLER_AXIS_STICK_RIGHT
+	#if CONTROLLER_AXIS_STICK_RIGHT
 		reset_vector_state(controller.stick_right);
-#endif
+	#endif
 	}
 
 
 	inline void copy_controller_triggers(ControllerInput const& src, ControllerInput& dst)
 	{
-#if CONTROLLER_TRIGGER_LEFT
+	#if CONTROLLER_TRIGGER_LEFT
 		dst.trigger_left = src.trigger_left;
-#endif
+	#endif
 
-#if CONTROLLER_TRIGGER_RIGHT
+	#if CONTROLLER_TRIGGER_RIGHT
 		dst.trigger_right = src.trigger_right;
-#endif
+	#endif
 	}
 
 
 	inline void reset_controller_triggers(ControllerInput& controller)
 	{
-#if CONTROLLER_TRIGGER_LEFT
+	#if CONTROLLER_TRIGGER_LEFT
 		controller.trigger_left = 0.0f;
-#endif
+	#endif
 
-#if CONTROLLER_TRIGGER_RIGHT
+	#if CONTROLLER_TRIGGER_RIGHT
 		controller.trigger_right = 0.0f;
-#endif
+	#endif
 	}
 
 
@@ -301,18 +301,68 @@ namespace input
 }
 
 
+/* joystic */
+
+namespace input
+{
+	inline void set_is_active(JoystickInput& jsk)
+	{
+		jsk.is_active = false;
+
+		for (u32 i = 0; i < N_JOYSTICK_BUTTONS; ++i)
+		{
+			jsk.is_active |= jsk.buttons[i].is_down;
+		}
+
+		jsk.is_active |= jsk.vec_joy.vec.x;
+		jsk.is_active |= jsk.vec_joy.vec.y;
+	}
+
+
+	inline void copy_joystick_state(JoystickInput const& src, JoystickInput& dst)
+	{
+		for (u32 i = 0; i < N_JOYSTICK_BUTTONS; ++i)
+		{
+			copy_button_state(src.buttons[i], dst.buttons[i]);
+		}
+
+		copy_vector_state(src.vec_joy, dst.vec_joy);
+
+		set_is_active(dst);
+	}
+
+
+	inline void reset_joystick_state(JoystickInput& jsk)
+	{
+		for (u32 i = 0; i < N_JOYSTICK_BUTTONS; ++i)
+		{
+			reset_button_state(jsk.buttons[i]);
+		}
+
+		reset_vector_state(jsk.vec_joy);
+
+		jsk.is_active = false;
+	}
+}
+
+
 /* copy/reset input */
 
 namespace input
 {
-	inline void copy_input_state(Input const& src, Input& dst, u32 n_controllers)
+	inline void copy_input_state(Input const& src, Input& dst)
 	{
 		copy_keyboard_state(src.keyboard, dst.keyboard);
 		copy_mouse_state(src.mouse, dst.mouse);
 
-		for (u32 i = 0; i < n_controllers; i++)
+		for (u32 i = 0; i < MAX_CONTROLLERS; i++)
 		{
 			copy_controller_state(src.controllers[i], dst.controllers[i]);
+		}
+
+		for (u32 i = 0; i < MAX_JOYSTICKS; i++)
+		{
+			copy_joystick_state(src.joysticks[i], dst.joysticks[i]);
 		}
 	}
 
@@ -325,6 +375,11 @@ namespace input
 		for (u32 i = 0; i < MAX_CONTROLLERS; i++)
 		{
 			reset_controller_state(input.controllers[i]);
+		}
+
+		for (u32 i = 0; i < MAX_JOYSTICKS; i++)
+		{
+			reset_joystick_state(input.joysticks[i]);
 		}
 	}
 }
