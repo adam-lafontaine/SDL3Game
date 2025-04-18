@@ -1,5 +1,6 @@
 #pragma once
 
+//#define NO_MOUSE
 
 // activate buttons to accept input
 #define MOUSE_LEFT 1

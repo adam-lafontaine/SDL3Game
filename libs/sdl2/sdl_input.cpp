@@ -26,21 +26,29 @@ namespace sdl
 
 
     static void open_gamepad_device(GamepadDevice& device, input::InputArray& input)
-    {
-    #ifndef NO_CONTROLLER
-        int num_joysticks = SDL_NumJoysticks();
-    #else
-        int num_joysticks = 0;
-    #endif
+    {        
+        int cmax = (int)input::MAX_CONTROLLERS;
+        int jmax = (int)input::MAX_JOYSTICKS;
+
+        #ifdef NO_CONTROLLER
+        cmax = 0;
+        #endif
+
+        #ifdef NO_JOYSTICK
+        jmax = 0;
+        #endif
         
         int c = 0;
         int j = 0;
-        for(int i = 0; i < num_joysticks; ++i)
+
+        int num_sdl_joysticks = SDL_NumJoysticks();
+
+        for(int i = 0; i < num_sdl_joysticks; ++i)
         {
             if (SDL_IsGameController(i))
             {
                 sdl::print_message("found a controller");
-                if (c >= input::MAX_CONTROLLERS)
+                if (c >= cmax)
                 {
                     continue;
                 }
@@ -73,7 +81,7 @@ namespace sdl
             else
             {
                 sdl::print_message("found a joystick");
-                if (j >= input::MAX_JOYSTICKS)
+                if (j >= jmax)
                 {
                     continue;
                 }
@@ -194,7 +202,7 @@ namespace sdl
     }
 
 
-    static void handle_window_event(SDL_WindowEvent const& w_event)
+    static void handle_window_event(SDL_WindowEvent const& w_event, input::Input& input)
     {
     #ifndef NO_WINDOW
 
@@ -204,7 +212,7 @@ namespace sdl
         {
             case SDL_WINDOWEVENT_SIZE_CHANGED:
             {
-
+                input.window_size_changed = 1;
             }break;
             case SDL_WINDOWEVENT_EXPOSED:
             {
@@ -218,6 +226,8 @@ namespace sdl
 
     static void toggle_fullscreen(SDL_Window* window)
     {
+    #ifndef NO_WINDOW
+
         static bool is_fullscreen = false;
 
         if (is_fullscreen)
@@ -230,15 +240,17 @@ namespace sdl
         }
 
         is_fullscreen = !is_fullscreen;
+
+    #endif
     }
 
 
-    static void handle_sdl_event(SDL_Event const& event)
+    static void handle_sdl_event(SDL_Event const& event, input::Input& input)
     {
         switch(event.type)
         {
         case SDL_WINDOWEVENT:
-            (event.window);
+            handle_window_event(event.window, input);
             break;
 
         case SDL_QUIT:
@@ -267,6 +279,7 @@ namespace sdl
                     print_message("ALT ENTER");
                     auto window = SDL_GetWindowFromID(event.window.windowID);
                     toggle_fullscreen(window);
+                    input.window_size_changed = 1;
                     break;
                 #endif
                 }
@@ -304,6 +317,8 @@ namespace sdl
 
 namespace input
 {
+#ifndef NO_KEYBOARD
+
     static void record_keyboard_input(SDL_Keycode key_code, KeyboardInput const& old_keyboard, KeyboardInput& new_keyboard, bool is_down)
     {
         switch (key_code)
@@ -618,9 +633,11 @@ namespace input
         set_is_active(new_keyboard);
     }
 
-
+#endif
     void record_keyboard_input(SDL_Event const& event, KeyboardInput const& old_keyboard, KeyboardInput& new_keyboard)
     {
+    #ifndef NO_KEYBOARD
+
         switch (event.type)
         {
         case SDL_KEYDOWN:
@@ -639,6 +656,8 @@ namespace input
         }
 
         set_is_active(new_keyboard);
+
+    #endif
     }
 }
 
@@ -647,6 +666,8 @@ namespace input
 
 namespace input
 {
+#ifndef NO_MOUSE
+
     static void record_mouse_button_input(Uint8 button_code, MouseInput const& old_mouse, MouseInput& new_mouse, bool is_down)
     {
         switch(button_code)
@@ -702,9 +723,12 @@ namespace input
     #endif
     }
 
+#endif
 
     static void record_mouse_input(SDL_Event const& event, MouseInput const& old_mouse, MouseInput& new_mouse)
     {
+    #ifndef NO_MOUSE
+
         auto& mouse = new_mouse;
 
         switch (event.type)
@@ -739,6 +763,8 @@ namespace input
         }
 
         set_is_active(mouse);
+
+    #endif
     }
 }
 
@@ -747,6 +773,8 @@ namespace input
 
 namespace input
 {
+#ifndef NO_JOYSTICK
+
     void record_joystic_button_input(Uint8 btn_id, JoystickInput const& old_jsk, JoystickInput& new_jsk, bool is_down)
     {
         switch (btn_id)
@@ -805,7 +833,7 @@ namespace input
     }
 
 
-    static void record_joystick_axis_input(Uint8 axis_id, JoystickInput& jsk, Sint16 value)
+    static void record_joystick_axis_input(Uint8 axis_id, JoystickInput const& old_jsk, JoystickInput& new_jsk, Sint16 value)
     {
         Sint16 x = 0;
         Sint16 y = 0;
@@ -826,12 +854,24 @@ namespace input
             break;
         }
 
-        sdl::set_unit_vector_state(jsk.vec_joy, x, y);
+        sdl::set_unit_vector_state(new_jsk.vec_axis, x, y);
+
+    #if JOYSTICK_BTN_AXIS
+
+        record_button_input(old_jsk.btn_axis_left,  new_jsk.btn_axis_left,  x < 0);
+        record_button_input(old_jsk.btn_axis_right, new_jsk.btn_axis_right, x > 0);
+        record_button_input(old_jsk.btn_axis_up,    new_jsk.btn_axis_up,    y < 0);
+        record_button_input(old_jsk.btn_axis_down,  new_jsk.btn_axis_down,  y > 0);
+
+    #endif
     }
 
+#endif
 
     static void record_joystick_input(SDL_Event const& event, Input const& pre, Input& cur, u32 n_joysticks)
     {
+    #ifndef NO_JOYSTICK
+
         int id = -1;
 
         Uint8 btn = 255;
@@ -864,7 +904,7 @@ namespace input
             id = sdl::map_joystick_id(event.jaxis.which);
             if (id >= 0)
             {
-                record_joystick_axis_input(axis, cur.joysticks[id], value);
+                record_joystick_axis_input(axis, pre.joysticks[id], cur.joysticks[id], value);
             }
 
         } break;
@@ -877,14 +917,20 @@ namespace input
         {
             set_is_active(cur.joysticks[i]);
         }
+
+    #endif
     }
+
+
 }
 
 
 /* controller */
 
 namespace input
-{    
+{ 
+#ifndef NO_CONTROLLER
+
     static f32 get_controller_axis(SDL_GameController* sdl_controller, SDL_GameControllerAxis axis_key)
     {
         auto axis = SDL_GameControllerGetAxis(sdl_controller, axis_key);
@@ -1006,7 +1052,7 @@ namespace input
     }
 
 
-    static void record_controller_input(SDL_GameController* sdl_controller, ControllerInput const& old_controller, ControllerInput& new_controller)
+    static void record_gamepad_controller_input(SDL_GameController* sdl_controller, ControllerInput const& old_controller, ControllerInput& new_controller)
     {
         if(!sdl_controller || !SDL_GameControllerGetAttached(sdl_controller))
         {
@@ -1019,14 +1065,20 @@ namespace input
         record_controller_axis_input(sdl_controller, new_controller);        
     }
 
+#endif
 
-    static void record_gamepad_input(Input const& pre, Input& cur, u32 n_controllers)
+
+    static void record_controller_input(Input const& pre, Input& cur, u32 n_controllers)
     {
+    #ifndef NO_CONTROLLER
+
         for (u32 i = 0; i < n_controllers; i++)
         {
-            record_controller_input(sdl::gamepad.controllers[i], pre.controllers[i], cur.controllers[i]);
+            record_gamepad_controller_input(sdl::gamepad.controllers[i], pre.controllers[i], cur.controllers[i]);
             set_is_active(cur.controllers[i]);
         }
+
+    #endif
     }
 }
 
@@ -1035,22 +1087,32 @@ namespace input
 
 namespace input
 {
-	constexpr auto subsystem_flags = SDL_INIT_GAMECONTROLLER | SDL_INIT_HAPTIC | SDL_INIT_JOYSTICK;
+    static constexpr Uint32 subsystem_flags()
+    {
+        Uint32 flags = SDL_INIT_GAMECONTROLLER;
+        flags |= SDL_INIT_JOYSTICK;
+
+    #ifndef NO_HAPTIC
+        flags |= SDL_INIT_HAPTIC;
+    #endif
+
+        return flags;
+    }
 
 
     bool init(InputArray& input)
     {
-        auto error = SDL_InitSubSystem(subsystem_flags);
+        auto error = SDL_InitSubSystem(subsystem_flags());
         if (error)
         {
             sdl::print_error("Init Input failed");
             return false;
         }
 
+        sdl::open_gamepad_device(sdl::gamepad, input);        
+
         reset_input_state(input.pre());
         reset_input_state(input.cur());
-
-        sdl::open_gamepad_device(sdl::gamepad, input);
 
         return true;
     }
@@ -1059,7 +1121,7 @@ namespace input
     void close()
     {
         sdl::close_gamepad_device(sdl::gamepad);
-        SDL_QuitSubSystem(subsystem_flags);
+        SDL_QuitSubSystem(subsystem_flags());
     }
 
 
@@ -1071,16 +1133,17 @@ namespace input
         copy_input_state(pre, cur);
         cur.frame = pre.frame + 1;
         cur.dt_frame = 1.0f / 60.0f; // TODO
+        cur.window_size_changed = 0;
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            sdl::handle_sdl_event(event);
+            sdl::handle_sdl_event(event, cur);
             record_keyboard_input(event, pre.keyboard, cur.keyboard);
             record_mouse_input(event, pre.mouse, cur.mouse);
             record_joystick_input(event, pre, cur, input.n_joysticks);
         }
 
-        record_gamepad_input(pre, cur, input.n_controllers);
+        record_controller_input(pre, cur, input.n_controllers);
     }
 }

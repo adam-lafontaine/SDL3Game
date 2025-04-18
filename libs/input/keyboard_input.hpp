@@ -1,5 +1,7 @@
 #pragma once
 
+//#define NO_KEYBOARD
+
 
 // activate keys to accept input from
 #define KEYBOARD_A 1

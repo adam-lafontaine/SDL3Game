@@ -309,7 +309,7 @@ namespace input
     public:
 
 		b8 is_active;
-
+	
         union
         {
             ButtonState buttons[N_CONTROLLER_BUTTONS];
@@ -373,16 +373,12 @@ namespace input
 	#if CONTROLLER_TRIGGER_RIGHT
         f32 trigger_right;
 	#endif
-
-
-
 	#if CONTROLLER_BTN_DPAD_ALL
-
 		VectorState<i8> vec_dpad;
-
-	#endif
+	#endif	
 
     };
+	
 }
 
 
@@ -394,7 +390,7 @@ namespace input
 	{
 	public:
 		b8 is_active;
-
+	
 		union
 		{
 			ButtonState buttons[N_JOYSTICK_BUTTONS];
@@ -431,13 +427,23 @@ namespace input
 			#if JOYSTICK_BTN_9
 				ButtonState btn_9;
 			#endif
+
+			#if JOYSTICK_BTN_AXIS
+
+				ButtonState btn_axis_up;
+				ButtonState btn_axis_down;
+				ButtonState btn_axis_left;
+				ButtonState btn_axis_right;
+
+			#endif
 			};
 		};
 
-		VectorState<i8> vec_joy;
-		
+		VectorState<i8> vec_axis;	
 	};
+	
 }
+
 
 /* input */
 
@@ -449,7 +455,12 @@ namespace input
 	constexpr u32 MAX_CONTROLLERS = 4;
 #endif
 
+
+#ifdef SINGLE_JOYSTICK
+	constexpr u32 MAX_JOYSTICKS = 1;
+#else
 	constexpr u32 MAX_JOYSTICKS = 4;
+#endif
 
 
 	class Input
@@ -461,6 +472,8 @@ namespace input
 		u64 frame;
 		f32 dt_frame;
 
+		b32 window_size_changed;
+		
 	#ifdef SINGLE_CONTROLLER
 
 		union
@@ -473,7 +486,20 @@ namespace input
 		ControllerInput controllers[MAX_CONTROLLERS];		
 	#endif
 
+
+	#ifdef SINGLE_JOYSTICK
+
+		union
+		{
+			JoystickInput joystick;
+			JoystickInput joysticks[MAX_JOYSTICKS];
+		};
+
+	#else
 		JoystickInput joysticks[MAX_JOYSTICKS];
+	#endif
+
+		
 	};
 
 

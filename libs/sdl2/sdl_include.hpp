@@ -11,7 +11,7 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
-#define NO_CONTROLLER
+#define NO_HAPTIC
 #define NO_WINDOW
 #ifdef WASM_PRINTF
 #define PRINT_MESSAGES

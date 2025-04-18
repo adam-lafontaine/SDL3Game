@@ -1,6 +1,8 @@
 #pragma once
 
-//#define SINGLE_CONTROLLER 1
+//#define NO_CONTROLLER
+
+//#define SINGLE_CONTROLLER
 
 
 #define CONTROLLER_BTN_DPAD_UP 1
@@ -49,6 +51,3 @@ namespace input
     CONTROLLER_BTN_STICK_LEFT +
     CONTROLLER_BTN_STICK_RIGHT;
 }
-
-
-

@@ -290,12 +290,10 @@ namespace game_io_test
         map_button(src.btn_8, dst.back);
         map_button(src.btn_9, dst.start);
 
-        auto& vec = src.vec_joy.vec;
-
-        dst.dpad_left |= vec.x < 0;
-        dst.dpad_right |= vec.x > 0;
-        dst.dpad_up |= vec.y < 0;
-        dst.dpad_down |= vec.y > 0;
+        map_button(src.btn_axis_up, dst.dpad_up);
+        map_button(src.btn_axis_down, dst.dpad_down);
+        map_button(src.btn_axis_left, dst.dpad_left);
+        map_button(src.btn_axis_right, dst.dpad_right);
 
         /*
         Iconic Arcade

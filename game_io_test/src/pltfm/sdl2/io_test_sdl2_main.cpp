@@ -61,7 +61,7 @@ namespace mn
 }
 
 
-bool create_window()
+bool create_window(Vec2Du32 game_dims)
 {
 #include "../../../../res/icon/icon_64.cpp"
     window::Icon64 icon{};
@@ -74,14 +74,19 @@ bool create_window()
 
 #ifndef APP_FULLSCREEN
 
-    if (!window::create(mn::window, game::APP_TITLE, WINDOW_WIDTH, WINDOW_HEIGHT, icon))
+    Vec2Du32 window_dims = {
+        game_dims.x > WINDOW_WIDTH ? game_dims.x : WINDOW_WIDTH,
+        game_dims.y > WINDOW_HEIGHT ? game_dims.y : WINDOW_HEIGHT
+    };
+
+    if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims))
     {
         return false;
     }
 
 #else
 
-    if (!window::create_fullscreen(mn::window, game::APP_TITLE, icon))
+    if (!window::create_fullscreen(mn::window, game::APP_TITLE, game_dims, icon))
     {
         return false;
     }
@@ -98,8 +103,8 @@ img::ImageView make_window_view()
 
     img::ImageView view{};
     view.matrix_data_ = (img::Pixel*)mn::window.pixel_buffer;
-    view.width = mn::window.width;
-    view.height = mn::window.height;
+    view.width = mn::window.width_px;
+    view.height = mn::window.height_px;
 
     return view;
 }
@@ -136,10 +141,10 @@ static bool main_init()
         return false;
     }
 
-    if (!create_window())
+    if (!create_window(result.screen_dimensions))
     {
         return false;
-    }    
+    }
 
     if (!game::set_screen_memory(mn::app_state, make_window_view()))
     {
