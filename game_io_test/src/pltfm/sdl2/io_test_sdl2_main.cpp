@@ -146,14 +146,10 @@ static bool main_init()
         return false;
     }
 
-    printf("3\n");
-
     if (!game::set_screen_memory(mn::app_state, make_window_view()))
     {
         return false;
     }
-
-    printf("4\n");
 
     return true;
 }

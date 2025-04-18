@@ -1109,10 +1109,10 @@ namespace input
             return false;
         }
 
+        sdl::open_gamepad_device(sdl::gamepad, input);        
+
         reset_input_state(input.pre());
         reset_input_state(input.cur());
-
-        sdl::open_gamepad_device(sdl::gamepad, input);
 
         return true;
     }
