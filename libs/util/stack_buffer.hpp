@@ -1,6 +1,9 @@
 #pragma once
 
-#include "types.hpp"
+#include <cassert>
+#include <cstddef>
+
+using u32 = unsigned;
 
 
 template <class T, u32 N>

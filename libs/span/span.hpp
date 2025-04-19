@@ -345,7 +345,7 @@ namespace span
 class StringView
 {
 public:
-    char* begin = 0;
+    char* data = 0;
     u32 capacity = 0;
     u32 length = 0;
 };
@@ -379,7 +379,7 @@ namespace span
 
     inline cstr to_cstr(StringView const& view)
     {
-        return (cstr)view.begin;
+        return (cstr)view.data;
     }
 
 
@@ -387,7 +387,7 @@ namespace span
     {
         StringView view{};
 
-        view.begin = (char*)text;
+        view.data = (char*)text;
         view.capacity = strlen(text);
         view.length = view.capacity;
 
@@ -399,7 +399,7 @@ namespace span
     {
         view.length = 0;
 
-        fill_u8((u8*)view.begin, 0, view.capacity);
+        fill_u8((u8*)view.data, 0, view.capacity);
     }
 
 
@@ -410,7 +410,7 @@ namespace span
         auto data = mb::push_elements(buffer, capacity);
         if (data)
         {
-            view.begin = (char*)data;
+            view.data = (char*)data;
             view.capacity = capacity;
             view.length = 0;
             
@@ -425,7 +425,7 @@ namespace span
     {
         StringView view{};
 
-        view.begin = buffer;
+        view.data = buffer;
         view.capacity = capacity;
         view.length = 0;
 
@@ -439,7 +439,7 @@ namespace span
 
         for (u32 i = 0; i < view.capacity; i++)
         {
-            if (!view.begin[i])
+            if (!view.data[i])
             {
                 view.length = i;
                 return;
@@ -451,9 +451,56 @@ namespace span
     template <typename... VA_ARGS>
     inline void sprintf(StringView& view, cstr fmt, VA_ARGS... va_args)
     {
-        view.length = (u32)stb::qsnprintf(view.begin, (int)view.capacity, fmt, va_args...);
+        view.length = (u32)stb::qsnprintf(view.data, (int)view.capacity, fmt, va_args...);
     }
 
 }
 
 #endif // SPAN_STRING
+
+
+namespace span
+{
+    template <typename T>
+    using SV = SpanView<T>;
+
+    using SVf64 = SpanView<f64>;
+    using SVf32 = SpanView<f32>;
+
+
+    void fma(SVf64 const& src_a, SVf64 const& src_b, SVf64 const& src_c, SVf64 const& dst);
+
+    void fmaf(SVf32 const& src_a, SVf32 const& src_b, SVf32 const& src_c, SVf32 const& dst);
+
+    void clamp(SVf32 const& values, f32 min, f32 max, SVf32 const& dst);
+
+    void sign(SVf32 const& values, SVf32 const& dst);
+
+    void round_to_unsigned(SVf32 const& values, SV<u8> const& dst);
+
+    void round_to_unsigned(SVf32 const& values, SV<u16> const& dst);
+
+    void round_to_unsigned(SVf32 const& values, SV<u32> const& dst);
+
+    void round_to_unsigned(SVf32 const& values, SV<u64> const& dst);
+
+    void round_to_signed(SVf32 const& values, SV<i32> const& dst);
+
+    void abs(SVf32 const& values, SVf32 const& dst);
+
+    void abs(SV<i32> const& values, SV<i32> const& dst);
+
+    void min(SVf32 const& src_a, SVf32 const& src_b, SVf32 const& dst);
+
+    void min(SV<i32> const& src_a, SV<i32> const& src_b, SV<i32> const& dst);
+
+    void min(SV<u32> const& src_a, SV<u32> const& src_b, SV<u32> const& dst);
+
+    void max(SVf32 const& src_a, SVf32 const& src_b, SVf32 const& dst);
+
+    void max(SV<i32> const& src_a, SV<i32> const& src_b, SV<i32> const& dst);
+
+    void max(SV<u32> const& src_a, SV<u32> const& src_b, SV<u32> const& dst);
+
+    void floor(SVf32 const& values, SVf32 const& dst);
+}

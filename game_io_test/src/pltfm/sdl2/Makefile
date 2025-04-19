@@ -42,8 +42,6 @@ numeric_h += $(types_h)
 
 stopwatch_h := $(util)/stopwatch.hpp
 
-memory_buffer := $(util)/memory_buffer.hpp
-
 #************
 
 

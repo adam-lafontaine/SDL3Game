@@ -650,9 +650,7 @@ namespace numeric
 
         return cxpr::round_to_unsigned<T>(value);
 
-    #endif
-
-        
+    #endif        
     }
 
 
@@ -663,7 +661,7 @@ namespace numeric
 
     #ifdef NUMERIC_CMATH
 
-        return (T)((u64)std::roundf(value));
+        return (T)((u64)std::round(value));
 
     #else
 
@@ -678,7 +676,15 @@ namespace numeric
     {
         static_assert(!is_unsigned<T>());
 
+    #ifdef NUMERIC_CMATH
+
+        return (T)std::llround(value);
+
+    #else
+
         return (T)fmaf(sign<f32, f32>(value), 0.5f, value);
+
+    #endif
     }
 
 
@@ -687,7 +693,15 @@ namespace numeric
     {
         static_assert(!is_unsigned<T>());
 
+    #ifdef NUMERIC_CMATH
+
+        return (T)std::llround(value);
+
+    #else
+
         return (T)fma(sign<f64, f64>(value), 0.5, value);
+
+    #endif        
     }
 
 

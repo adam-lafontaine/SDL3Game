@@ -1,9 +1,10 @@
 #pragma once
 
 #include "alloc_type.hpp"
+#include "../span/span.hpp"
 
 #include <cstdlib>
-
+#include <cassert>
 
 //#define LOG_ALLOC_TYPE
 
@@ -45,12 +46,12 @@ namespace mem
     {
         alloc_type_log("alloc_memory(%u, %u, %s)\n", n_elements, element_size, tag);
 
-#if defined _WIN32
+#if defined _WIN32 || defined __EMSCRIPTEN__
 
         return std::malloc(n_elements * element_size);
 
 #else
-        size_t alignment = 1;
+        u32 alignment = 1;
 
         switch (element_size)
         {
@@ -96,9 +97,9 @@ namespace mem
 
 #else
 
-#include "../span/span.hpp"
-
 #include <vector>
+
+
 template <typename T>
 using List = std::vector<T>;
 
@@ -121,7 +122,7 @@ namespace counts
     }
 
 
-    template <size_t MAX_ALLOC>
+    template <u32 MAX_ALLOC>
     class AllocLog
     {
     public:
@@ -144,7 +145,7 @@ namespace counts
     };
 
 
-    template <size_t ELE_SZ, size_t MAX_ALLOC>
+    template <u32 ELE_SZ, u32 MAX_ALLOC>
     class AllocCounts
     {
     public:
@@ -166,7 +167,7 @@ namespace counts
     };
 
 
-    template <size_t ELE_SZ, size_t MAX_ALLOC>
+    template <u32 ELE_SZ, u32 MAX_ALLOC>
     static void update_element_counts(AllocCounts<ELE_SZ, MAX_ALLOC>& ac, u32 slot)
     {
         ac.elements_allocated = ac.bytes_allocated / ac.element_size;
@@ -177,7 +178,7 @@ namespace counts
 
 namespace counts
 {
-    template <size_t ELE_SZ, size_t MAX_ALLOC>
+    template <u32 ELE_SZ, u32 MAX_ALLOC>
     static void log_alloc(AllocCounts<ELE_SZ, MAX_ALLOC>& ac, cstr action, u32 slot)
     {
         ac.log.tags.push_back(ac.tags[slot]);
@@ -200,23 +201,17 @@ namespace counts
         for (;ac.keys[i] && i < ac.max_allocations; i++)
         { }
 
-        assert(i < ac.max_allocations && "Allocation limit reached");
+        assert(i < ac.max_allocations && "*** Allocation limit reached ***");
+
         if (i >= ac.max_allocations || ac.keys[i])
         {
             alloc_type_log("Allocation limit reached (%u)\n", ac.element_size);
             return 0;
         }
 
-        size_t const n_bytes = n_elements * ac.element_size;
+        u32 const n_bytes = n_elements * ac.element_size;
 
-        void* data = 0;
-
-        #if defined _WIN32
-        data = std::malloc(n_bytes);
-        #else
-        data = std::aligned_alloc(ac.element_size, n_bytes);
-        #endif
-        
+        auto data = std::aligned_alloc(ac.element_size, n_bytes);
         assert(data && "Allocation failed");
         if (!data)
         {
@@ -290,14 +285,15 @@ namespace counts
         for (;ac.keys[i] && i < ac.max_allocations; i++)
         { }
 
-        assert(i < ac.max_allocations && "Allocation limit reached");
+        assert(i < ac.max_allocations && "*** Allocation limit reached ***");
+
         if (i >= ac.max_allocations || ac.keys[i])
         {
             alloc_type_log("Allocation limit reached (%u)\n", ac.element_size);
             return;
         }
 
-        size_t const n_bytes = n_elements * ac.element_size;
+        u32 const n_bytes = n_elements * ac.element_size;
 
         ac.bytes_allocated += n_bytes;
         ac.keys[i] = ptr;
@@ -347,10 +343,10 @@ namespace counts
 
 namespace mem
 {
-    using Counts_8 = counts::AllocCounts<1, 20>;
-    using Counts_16 = counts::AllocCounts<2, 10>;
-    using Counts_32 = counts::AllocCounts<4, 20>;
-    using Counts_64 = counts::AllocCounts<8, 10>;
+    using Counts_8 = counts::AllocCounts<1, 50>;
+    using Counts_16 = counts::AllocCounts<2, 50>;
+    using Counts_32 = counts::AllocCounts<4, 50>;
+    using Counts_64 = counts::AllocCounts<8, 50>;
     
 
     Counts_8 alloc_8{};
@@ -477,9 +473,9 @@ namespace mem
     static cstr get_file_name(cstr full_path)
     {
         auto str = span::to_string_view(full_path);
-        auto c = str.begin + str.length;
+        auto c = str.data + str.length;
 
-        for (; c >= str.begin && *c != '/'; c--)
+        for (; c >= str.data && *c != '/'; c--)
         { }
 
         //return (cstr)(c + 1); // no leading '/'
@@ -558,7 +554,7 @@ namespace mem
 
 namespace mem
 {
-    template <size_t ELE_SZ, size_t MAX_ALLOC>
+    template <u32 ELE_SZ, u32 MAX_ALLOC>
     static void set_status(counts::AllocCounts<ELE_SZ, MAX_ALLOC> const& src, AllocationStatus& dst)
     {
         dst.type_name = src.type_name;
@@ -582,7 +578,7 @@ namespace mem
     }
 
 
-    template <size_t ELE_SZ, size_t MAX_ALLOC>
+    template <u32 ELE_SZ, u32 MAX_ALLOC>
     static void set_history(counts::AllocCounts<ELE_SZ, MAX_ALLOC> const& src, AllocationHistory& dst)
     {
         dst.type_name = src.type_name;

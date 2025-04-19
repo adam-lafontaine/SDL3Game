@@ -45,7 +45,7 @@ namespace
 
         for (u32 i = 0; i < text.length; i++)
         {
-            auto id = text.begin[i] - ' ';
+            auto id = text.data[i] - ' ';
             width += (u32)ascii.widths[id];
         }
 
@@ -168,7 +168,7 @@ namespace ascii
 
         for (u32 i = 0; i < text.length && w_remaining > 0; i++)
         {
-            auto mask = mask_fn(text.begin[i]);
+            auto mask = mask_fn(text.data[i]);
 
             width = num::min(mask.width, (u32)w_remaining);
             d_range.x_end += width;
@@ -208,7 +208,7 @@ namespace ascii
 
         for (u32 i = 0; i < text.length && w_remaining > 0; i++)
         {
-            auto mask = mask_fn(text.begin[i]);
+            auto mask = mask_fn(text.data[i]);
 
             s_width = num::min(mask.width, (u32)w_remaining / scale);
             d_width = s_width * scale;

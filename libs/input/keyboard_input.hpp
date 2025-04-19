@@ -21,7 +21,7 @@
 #define KEYBOARD_O 0
 #define KEYBOARD_P 1
 #define KEYBOARD_Q 0
-#define KEYBOARD_R 0
+#define KEYBOARD_R 1
 #define KEYBOARD_S 1
 #define KEYBOARD_T 0
 #define KEYBOARD_U 0

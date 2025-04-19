@@ -53,4 +53,8 @@ namespace window
     bool resize_pixel_buffer(Window& window, u32 width, u32 height);
 
     void render(Window const& window, b32 size_changed = 0);
+
+    void hide_mouse_cursor();
+
+    void show_mouse_cursor();
 }
