@@ -34,9 +34,9 @@ namespace assets
     static cstr get_file_name(cstr full_path)
     {
         auto str = span::to_string_view(full_path);
-        auto c = str.begin + str.length;
+        auto c = str.data + str.length;
 
-        for (; c >= str.begin && *c != '/'; c--)
+        for (; c >= str.data && *c != '/'; c--)
         { }
 
         //return (cstr)(c + 1); // no leading '/'

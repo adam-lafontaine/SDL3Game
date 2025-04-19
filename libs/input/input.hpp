@@ -530,11 +530,16 @@ namespace input
 
 namespace input
 {
+	typedef void (*event_cb)(void *event);
+
+
 	bool init(InputArray& input);
 
 	void close();
 
 	void record_input(InputArray& input);
+
+	void record_input(InputArray& input, event_cb handle_event);
 
 	void end_program(); // define in main.cpp
 

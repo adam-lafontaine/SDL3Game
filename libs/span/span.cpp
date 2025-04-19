@@ -3,17 +3,19 @@
 #include "span.hpp"
 
 #ifdef __AVX__
-#define SPAN_SIMD_128
+#define SPAN_SIMD_AVX_128
 #endif
 
 #ifdef __AVX2__
-#define SPAN_SIMD_128
-#define SPAN_SIMD_256
+#define SPAN_SIMD_AVX_128
+#define SPAN_SIMD_AVX_256
 #endif
 
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+#define SPAN_SIMD_NEON_128
+#endif
 
-
-#ifdef SPAN_SIMD_128
+#ifdef SPAN_SIMD_AVX_128
 #include <immintrin.h>
 
 /* defines */
@@ -22,13 +24,17 @@ namespace span
 {
     using i128 = __m128i;
 
-#ifdef SPAN_SIMD_256
+#ifdef SPAN_SIMD_AVX_256
     using i256 = __m256i;
 #endif
 }
 
 #endif
 
+
+#ifdef SPAN_SIMD_NEON_128
+#include <arm_neon.h>
+#endif
 
 /* defines */
 
@@ -48,24 +54,44 @@ namespace span
 
 namespace span
 {
+    static inline void bit_copy_u8_64(u8* src, u8* dst)
+    {
+        dst[0] = src[0];
+        dst[1] = src[1];
+        dst[2] = src[2];
+        dst[3] = src[3];
+        dst[4] = src[4];
+        dst[5] = src[5];
+        dst[6] = src[6];
+        dst[7] = src[7];
+    }
+
+
     static inline void bit_copy_128(u8* src, u8* dst)
     {
-        #ifdef SPAN_SIMD_128
+        #ifdef SPAN_SIMD_AVX_128
         _mm_storeu_si128((i128*)dst, _mm_loadu_si128((i128*)src));
+
+        #elif defined(SPAN_SIMD_NEON_128)
+        vst1q_u8(dst, vld1q_u8(src));
+
         #else
-        ((u64*)dst)[0] = ((u64*)src)[0];
-        ((u64*)dst)[1] = ((u64*)src)[1];
+        bit_copy_u8_64(src, dst);
+        bit_copy_u8_64(src + size64, dst + size64);
+
         #endif
     }
 
 
     static inline void bit_copy_256(u8* src, u8* dst)
     {
-        #ifdef SPAN_SIMD_256
+        #ifdef SPAN_SIMD_AVX_256
         _mm256_storeu_si256((i256*)dst, _mm256_loadu_si256((i256*)src));
+
         #else
         bit_copy_128(src, dst);
         bit_copy_128(src + size128, dst + size128);
+
         #endif
     }
 }
@@ -75,8 +101,6 @@ namespace span
 
 namespace span
 {
-#ifndef SPAN_SIMD_128
-
     static inline void bit_fill_u8_64(u8* dst, u8 value)
     {
         dst[0] = value;
@@ -89,23 +113,26 @@ namespace span
         dst[7] = value;
     }
 
-#endif
-
 
     static inline void bit_fill_u8_128(u8* dst, u8 value)
     {
-        #ifdef SPAN_SIMD_128
+        #ifdef SPAN_SIMD_AVX_128
         _mm_storeu_si128((i128*)dst, _mm_set1_epi8(value));
+
+        #elif defined(SPAN_SIMD_NEON_128)
+        vst1q_u8(dst, vdupq_n_u8(value));
+
         #else
         bit_fill_u8_64(dst, value);
         bit_fill_u8_64(dst + size64, value);
+
         #endif
     }
 
 
     static inline void bit_fill_u8_256(u8* dst, u8 value)
     {
-        #ifdef SPAN_SIMD_256
+        #ifdef SPAN_SIMD_AVX_256
         _mm256_storeu_si256((i256*)dst, _mm256_set1_epi8(value));
         #else
         bit_fill_u8_128(dst, value);
@@ -114,10 +141,14 @@ namespace span
     }
 
 
-    static inline void bit_fill_i32_128(u8* dst, i32 value)
+    static inline void bit_fill_u32_128(u8* dst, u32 value)
     {
-        #ifdef SPAN_SIMD_128
+        #ifdef SPAN_SIMD_AVX_128
         _mm_storeu_si128((i128*)dst, _mm_set1_epi32(value));
+
+        #elif defined(SPAN_SIMD_NEON_128)
+        vst1q_u32((u32*)dst, vdupq_n_u32(value));
+
         #else
         ((i32*)dst)[0] = value;
         ((i32*)dst)[1] = value;
@@ -127,13 +158,13 @@ namespace span
     }
 
 
-    static inline void bit_fill_i32_256(u8* dst, i32 value)
+    static inline void bit_fill_u32_256(u8* dst, u32 value)
     {
-        #ifdef SPAN_SIMD_256
+        #ifdef SPAN_SIMD_AVX_256
         _mm256_storeu_si256((i256*)dst, _mm256_set1_epi32(value));
         #else
-        bit_fill_i32_128(dst, value);
-        bit_fill_i32_128(dst + size128, value);
+        bit_fill_u32_128(dst, value);
+        bit_fill_u32_128(dst + size128, value);
         #endif
     }
     
@@ -230,18 +261,17 @@ namespace span
     }
 
 
-    static inline void bit_fill_i32_512(u8* dst, i32 value)
-    {
-        
-        bit_fill_i32_256(dst, value);
-        bit_fill_i32_256(dst + size256, value);
+    static inline void bit_fill_u32_512(u8* dst, u32 value)
+    {              
+        bit_fill_u32_256(dst, value);
+        bit_fill_u32_256(dst + size256, value);
     }
 
 
-    static inline void bit_fill_i32_1024(u8* dst, u32 value)
+    static inline void bit_fill_u32_1024(u8* dst, u32 value)
     {
-        bit_fill_i32_512(dst, value);
-        bit_fill_i32_512(dst + size512, value);
+        bit_fill_u32_512(dst, value);
+        bit_fill_u32_512(dst + size512, value);
     }
 }
 
@@ -535,8 +565,6 @@ namespace span
 
     static void fill_u32_128(u32* dst, u32 value, u64 len_u32)
     {
-        auto const ival = *((int*)(&value));
-
         auto const len_u8 = len_u32 * size32;
         auto const n128 = len_u8 / size128;
         auto const end128 = n128 * size128;        
@@ -547,18 +575,16 @@ namespace span
 
         for (; i < end128; i += size128)
         {
-            bit_fill_i32_128(d8 + i, ival);
+            bit_fill_u32_128(d8 + i, value);
         }
 
         i = len_u8 - size128;
-        bit_fill_i32_128(d8 + i, ival);
+        bit_fill_u32_128(d8 + i, value);
     }
 
 
     static void fill_u32_256(u32* dst, u32 value, u64 len_u32)
     {
-        auto const ival = *((int*)(&value));
-
         auto const len_u8 = len_u32 * size32;
         auto const n256 = len_u8 / size256;
         auto const end256 = n256 * size256;
@@ -569,18 +595,16 @@ namespace span
 
         for (; i < end256; i += size256)
         {
-            bit_fill_i32_256(d8 + i, ival);
+            bit_fill_u32_256(d8 + i, value);
         }
 
         i = len_u8 - size256;
-        bit_fill_i32_256(d8 + i, ival);
+        bit_fill_u32_256(d8 + i, value);
     }
 
 
     static void fill_u32_512(u32* dst, u32 value, u64 len_u32)
     {
-        auto const ival = *((int*)(&value));
-
         auto const len_u8 = len_u32 * size32;
         auto const n512 = len_u8 / size512;
         auto const end512 = n512 * size512;
@@ -591,18 +615,16 @@ namespace span
 
         for (; i < end512; i += size512)
         {
-            bit_fill_i32_512(d8 + i, ival);
+            bit_fill_u32_512(d8 + i, value);
         }
 
         i = len_u8 - size512;
-        bit_fill_i32_512(d8 + i, ival);
+        bit_fill_u32_512(d8 + i, value);
     }
 
 
     static void fill_u32_1024(u32* dst, u32 value, u64 len_u32)
     {
-        auto const ival = *((int*)(&value));
-
         auto const len_u8 = len_u32 * size32;
         auto const n1024 = len_u8 / size1024;
         auto const end1024 = n1024 * size1024;
@@ -613,11 +635,11 @@ namespace span
 
         for (; i < end1024; i += size1024)
         {
-            bit_fill_i32_1024(d8 + i, ival);
+            bit_fill_u32_1024(d8 + i, value);
         }
 
         i = len_u8 - size1024;
-        bit_fill_i32_1024(d8 + i, ival);
+        bit_fill_u32_1024(d8 + i, value);
     }
 
 }

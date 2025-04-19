@@ -214,40 +214,6 @@ namespace sdl
     }
 
 
-    static void set_window_icon(SDL_Window* window, window::Icon64 const& icon_64)
-    {
-        static_assert(window::PIXEL_SIZE == window::Icon64::bytes_per_pixel);
-
-        // these masks are needed to tell SDL_CreateRGBSurface(From)
-        // to assume the data it gets is byte-wise RGB(A) data
-        Uint32 rmask, gmask, bmask, amask;
-    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        int shift = (icon_64.bytes_per_pixel == 3) ? 8 : 0;
-        rmask = 0xff000000 >> shift;
-        gmask = 0x00ff0000 >> shift;
-        bmask = 0x0000ff00 >> shift;
-        amask = 0x000000ff >> shift;
-    #else // little endian, like x86
-        rmask = 0x000000ff;
-        gmask = 0x0000ff00;
-        bmask = 0x00ff0000;
-        amask = (icon_64.bytes_per_pixel == 3) ? 0 : 0xff000000;
-    #endif
-
-        SDL_Surface* icon = SDL_CreateRGBSurfaceFrom(
-            (void*)icon_64.pixel_data,
-            icon_64.width,
-            icon_64.height,
-            icon_64.bytes_per_pixel * 8,
-            icon_64.bytes_per_pixel * icon_64.width,
-            rmask, gmask, bmask, amask);
-
-        SDL_SetWindowIcon(window, icon);
-
-        SDL_FreeSurface(icon);
-    }
-
-
     static void set_out_rect(ScreenMemory& screen)
     {
         SDL_SetRenderDrawColor(screen.renderer, 0, 0, 0, 255); // Black background
@@ -260,7 +226,7 @@ namespace sdl
         auto scale_w = (f32)width / screen.width_px;
         auto scale_h = (f32)height / screen.height_px;
 
-        auto scale = scale_w < scale_h ? scale_w : scale_h;
+        auto scale = num::min(scale_w, scale_h);
 
         auto& r = screen.render_rect;
 
@@ -330,6 +296,14 @@ namespace window
     {
         return *(sdl::ScreenMemory*)window.handle;
     }
+    
+
+    static void set_window_icon_64(sdl::ScreenMemory& screen, window::Icon64 const& icon_64)
+    {
+        static_assert(window::PIXEL_SIZE == window::Icon64::bytes_per_pixel);
+
+        sdl::set_window_icon(screen.window, icon_64);
+    }
 }
 
 
@@ -394,7 +368,7 @@ namespace window
         }
 
         auto& screen = get_screen(window);
-        sdl::set_window_icon(screen.window, icon);
+        set_window_icon_64(screen, icon);
 
         return true;
     }
@@ -438,7 +412,7 @@ namespace window
         }
 
         auto& screen = get_screen(window);
-        sdl::set_window_icon(screen.window, icon);
+        set_window_icon_64(screen, icon);
 
         return true;
     }
@@ -536,5 +510,17 @@ namespace window
         #endif
         
         SDL_RenderPresent(screen.renderer);
+    }
+
+
+    void hide_mouse_cursor()
+    {
+        SDL_ShowCursor(SDL_DISABLE);
+    }
+
+
+    void show_mouse_cursor()
+    {
+        SDL_ShowCursor(SDL_ENABLE);
     }
 }
