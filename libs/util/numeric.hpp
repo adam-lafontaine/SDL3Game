@@ -1,4 +1,5 @@
 #pragma once
+// 2025-06-10
 
 #include "types.hpp"
 
@@ -15,12 +16,27 @@
 
 namespace numeric
 {
+    template <typename T>
+    struct MinMax
+    {
+        T min;
+        T max;
+    };
+
+
 namespace cxpr
 {
     template <typename T>
     inline constexpr T min(T a, T b)
     {
         return a < b ? a : b;
+    }
+
+
+    template <typename T>
+    inline constexpr T min(T a, T b, T c)
+    {
+        return min(min(a, b), c);
     }
 
 
@@ -32,9 +48,33 @@ namespace cxpr
 
 
     template <typename T>
-    inline constexpr bool is_unsigned()
+    inline constexpr T max(T a, T b, T c)
     {
-        return (T)((T)0 - (T)1) > (T)0;
+        return max(max(a, b), c);
+    }
+
+
+    template <typename T>
+    inline constexpr MinMax<T> minmax(T a, T b)
+    {
+        MinMax<T> mm{};
+
+        mm.min = min(a, b);
+        mm.max = max(a, b);
+
+        return mm;
+    }
+
+
+    template <typename T>
+    inline constexpr MinMax<T> minmax(T a, T b, T c)
+    {
+        MinMax<T> mm{};
+
+        mm.min = min(a, b, c);
+        mm.max = max(a, b, c);
+
+        return mm;
     }
 
 
@@ -51,6 +91,34 @@ namespace cxpr
     {
         const T t = value < min ? (T)min : value;
         return t > max ? (T)max : t;
+    }
+
+
+    template <typename T, typename U>
+    inline constexpr T clamp(T value, MinMax<U> minmax)
+    {
+        auto min = minmax.min;
+        auto max = minmax.max;
+
+        const T t = value < min ? (T)min : value;
+        return t > max ? (T)max : t;
+    }
+
+
+    template <typename R, typename T>
+    inline constexpr R lerp(T val, MinMax<T> mm_val, MinMax<R> mm_res)
+    {
+        f64 v = mm_val.max - mm_val.min;
+        f64 r = mm_res.max - mm_res.min;
+
+        return mm_val.min + (T)(r * val / v);
+    }
+
+
+    template <typename T>
+    inline constexpr bool is_unsigned()
+    {
+        return (T)((T)0 - (T)1) > (T)0;
     }
 
 
@@ -202,7 +270,6 @@ namespace cxpr
     {
         return (num && !(num & (num - 1)));
     }
-
 }
 
 
@@ -580,39 +647,151 @@ namespace numeric
 
 
     template <typename T>
+    inline constexpr T min(T a, T b, T c)
+    {
+        return cxpr::min(a, b, c);
+    }
+
+
+    template <typename T>
     inline constexpr T max(T a, T b)
     {
         return cxpr::max(a, b);
     }
 
 
+    template <typename T>
+    inline constexpr T max(T a, T b, T c)
+    {
+        return cxpr::max(a, b, c);
+    }
+
+
     inline f32 min(f32 a, f32 b)
     {
-#ifdef NUMERIC_SIMD_128
+    #ifdef NUMERIC_SIMD_128
         auto a128 = to_128(a);
         auto b128 = to_128(b);
 
         auto res = _mm_min_ss(a128, b128);
 
         return to_f32(res);
-#else
+    #else
         return cxpr::min(a, b);
-#endif
+    #endif
+    }
+
+
+    inline f32 min(f32 a, f32 b, f32 c)
+    {
+    #ifdef NUMERIC_SIMD_128
+        auto a128 = to_128(a);
+        auto b128 = to_128(b);
+        auto c128 = to_128(c);
+
+        auto res = _mm_min_ss(a128, b128);
+        res = _mm_min_ss(res, c128);
+
+        return to_f32(res);
+    #else
+        return cxpr::min(a, b, c);
+    #endif
     }
 
 
     inline f64 min(f64 a, f64 b)
     {
-#ifdef NUMERIC_SIMD_128
+    #ifdef NUMERIC_SIMD_128
         auto a128 = to_128(a);
         auto b128 = to_128(b);
 
         auto res = _mm_min_sd(a128, b128);
 
         return to_f64(res);
-#else
+    #else
         return cxpr::min(a, b);
-#endif
+    #endif
+    }
+
+
+    inline f64 min(f64 a, f64 b, f64 c)
+    {
+    #ifdef NUMERIC_SIMD_128
+        auto a128 = to_128(a);
+        auto b128 = to_128(b);
+        auto c128 = to_128(c);
+
+        auto res = _mm_min_sd(a128, b128);
+        res = _mm_min_sd(res, c128);
+
+        return to_f64(res);
+    #else
+        return cxpr::min(a, b, c);
+    #endif
+    }
+
+
+    inline f32 max(f32 a, f32 b)
+    {
+    #ifdef NUMERIC_SIMD_128
+        auto a128 = to_128(a);
+        auto b128 = to_128(b);
+
+        auto res = _mm_max_ss(a128, b128);
+
+        return to_f32(res);
+    #else
+        return cxpr::max(a, b);
+    #endif
+    }
+
+
+    inline f32 max(f32 a, f32 b, f32 c)
+    {
+    #ifdef NUMERIC_SIMD_128
+        auto a128 = to_128(a);
+        auto b128 = to_128(b);
+        auto c128 = to_128(c);
+
+        auto res = _mm_max_ss(a128, b128);
+        res = _mm_max_ss(res, c128);
+
+        return to_f32(res);
+    #else
+        return cxpr::max(a, b, c);
+    #endif
+    }
+
+
+    inline f64 max(f64 a, f64 b)
+    {
+    #ifdef NUMERIC_SIMD_128
+        auto a128 = to_128(a);
+        auto b128 = to_128(b);
+
+        auto res = _mm_max_sd(a128, b128);
+
+        return to_f64(res);
+    #else
+        return cxpr::max(a, b);
+    #endif
+    }
+
+
+    inline f64 max(f64 a, f64 b, f64 c)
+    {
+    #ifdef NUMERIC_SIMD_128
+        auto a128 = to_128(a);
+        auto b128 = to_128(b);
+        auto c128 = to_128(c);
+
+        auto res = _mm_max_sd(a128, b128);
+        res = _mm_max_sd(res, c128);
+
+        return to_f64(res);
+    #else
+        return cxpr::max(a, b, c);
+    #endif
     }
 
 
@@ -627,6 +806,20 @@ namespace numeric
     inline constexpr T clamp(T value, U min, U max)
     {
         return cxpr::clamp(value, min, max);
+    }
+
+
+    template <typename T, typename U>
+    inline constexpr T clamp(T value, MinMax<U> minmax)
+    {
+        return cxpr::clamp(value, minmax);
+    }
+
+
+    template <typename R, typename T>
+    inline constexpr R lerp(T val, MinMax<T> mm_val, MinMax<R> mm_res)
+    {
+        return cxpr::lerp(val, mm_val, mm_res);
     }
 
 
