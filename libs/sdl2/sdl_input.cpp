@@ -7,6 +7,9 @@
 namespace num = numeric;
 
 
+void end_program();
+
+
 /* gamepad device */
 
 namespace sdl
