@@ -1,13 +1,10 @@
-#pragma once
-
 #include "../input/input_state.hpp"
 #include "../util/numeric.hpp"
 #include "sdl_include.hpp"
 
+
 namespace num = numeric;
 
-
-void end_program();
 
 /* helpers */
 
@@ -53,6 +50,8 @@ namespace sdl
         unit.y *= i_mag;
     }
 }
+
+
 
 
 #include "sdl_joystick.cpp"

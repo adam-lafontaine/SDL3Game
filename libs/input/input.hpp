@@ -3,7 +3,7 @@
 #include "../util/types.hpp"
 #include "keyboard_input.hpp"
 #include "mouse_input.hpp"
-#include "controller_input.hpp"
+#include "gamepad_input.hpp"
 #include "joystick_input.hpp"
 
 
@@ -36,7 +36,7 @@ namespace input
 
 		union
 		{
-			Vec2Df32 unit_direction;
+			Vec2Df32 unit;
 
 			struct
 			{
@@ -300,11 +300,11 @@ namespace input
 }
 
 
-/* controller */
+/* gamepad */
 
 namespace input
 {
-    class ControllerInput
+    class GamepadInput
     {
     public:
 
@@ -312,68 +312,68 @@ namespace input
 	
         union
         {
-            ButtonState buttons[N_CONTROLLER_BUTTONS];
+            ButtonState buttons[N_GAMEPAD_BUTTONS];
 
             struct
             {
-			#if CONTROLLER_BTN_DPAD_UP
+			#if GAMEPAD_BTN_DPAD_UP
                 ButtonState btn_dpad_up;
 			#endif
-			#if CONTROLLER_BTN_DPAD_DOWN
+			#if GAMEPAD_BTN_DPAD_DOWN
                 ButtonState btn_dpad_down;
 			#endif
-			#if CONTROLLER_BTN_DPAD_LEFT
+			#if GAMEPAD_BTN_DPAD_LEFT
                 ButtonState btn_dpad_left;
 			#endif
-			#if CONTROLLER_BTN_DPAD_RIGHT
+			#if GAMEPAD_BTN_DPAD_RIGHT
                 ButtonState btn_dpad_right;
 			#endif
-			#if CONTROLLER_BTN_START
+			#if GAMEPAD_BTN_START
                 ButtonState btn_start;
 			#endif
-			#if CONTROLLER_BTN_BACK
+			#if GAMEPAD_BTN_BACK
                 ButtonState btn_back;
 			#endif
-			#if CONTROLLER_BTN_A
-                ButtonState btn_a;
+			#if GAMEPAD_BTN_SOUTH
+                ButtonState btn_south;
 			#endif
-			#if CONTROLLER_BTN_B
-                ButtonState btn_b;
+			#if GAMEPAD_BTN_EAST
+                ButtonState btn_east;
 			#endif
-			#if CONTROLLER_BTN_X
-                ButtonState btn_x;
+			#if GAMEPAD_BTN_WEST
+                ButtonState btn_west;
 			#endif
-			#if CONTROLLER_BTN_Y
-                ButtonState btn_y;
+			#if GAMEPAD_BTN_NORTH
+                ButtonState btn_north;
 			#endif
-			#if CONTROLLER_BTN_SHOULDER_LEFT
+			#if GAMEPAD_BTN_SHOULDER_LEFT
                 ButtonState btn_shoulder_left;
 			#endif
-			#if CONTROLLER_BTN_SHOULDER_RIGHT
+			#if GAMEPAD_BTN_SHOULDER_RIGHT
                 ButtonState btn_shoulder_right;
 			#endif
-			#if CONTROLLER_BTN_STICK_LEFT
+			#if GAMEPAD_BTN_STICK_LEFT
                 ButtonState btn_stick_left;
 			#endif
-			#if CONTROLLER_BTN_STICK_RIGHT
+			#if GAMEPAD_BTN_STICK_RIGHT
                 ButtonState btn_stick_right;
 			#endif
             };            
         };
 
-	#if CONTROLLER_AXIS_STICK_LEFT
+	#if GAMEPAD_AXIS_STICK_LEFT
         VectorState<f32> stick_left;
 	#endif
-	#if CONTROLLER_AXIS_STICK_RIGHT
+	#if GAMEPAD_AXIS_STICK_RIGHT
         VectorState<f32> stick_right;
 	#endif
-	#if CONTROLLER_TRIGGER_LEFT
+	#if GAMEPAD_TRIGGER_LEFT
         f32 trigger_left;
 	#endif
-	#if CONTROLLER_TRIGGER_RIGHT
+	#if GAMEPAD_TRIGGER_RIGHT
         f32 trigger_right;
 	#endif
-	#if CONTROLLER_BTN_DPAD_ALL
+	#if GAMEPAD_BTN_DPAD_ALL
 		VectorState<i8> vec_dpad;
 	#endif	
 
@@ -427,19 +427,35 @@ namespace input
 			#if JOYSTICK_BTN_9
 				ButtonState btn_9;
 			#endif
-
-			#if JOYSTICK_BTN_AXIS
-
-				ButtonState btn_axis_up;
-				ButtonState btn_axis_down;
-				ButtonState btn_axis_left;
-				ButtonState btn_axis_right;
-
-			#endif
 			};
 		};
 
-		VectorState<i8> vec_axis;	
+		union
+		{
+			f32 axes[N_JOYSTICK_AXES];
+
+			struct
+			{
+			#if JOYSTICK_AXIS_0
+				f32 axis_0;
+			#endif
+			#if JOYSTICK_AXIS_1
+				f32 axis_1;
+			#endif
+			#if JOYSTICK_AXIS_2
+				f32 axis_2;
+			#endif
+			#if JOYSTICK_AXIS_3
+				f32 axis_3;
+			#endif
+			#if JOYSTICK_AXIS_4
+				f32 axis_4;
+			#endif
+			#if JOYSTICK_AXIS_5
+				f32 axis_5;
+			#endif
+			};
+		};
 	};
 	
 }
@@ -449,10 +465,10 @@ namespace input
 
 namespace input
 {
-#ifdef SINGLE_CONTROLLER
-	constexpr u32 MAX_CONTROLLERS = 1;
+#ifdef SINGLE_GAMEPAD
+	constexpr u32 MAX_GAMEPADS = 1;
 #else
-	constexpr u32 MAX_CONTROLLERS = 4;
+	constexpr u32 MAX_GAMEPADS = 4;
 #endif
 
 
@@ -474,16 +490,16 @@ namespace input
 
 		b32 window_size_changed;
 		
-	#ifdef SINGLE_CONTROLLER
+	#ifdef SINGLE_GAMEPAD
 
 		union
 		{
-			ControllerInput controller;
-			ControllerInput controllers[MAX_CONTROLLERS];
+			GamepadInput gamepad;
+			GamepadInput gamepads[MAX_GAMEPADS];
 		};		
 		
 	#else
-		ControllerInput controllers[MAX_CONTROLLERS];		
+		GamepadInput gamepads[MAX_GAMEPADS];		
 	#endif
 
 
@@ -513,7 +529,7 @@ namespace input
 
 	public:	
 		
-		u32 n_controllers;
+		u32 n_gamepads;
 		u32 n_joysticks;
 
 		Input& pre() { return inputs[p]; }

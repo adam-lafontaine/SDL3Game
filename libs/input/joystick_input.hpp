@@ -12,10 +12,13 @@
 #define JOYSTICK_BTN_7 0
 #define JOYSTICK_BTN_8 1
 #define JOYSTICK_BTN_9 1
-#define JOYSTICK_BTN_AXIS 1
 
-#define JOYSTICK_AXIS_STICK_LEFT 1
-#define JOYSTICK_AXIS_STICK_RIGHT 1
+#define JOYSTICK_AXIS_0 1
+#define JOYSTICK_AXIS_1 1
+#define JOYSTICK_AXIS_2 1
+#define JOYSTICK_AXIS_3 1
+#define JOYSTICK_AXIS_4 1
+#define JOYSTICK_AXIS_5 1
 
 
 namespace input
@@ -30,6 +33,13 @@ namespace input
     JOYSTICK_BTN_6 +
     JOYSTICK_BTN_7 +
     JOYSTICK_BTN_8 +
-    JOYSTICK_BTN_9 +
-    JOYSTICK_BTN_AXIS * 4;
+    JOYSTICK_BTN_9;
+
+    constexpr unsigned N_JOYSTICK_AXES = 
+    JOYSTICK_AXIS_0 +
+    JOYSTICK_AXIS_1 +
+    JOYSTICK_AXIS_2 +
+    JOYSTICK_AXIS_3 +
+    JOYSTICK_AXIS_4 +
+    JOYSTICK_AXIS_5;
 }

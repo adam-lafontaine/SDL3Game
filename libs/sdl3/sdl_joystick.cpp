@@ -32,7 +32,7 @@ namespace sdl
     };
 
 
-    using GamepadDeviceArray = DeviceArray<GamepadDevice, input::MAX_CONTROLLERS>;
+    using GamepadDeviceArray = DeviceArray<GamepadDevice, input::MAX_GAMEPADS>;
     using JoystickDeviceArray = DeviceArray<JoystickDevice, input::MAX_JOYSTICKS>;
 
 
@@ -40,7 +40,6 @@ namespace sdl
     {
     public:
         GamepadDeviceArray gamepads;
-
         JoystickDeviceArray joysticks;
     };
 
@@ -98,7 +97,7 @@ namespace sdl
 {
     static void add_gamepad_device(GamepadDeviceArray& devices, SDL_JoystickID id, SDL_JoystickType type)
     {
-    #ifndef NO_CONTROLLER
+    #ifndef NO_GAMEPAD
 
         if (!SDL_IsGamepad(id))
         {
@@ -173,8 +172,6 @@ namespace sdl
             break;
         }
     }
-
-
     
 }
 
@@ -209,7 +206,36 @@ namespace sdl
     }
 
 
+    static i32 find_gamepad(SDL_JoystickID id)
+    {
+        auto& devices = input_devices.gamepads;
 
+        for (i32 i = 0; i < devices.capacity; i++)
+        {
+            if (id == devices.data[i].id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+
+    static i32 find_joystick(SDL_JoystickID id)
+    {
+        auto& devices = input_devices.joysticks;
+
+        for (i32 i = 0; i < devices.capacity; i++)
+        {
+            if (id == devices.data[i].id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }
 
 
@@ -223,95 +249,122 @@ namespace sdl
 
 #ifndef NO_JOYSTICK
 
-    void record_joystic_button_input(Uint8 btn_id, JoystickInput const& old_jsk, JoystickInput& new_jsk, bool is_down)
+    static void record_joystic_button_input(JoystickInput const& old_jsk, JoystickInput& new_jsk, Uint8 btn_id, bool is_down)
     {
+        input::ButtonState btn_old = {};
+        input::ButtonState* btn_new = 0;
+
         switch (btn_id)
         {
         #if JOYSTICK_BTN_0
         case 0:
-            input::record_button_input(old_jsk.btn_0, new_jsk.btn_0, is_down);
+            btn_old = old_jsk.btn_0;
+            btn_new = &new_jsk.btn_0;
             break;
         #endif
         #if JOYSTICK_BTN_1
         case 1:
-            input::record_button_input(old_jsk.btn_1, new_jsk.btn_1, is_down);
+            btn_old = old_jsk.btn_1;
+            btn_new = &new_jsk.btn_1;
             break;
         #endif
         #if JOYSTICK_BTN_2
         case 2:
-            input::record_button_input(old_jsk.btn_2, new_jsk.btn_2, is_down);
+            btn_old = old_jsk.btn_2;
+            btn_new = &new_jsk.btn_2;
             break;
         #endif
         #if JOYSTICK_BTN_3
         case 3:
-            input::record_button_input(old_jsk.btn_3, new_jsk.btn_3, is_down);
+            btn_old = old_jsk.btn_3;
+            btn_new = &new_jsk.btn_3;
             break;
         #endif
         #if JOYSTICK_BTN_4
         case 4:
-            input::record_button_input(old_jsk.btn_4, new_jsk.btn_4, is_down);
+            btn_old = old_jsk.btn_4;
+            btn_new = &new_jsk.btn_4;
             break;
         #endif
         #if JOYSTICK_BTN_5
         case 5:
-            input::record_button_input(old_jsk.btn_5, new_jsk.btn_5, is_down);
+            btn_old = old_jsk.btn_5;
+            btn_new = &new_jsk.btn_5;
             break;
         #endif
         #if JOYSTICK_BTN_6
         case 6:
-            input::record_button_input(old_jsk.btn_6, new_jsk.btn_6, is_down);
+            btn_old = old_jsk.btn_6;
+            btn_new = &new_jsk.btn_6;
             break;
         #endif
         #if JOYSTICK_BTN_7
         case 7:
-            input::record_button_input(old_jsk.btn_7, new_jsk.btn_7, is_down);
+            btn_old = old_jsk.btn_7;
+            btn_new = &new_jsk.btn_7;
             break;
         #endif
         #if JOYSTICK_BTN_8
         case 8:
-            input::record_button_input(old_jsk.btn_8, new_jsk.btn_8, is_down);
+            btn_old = old_jsk.btn_8;
+            btn_new = &new_jsk.btn_8;
             break;
         #endif
         #if JOYSTICK_BTN_9
         case 9:
-            input::record_button_input(old_jsk.btn_9, new_jsk.btn_9, is_down);
+            btn_old = old_jsk.btn_9;
+            btn_new = &new_jsk.btn_9;
             break;
         #endif
+
+        default: return;
         }
+
+        input::record_button_input(btn_old, *btn_new, is_down);
     }
 
 
-    static void record_joystick_axis_input(Uint8 axis_id, JoystickInput const& old_jsk, JoystickInput& new_jsk, Sint16 value)
+    static void record_joystick_axis_input(JoystickInput& jsk, Uint8 axis_id, Sint16 value)
     {
-        Sint16 x = 0;
-        Sint16 y = 0;
-
-        value /= 3200;
+        f32* axis = 0;
 
         switch (axis_id)
-        {
+        {        
+        #if JOYSTICK_AXIS_0
         case 0:
-            x = value;
+            axis = &jsk.axis_0;
             break;
-
+        #endif
+        #if JOYSTICK_AXIS_1
         case 1:
-            y = value;
+            axis = &jsk.axis_1;
             break;
+        #endif
+        #if JOYSTICK_AXIS_2
+        case 2:
+            axis = &jsk.axis_2;
+            break;
+        #endif
+        #if JOYSTICK_AXIS_3
+        case 3:
+            axis = &jsk.axis_3;
+            break;
+        #endif
+        #if JOYSTICK_AXIS_4
+        case 4:
+            axis = &jsk.axis_4;
+            break;
+        #endif
+        #if JOYSTICK_AXIS_5
+        case 5:
+            axis = &jsk.axis_5;
+            break;
+        #endif
 
-        default:
-            break;
+        default: return;
         }
 
-        set_unit_vector_state(new_jsk.vec_axis, x, y);
-
-    #if JOYSTICK_BTN_AXIS
-
-        input::record_button_input(old_jsk.btn_axis_left,  new_jsk.btn_axis_left,  x < 0);
-        input::record_button_input(old_jsk.btn_axis_right, new_jsk.btn_axis_right, x > 0);
-        input::record_button_input(old_jsk.btn_axis_up,    new_jsk.btn_axis_up,    y < 0);
-        input::record_button_input(old_jsk.btn_axis_down,  new_jsk.btn_axis_down,  y > 0);
-
-    #endif
+        *axis = normalize_axis_value(value);
     }
 
 #endif
@@ -321,7 +374,7 @@ namespace sdl
     {
     #ifndef NO_JOYSTICK
 
-        int id = -1;
+        i32 id = -1;
 
         Uint8 btn = 255;
         bool is_down = false;
@@ -334,14 +387,37 @@ namespace sdl
         case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
         case SDL_EVENT_JOYSTICK_BUTTON_UP:
         {
+            id = find_joystick(event.jdevice.which);
+            if (id < 0)
+            {
+                return;
+            }
+
+            auto& p = prev.joysticks[id];
+            auto& c = curr.joysticks[id];
+
             btn = event.jbutton.button;
             is_down = event.jbutton.down;
+
+            record_joystic_button_input(p, c, btn, is_down);
+
         } break;
 
         case SDL_EVENT_JOYSTICK_AXIS_MOTION:
         {
+            id = find_joystick(event.jdevice.which);
+            if (id < 0)
+            {
+                return;
+            }
+
+            auto& c = curr.joysticks[id];
+
             axis = event.jaxis.axis;
             value = event.jaxis.value;
+            
+            record_joystick_axis_input(c, axis, value);
+            
         } break;
 
         }
@@ -356,21 +432,194 @@ namespace sdl
 
 namespace sdl
 {
-    using ControllerInput = input::ControllerInput;
+    using GamepadInput = input::GamepadInput;
 
 
-#ifndef NO_CONTROLLER
+#ifndef NO_GAMEPAD
 
-    static void record_controller_button_input(SDL_GamepadButton btn, ControllerInput const& old_controller, ControllerInput& new_controller, bool is_down)
+    static void record_gamepad_button_input(GamepadInput const& old_gamepad, GamepadInput& new_gamepad, Uint8 btn_id, bool is_down)
     {
-        switch (btn)
+        input::ButtonState btn_old = {};
+        input::ButtonState* btn_new = 0;
+
+        switch (btn_id)
         {
-        #if CONTROLLER_BTN_DPAD_UP
+        #if GAMEPAD_BTN_DPAD_UP
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
-            input::record_button_input(old_controller.btn_dpad_up, new_controller.btn_dpad_up, is_down);
+            btn_old = old_gamepad.btn_dpad_up;
+            btn_new = &new_gamepad.btn_dpad_up;
             break;
         #endif
+        #if GAMEPAD_BTN_DPAD_DOWN
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+            btn_old = old_gamepad.btn_dpad_down;
+            btn_new = &new_gamepad.btn_dpad_down;
+            break;
+        #endif
+        #if GAMEPAD_BTN_DPAD_LEFT
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+            btn_old = old_gamepad.btn_dpad_left;
+            btn_new = &new_gamepad.btn_dpad_left;
+            break;
+        #endif
+        #if GAMEPAD_BTN_DPAD_RIGHT
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+            btn_old = old_gamepad.btn_dpad_right;
+            btn_new = &new_gamepad.btn_dpad_right;
+            break;
+        #endif
+        #if GAMEPAD_BTN_SOUTH
+        case SDL_GAMEPAD_BUTTON_SOUTH:
+            btn_old = old_gamepad.btn_south;
+            btn_new = &new_gamepad.btn_south;
+            break;
+        #endif
+        #if GAMEPAD_BTN_EAST
+        case SDL_GAMEPAD_BUTTON_EAST:
+            btn_old = old_gamepad.btn_east;
+            btn_new = &new_gamepad.btn_east;
+            break;
+        #endif
+        #if GAMEPAD_BTN_WEST
+        case SDL_GAMEPAD_BUTTON_WEST:
+            btn_old = old_gamepad.btn_west;
+            btn_new = &new_gamepad.btn_west;
+            break;
+        #endif
+        #if GAMEPAD_BTN_NORTH
+        case SDL_GAMEPAD_BUTTON_NORTH:
+            btn_old = old_gamepad.btn_north;
+            btn_new = &new_gamepad.btn_north;
+            break;
+        #endif
+        #if GAMEPAD_BTN_BACK
+        case SDL_GAMEPAD_BUTTON_BACK:
+            btn_old = old_gamepad.btn_back;
+            btn_new = &new_gamepad.btn_back;
+            break;
+        #endif
+        #if GAMEPAD_BTN_GUIDE
+        case SDL_GAMEPAD_BUTTON_GUIDE:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+        #endif
+        #if GAMEPAD_BTN_START
+        case SDL_GAMEPAD_BUTTON_START:
+            btn_old = old_gamepad.btn_start;
+            btn_new = &new_gamepad.btn_start;
+            break;
+        #endif
+        #if GAMEPAD_BTN_STICK_LEFT
+        case SDL_GAMEPAD_BUTTON_LEFT_STICK:
+            btn_old = old_gamepad.btn_stick_left;
+            btn_new = &new_gamepad.btn_stick_left;
+            break;
+        #endif
+        #if GAMEPAD_BTN_STICK_RIGHT
+        case SDL_GAMEPAD_BUTTON_RIGHT_STICK:
+            btn_old = old_gamepad.btn_stick_right;
+            btn_new = &new_gamepad.btn_stick_right;
+            break;
+        #endif
+        #if GAMEPAD_BTN_SHOULDER_LEFT
+        case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER:
+            btn_old = old_gamepad.btn_shoulder_left;
+            btn_new = &new_gamepad.btn_shoulder_left;
+            break;
+        #endif
+        #if GAMEPAD_BTN_SHOULDER_RIGHT
+        case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER:
+            btn_old = old_gamepad.btn_shoulder_right;
+            btn_new = &new_gamepad.btn_shoulder_right;
+            break;
+        #endif
+        #if GAMEPAD_BTN_MISC1
+        case SDL_GAMEPAD_BUTTON_MISC1:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+        #endif
+        #if GAMEPAD_BTN_RIGHT_PADDLE1
+        case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+        #endif
+        #if GAMEPAD_BTN_LEFT_PADDLE1
+        case SDL_GAMEPAD_BUTTON_LEFT_PADDLE1:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+        #endif
+        #if GAMEPAD_BTN_RIGHT_PADDLE2
+        case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+        #endif
+        #if GAMEPAD_BTN_LEFT_PADDLE2
+        case SDL_GAMEPAD_BUTTON_LEFT_PADDLE2:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+        #endif
+        #if GAMEPAD_BTN_TOUCHPAD
+        case SDL_GAMEPAD_BUTTON_TOUCHPAD:
+            btn_old = old_gamepad.btn_;
+            btn_new = &new_gamepad.btn_;
+            break;
+    #endif
+
+        default: return;
         }
+
+        input::record_button_input(btn_old, *btn_new, is_down);
+    }
+
+
+    static void record_gamepad_axis_input(GamepadInput& gamepad, Uint8 axis_id, Sint16 axis_value)
+    {
+        f32* axis_input = 0;
+
+        switch (axis_id)
+        {
+        #if GAMEPAD_AXIS_STICK_LEFT
+        case SDL_GAMEPAD_AXIS_LEFTX:
+            axis_input = &gamepad.stick_left.vec.x;
+            break;
+
+        case SDL_GAMEPAD_AXIS_LEFTY:
+            axis_input = &gamepad.stick_left.vec.y;
+            break;
+        #endif
+
+        #if GAMEPAD_AXIS_STICK_RIGHT
+        case SDL_GAMEPAD_AXIS_RIGHTX:
+            axis_input = &gamepad.stick_right.vec.x;
+            break;
+
+        case SDL_GAMEPAD_AXIS_RIGHTY:
+            axis_input = &gamepad.stick_right.vec.y;
+            break;
+        #endif
+
+        #if GAMEPAD_TRIGGER_LEFT
+        case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
+            axis_input = &gamepad.trigger_left;
+            break;
+        #endif
+
+        #if GAMEPAD_TRIGGER_RIGHT
+        case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
+            axis_input = &gamepad.trigger_right;
+            break;
+        #endif
+
+        default: return;
+        }
+
+        *axis_input = normalize_axis_value(axis_value);
     }
 
 #endif
@@ -378,14 +627,14 @@ namespace sdl
 
     static void record_gamepad_input(SDL_Event const& event, Input const& prev, Input& curr)
     {
-    #ifndef NO_CONTROLLER
+    #ifndef NO_GAMEPAD
 
-    int id = -1;
+    i32 id = -1;
 
     Uint8 btn = 255; // SDL_GamepadButton
     bool is_down = false;
     
-    Uint8 axis = 255;
+    Uint8 axis = 255; // SDL_GamepadAxis
     Sint16 value = 0;
 
     switch (event.type)
@@ -393,15 +642,36 @@ namespace sdl
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_BUTTON_UP:
     {
+        id = find_gamepad(event.gdevice.which);
+        if (id < 0)
+        {
+            return;
+        }
+
+        auto& p = prev.gamepads[id];
+        auto& c = curr.gamepads[id];
+
         btn = event.gbutton.button;
         is_down = event.gbutton.down;
+
+        record_gamepad_button_input(p, c, btn, is_down);
 
     } break;
 
     case SDL_EVENT_GAMEPAD_AXIS_MOTION:
     {
+        id = find_gamepad(event.gdevice.which);
+        if (id < 0)
+        {
+            return;
+        }
+
+        auto& c = curr.gamepads[id];
+
         axis = event.gaxis.axis;
         value = event.gaxis.value;
+
+        record_gamepad_axis_input(c, axis, value);
 
     } break;
     }
