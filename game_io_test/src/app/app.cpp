@@ -296,7 +296,7 @@ namespace game_io_test
         map_button(src.btn_8, dst.back);
         map_button(src.btn_9, dst.start);
 
-        dst.dpad_up != src.axis_1 < 0.0f; // TODO
+        //dst.dpad_up |= src.axis_1 < 0.0f; // TODO
         //dst.dpad_down = 0;
         //dst.dpad_left = 0;
         //dst.dpad_right = 0;
@@ -319,7 +319,7 @@ namespace game_io_test
     }
 
 
-    static void map_keyboard_inputsput(input::KeyboardInput const& src, KeyboardOnOff& dst)
+    static void map_keyboard_inputs(input::KeyboardInput const& src, KeyboardOnOff& dst)
     {
         map_button(src.kbd_1, dst.n_1);
         map_button(src.kbd_2, dst.n_2);
@@ -335,7 +335,7 @@ namespace game_io_test
     }
 
 
-    static void map_mouse_inputsput(input::MouseInput const& src, MouseBtnOnOff& dst)
+    static void map_mouse_inputs(input::MouseInput const& src, MouseBtnOnOff& dst)
     {
         map_button(src.btn_left, dst.left);
         map_button(src.btn_right, dst.right);
@@ -362,8 +362,8 @@ namespace game_io_test
         map_joystick_input(src.joysticks[0], dst.controller1);
         map_joystick_input(src.joysticks[1], dst.controller2);
 
-        map_keyboard_inputsput(src.keyboard, dst.keyboard);        
-        map_mouse_inputsput(src.mouse, dst.mouse);
+        map_keyboard_inputs(src.keyboard, dst.keyboard);        
+        map_mouse_inputs(src.mouse, dst.mouse);
 
         dst.mouse_pos = src.mouse.window_pos;
 

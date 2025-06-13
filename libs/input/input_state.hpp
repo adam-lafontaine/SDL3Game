@@ -279,9 +279,9 @@ namespace input
 		{
 			copy_button_state(src.buttons[i], dst.buttons[i]);
 		}
-
-		copy_gamepad_axes(src, dst);
-		copy_gamepad_triggers(src, dst);
+		
+		reset_gamepad_axes(dst);
+		reset_gamepad_triggers(dst);
 		dst.is_active = false;
 	}
 
