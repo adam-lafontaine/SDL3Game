@@ -105,13 +105,15 @@ namespace cxpr
     }
 
 
-    template <typename R, typename T>
-    inline constexpr R lerp(T val, MinMax<T> mm_val, MinMax<R> mm_res)
+    template <typename SRC, typename DST>
+    inline constexpr DST lerp(SRC val, MinMax<SRC> mm_src, MinMax<DST> mm_dst)
     {
-        f64 v = mm_val.max - mm_val.min;
-        f64 r = mm_res.max - mm_res.min;
+        f64 D = mm_dst.max - mm_dst.min;
+        f64 S = mm_src.max - mm_src.min;
+        f64 s = val - mm_src.min;
+        
 
-        return mm_val.min + (T)(r * val / v);
+        return mm_dst.min + (DST)(D * s / S);
     }
 
 
@@ -816,10 +818,10 @@ namespace numeric
     }
 
 
-    template <typename R, typename T>
-    inline constexpr R lerp(T val, MinMax<T> mm_val, MinMax<R> mm_res)
+    template <typename SRC, typename DST>
+    inline constexpr DST lerp(SRC val, MinMax<SRC> mm_src, MinMax<DST> mm_dst)
     {
-        return cxpr::lerp(val, mm_val, mm_res);
+        return cxpr::lerp(val, mm_src, mm_dst);
     }
 
 

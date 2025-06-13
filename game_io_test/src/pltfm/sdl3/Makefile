@@ -168,10 +168,17 @@ sdl3 := $(libs)/sdl3
 
 sdl_include_h := $(sdl3)/sdl_include.hpp
 
+sdl_joystick_c := $(sdl3)/sdl_joystick.cpp
+sdl_keybord_c  := $(sdl3)/sdl_keyboard.cpp
+sdl_mouse_c    := $(sdl3)/sdl_mouse.cpp
+
 sdl_input_c := $(sdl3)/sdl_input.cpp
 sdl_input_c += $(input_state_h)
 sdl_input_c += $(numeric_h)
 sdl_input_c += $(sdl_include_h)
+sdl_input_c += $(sdl_joystick_c)
+sdl_input_c += $(sdl_keyboard_c)
+sdl_input_c += $(sdl_mouse_c)
 
 sdl_window_c := $(sdl3)/sdl_window.cpp
 sdl_window_c += $(window_h)

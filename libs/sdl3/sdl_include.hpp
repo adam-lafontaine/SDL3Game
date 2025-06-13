@@ -63,30 +63,6 @@ namespace sdl
 
     inline void set_window_icon(SDL_Window* window, auto const& icon_64)
     {
-        // these masks are needed to tell SDL_CreateRGBSurface(From)
-        // to assume the data it gets is byte-wise RGB(A) data
-        /*Uint32 rmask, gmask, bmask, amask;
-    #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        int shift = (icon_64.bytes_per_pixel == 3) ? 8 : 0;
-        rmask = 0xff000000 >> shift;
-        gmask = 0x00ff0000 >> shift;
-        bmask = 0x0000ff00 >> shift;
-        amask = 0x000000ff >> shift;
-    #else // little endian, like x86
-        rmask = 0x000000ff;
-        gmask = 0x0000ff00;
-        bmask = 0x00ff0000;
-        amask = (icon_64.bytes_per_pixel == 3) ? 0 : 0xff000000;
-    #endif
-
-        SDL_Surface* icon = SDL_CreateRGBSurfaceFrom(
-            (void*)icon_64.pixel_data,
-            icon_64.width,
-            icon_64.height,
-            icon_64.bytes_per_pixel * 8,
-            icon_64.bytes_per_pixel * icon_64.width,
-            rmask, gmask, bmask, amask);*/
-
         SDL_Surface* icon = SDL_CreateSurfaceFrom(
             (int)icon_64.width,
             (int)icon_64.height,
