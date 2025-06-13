@@ -17,10 +17,16 @@
 
 namespace input
 {
+#ifdef NO_MOUSE
+	constexpr unsigned N_MOUSE_BUTTONS = 0;
+#else
+
 	constexpr unsigned N_MOUSE_BUTTONS =
 	MOUSE_LEFT + 
 	MOUSE_RIGHT + 
 	MOUSE_MIDDLE + 
 	MOUSE_X1 + 
 	MOUSE_X2;
+
+#endif
 }

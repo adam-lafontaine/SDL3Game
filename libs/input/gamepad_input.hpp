@@ -1,7 +1,6 @@
 #pragma once
 
 //#define NO_GAMEPAD
-
 //#define SINGLE_GAMEPAD
 
 
@@ -35,6 +34,11 @@
 
 namespace input
 {
+#ifdef NO_GAMEPAD
+    constexpr unsigned N_GAMEPAD_BUTTONS = 0;
+    constexpr unsigned N_GAMEPAD_AXES = 0;
+#else
+
     constexpr unsigned N_GAMEPAD_BUTTONS = 
     GAMEPAD_BTN_DPAD_UP +
     GAMEPAD_BTN_DPAD_DOWN +
@@ -50,4 +54,12 @@ namespace input
     GAMEPAD_BTN_SHOULDER_RIGHT +
     GAMEPAD_BTN_STICK_LEFT +
     GAMEPAD_BTN_STICK_RIGHT;
+
+    constexpr unsigned N_GAMEPAD_AXES =
+    GAMEPAD_AXIS_STICK_LEFT +
+    GAMEPAD_AXIS_STICK_RIGHT +
+    GAMEPAD_TRIGGER_LEFT +
+    GAMEPAD_TRIGGER_RIGHT;
+
+#endif
 }

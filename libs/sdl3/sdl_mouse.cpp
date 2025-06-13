@@ -98,8 +98,6 @@ namespace sdl
             
         }
 
-        set_is_active(mouse);
-
     #endif
     }
 }

@@ -367,8 +367,6 @@ namespace sdl
         } break;
         }
 
-        set_is_active(new_keyboard);
-
     #endif
     }
 }

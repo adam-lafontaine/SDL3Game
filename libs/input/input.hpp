@@ -532,9 +532,9 @@ namespace input
 		u32 n_gamepads;
 		u32 n_joysticks;
 
-		Input& pre() { return inputs[p]; }
+		Input& prev() { return inputs[p]; }
 
-		Input& cur() { return inputs[c]; }
+		Input& curr() { return inputs[c]; }
 
 		void swap() { p = c; c = !p; }
 	};
@@ -549,14 +549,14 @@ namespace input
 	typedef void (*event_cb)(void *event);
 
 
-	bool init(InputArray& input);
+	bool init(InputArray& inputs);
 
 	void close();
 
-	void record_input(InputArray& input);
+	void record_input(InputArray& inputs);
 
-	void record_input(InputArray& input, event_cb handle_event);
-
-	void end_program(); // define in main.cpp
+	void record_input(InputArray& inputs, event_cb handle_event);
 
 }
+
+void end_program(); // define in main.cpp

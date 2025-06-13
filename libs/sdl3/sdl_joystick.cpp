@@ -324,47 +324,46 @@ namespace sdl
     }
 
 
-    static void record_joystick_axis_input(JoystickInput& jsk, Uint8 axis_id, Sint16 value)
+    static void record_joystick_axis_input(JoystickInput& jsk, Uint8 axis_id, Sint16 axis_value)
     {
-        f32* axis = 0;
+        auto val32 = normalize_axis_value(axis_value);
 
         switch (axis_id)
         {        
         #if JOYSTICK_AXIS_0
         case 0:
-            axis = &jsk.axis_0;
+            jsk.axis_0 = val32;
             break;
         #endif
         #if JOYSTICK_AXIS_1
         case 1:
-            axis = &jsk.axis_1;
+            jsk.axis_1 = val32;
             break;
         #endif
         #if JOYSTICK_AXIS_2
         case 2:
-            axis = &jsk.axis_2;
+            jsk.axis_2 = val32;
             break;
         #endif
         #if JOYSTICK_AXIS_3
         case 3:
-            axis = &jsk.axis_3;
+            jsk.axis_3 = val32;
             break;
         #endif
         #if JOYSTICK_AXIS_4
         case 4:
-            axis = &jsk.axis_4;
+            jsk.axis_4 = val32;
             break;
         #endif
         #if JOYSTICK_AXIS_5
         case 5:
-            axis = &jsk.axis_5;
+            jsk.axis_5 = val32;
             break;
         #endif
 
-        default: return;
+        default:
+            break;
         }
-
-        *axis = normalize_axis_value(value);
     }
 
 #endif
@@ -580,46 +579,45 @@ namespace sdl
 
     static void record_gamepad_axis_input(GamepadInput& gamepad, Uint8 axis_id, Sint16 axis_value)
     {
-        f32* axis_input = 0;
+        auto val32 = normalize_axis_value(axis_value);
 
         switch (axis_id)
         {
         #if GAMEPAD_AXIS_STICK_LEFT
         case SDL_GAMEPAD_AXIS_LEFTX:
-            axis_input = &gamepad.stick_left.vec.x;
+            gamepad.stick_left.vec.x = val32;
             break;
 
         case SDL_GAMEPAD_AXIS_LEFTY:
-            axis_input = &gamepad.stick_left.vec.y;
+            gamepad.stick_left.vec.y = val32;
             break;
         #endif
 
         #if GAMEPAD_AXIS_STICK_RIGHT
         case SDL_GAMEPAD_AXIS_RIGHTX:
-            axis_input = &gamepad.stick_right.vec.x;
+            gamepad.stick_right.vec.x = val32;
             break;
 
         case SDL_GAMEPAD_AXIS_RIGHTY:
-            axis_input = &gamepad.stick_right.vec.y;
+            gamepad.stick_right.vec.y = val32;
             break;
         #endif
 
         #if GAMEPAD_TRIGGER_LEFT
         case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-            axis_input = &gamepad.trigger_left;
+            gamepad.trigger_left = val32;
             break;
         #endif
 
         #if GAMEPAD_TRIGGER_RIGHT
         case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-            axis_input = &gamepad.trigger_right;
+            gamepad.trigger_right = val32;
             break;
         #endif
 
-        default: return;
+        default: 
+            break;
         }
-
-        *axis_input = normalize_axis_value(axis_value);
     }
 
 #endif

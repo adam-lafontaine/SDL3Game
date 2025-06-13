@@ -1,5 +1,6 @@
 #pragma once
 
+//#define NO_JOYSTICK
 //#define SINGLE_JOYSTICK
 
 #define JOYSTICK_BTN_0 1
@@ -23,6 +24,12 @@
 
 namespace input
 {
+
+#ifdef NO_JOYSTICK
+    constexpr unsigned N_JOYSTICK_BUTTONS = 0;
+    constexpr unsigned N_JOYSTICK_AXES = 0;
+#else
+
     constexpr unsigned N_JOYSTICK_BUTTONS = 
     JOYSTICK_BTN_0 +
     JOYSTICK_BTN_1 +
@@ -42,4 +49,6 @@ namespace input
     JOYSTICK_AXIS_3 +
     JOYSTICK_AXIS_4 +
     JOYSTICK_AXIS_5;
+
+#endif
 }

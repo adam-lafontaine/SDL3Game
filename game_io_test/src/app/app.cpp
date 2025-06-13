@@ -250,17 +250,17 @@ namespace game_io_test
     }
 
 
-    static void map_controller_input(input::ControllerInput const& src, ControllerBtnOnOff& dst)
+    static void map_gamepad_input(input::GamepadInput const& src, ControllerBtnOnOff& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
         map_button(src.btn_dpad_down, dst.dpad_down);
         map_button(src.btn_dpad_left, dst.dpad_left);
         map_button(src.btn_dpad_right, dst.dpad_right);
 
-        map_button(src.btn_a, dst.a);
-        map_button(src.btn_b, dst.b);
-        map_button(src.btn_x, dst.x);
-        map_button(src.btn_y, dst.y);
+        map_button(src.btn_south, dst.a);
+        map_button(src.btn_east, dst.b);
+        map_button(src.btn_west, dst.x);
+        map_button(src.btn_north, dst.y);
 
         map_button(src.btn_start, dst.start);
         map_button(src.btn_back, dst.back);
@@ -290,10 +290,10 @@ namespace game_io_test
         map_button(src.btn_8, dst.back);
         map_button(src.btn_9, dst.start);
 
-        map_button(src.btn_axis_up, dst.dpad_up);
-        map_button(src.btn_axis_down, dst.dpad_down);
-        map_button(src.btn_axis_left, dst.dpad_left);
-        map_button(src.btn_axis_right, dst.dpad_right);
+        dst.dpad_up = 0;
+        dst.dpad_down = 0;
+        dst.dpad_left = 0;
+        dst.dpad_right = 0;
 
         /*
         Iconic Arcade
@@ -337,10 +337,10 @@ namespace game_io_test
     }
 
 
-    static void map_thumbstick_input(input::ControllerInput const& src, ControllerStickRotation& dst)
+    static void map_thumbstick_input(input::GamepadInput const& src, ControllerStickRotation& dst)
     {
-        dst.stick_left = src.stick_left.unit_direction;
-        dst.stick_right = src.stick_right.unit_direction;
+        dst.stick_left = src.stick_left.unit;
+        dst.stick_right = src.stick_right.unit;
     }
 
 
@@ -348,8 +348,8 @@ namespace game_io_test
     {
         clear_input_list(dst);
 
-        map_controller_input(src.controllers[0], dst.controller1);
-        map_controller_input(src.controllers[1], dst.controller2);
+        map_gamepad_input(src.gamepads[0], dst.controller1);
+        map_gamepad_input(src.gamepads[1], dst.controller2);
 
         map_joystick_input(src.joysticks[0], dst.controller1);
         map_joystick_input(src.joysticks[1], dst.controller2);
@@ -359,8 +359,8 @@ namespace game_io_test
 
         dst.mouse_pos = src.mouse.window_pos;
 
-        map_thumbstick_input(src.controllers[0], dst.sticks1);
-        map_thumbstick_input(src.controllers[1], dst.sticks2);
+        map_thumbstick_input(src.gamepads[0], dst.sticks1);
+        map_thumbstick_input(src.gamepads[1], dst.sticks2);
     }
 
 
