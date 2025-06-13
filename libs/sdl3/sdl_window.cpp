@@ -16,7 +16,7 @@ namespace sdl
         SDL_Renderer* renderer = 0;
         SDL_Texture* texture = 0;
 
-        SDL_Rect render_rect;
+        SDL_FRect render_rect;
 
         u32 width_px = 0;
         u32 height_px = 0;
@@ -48,8 +48,6 @@ namespace sdl
     {
         screen.window = SDL_CreateWindow(
             title,
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
             (int)width,
             (int)height,
             SDL_WINDOW_RESIZABLE);
@@ -68,11 +66,9 @@ namespace sdl
     {
         screen.window = SDL_CreateWindow(
             title,
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
             0,
             0,
-            SDL_WINDOW_FULLSCREEN_DESKTOP);
+            SDL_WINDOW_FULLSCREEN);
 
         if(!screen.window)
         {
@@ -86,7 +82,7 @@ namespace sdl
 
     static bool create_renderer(ScreenMemory& screen)
     {
-        screen.renderer = SDL_CreateRenderer(screen.window, -1, 0);
+        screen.renderer = SDL_CreateRenderer(screen.window, NULL);
 
         if(!screen.renderer)
         {
@@ -166,9 +162,8 @@ namespace sdl
 
         int width = 0;
         int height = 0;
-
-        auto err = SDL_GetRendererOutputSize(screen.renderer, &width, &height);
-        if (err)
+        
+        if (!SDL_GetCurrentRenderOutputSize(screen.renderer, &width, &height))
         {
             destroy_screen_memory(screen);
             return false;
@@ -216,9 +211,16 @@ namespace sdl
 
     static void set_out_rect(ScreenMemory& screen)
     {
+        SDL_SetRenderDrawColor(screen.renderer, 0, 0, 0, 255); // Black background
+        SDL_RenderClear(screen.renderer);
+
         int width;
         int height;
-        SDL_GetRendererOutputSize(screen.renderer, &width, &height);
+        if (!SDL_GetCurrentRenderOutputSize(screen.renderer, &width, &height))
+        {
+            print_error("SDL_GetCurrentRenderOutputSize()");
+            return;
+        }
 
         auto scale_w = (f32)width / screen.width_px;
         auto scale_h = (f32)height / screen.height_px;
@@ -300,6 +302,28 @@ namespace window
         static_assert(window::PIXEL_SIZE == window::Icon64::bytes_per_pixel);
 
         sdl::set_window_icon(screen.window, icon_64);
+    }
+
+
+    static void copy_window_pixels(Window const& window, void* dst_data, int dst_pitch)
+    {   
+        auto h = window.height_px;
+        auto w = window.width_px;
+
+        u32* src = window.pixel_buffer;
+        u32* dst = (u32*)dst_data;
+
+        for (u32 y = 0; y < h; y++)
+        {
+            for (u32 x = 0; x < w; x++)
+            {
+                dst[x] = src[x];
+            }
+
+            src += w;
+            dst_data += dst_pitch;
+            dst = (u32*)dst_data;
+        }
     }
 }
 
@@ -485,27 +509,35 @@ namespace window
         SDL_SetRenderDrawColor(screen.renderer, 0, 0, 0, 255); // Black background
         SDL_RenderClear(screen.renderer);
 
-        auto pitch = screen.width_px * sizeof(window.pixel_buffer[0]);
-        
+        void* dst_data = 0;
+        int dst_pitch = 0;
 
         #ifdef PRINT_MESSAGES
 
-        err = SDL_UpdateTexture(screen.texture, 0, (void*)window.pixel_buffer, pitch);
-        if(err)
+        if (SDL_LockTexture(screen.texture, NULL, &dst_data, &dst_pitch))
         {
-            sdl::print_error("SDL_UpdateTexture failed");
+            copy_window_pixels(window, dst_data, dst_pitch);
+            SDL_UnlockTexture(screen.texture);
+        }
+        else
+        {
+            sdl::print_error("SDL_LockTexture()");
         }
 
-        err = SDL_RenderCopy(screen.renderer, screen.texture, NULL, &screen.render_rect);
-        if(err)
+        if (!SDL_RenderTexture(screen.renderer, screen.texture, NULL, &screen.render_rect))
         {
-            sdl::print_error("SDL_RenderCopy failed");
+            sdl::print_error("SDL_RenderTexture()");
         }
 
         #else
 
-        SDL_UpdateTexture(screen.texture, 0, (void*)window.pixel_buffer, pitch);
-        SDL_RenderCopy(screen.renderer, screen.texture, 0, &screen.render_rect);
+        if (SDL_LockTexture(screen.texture, NULL, &dst_data, &dst_pitch))
+        {
+            copy_window_pixels(window, dst_data, dst_pitch);
+            SDL_UnlockTexture(screen.texture);
+        }
+
+        SDL_RenderTexture(screen.renderer, screen.texture, NULL, &screen.render_rect);
 
         #endif
         
@@ -515,12 +547,12 @@ namespace window
 
     void hide_mouse_cursor()
     {
-        SDL_ShowCursor(SDL_DISABLE);
+        SDL_HideCursor();
     }
 
 
     void show_mouse_cursor()
     {
-        SDL_ShowCursor(SDL_ENABLE);
+        SDL_ShowCursor();
     }
 }

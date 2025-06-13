@@ -176,7 +176,7 @@ static void main_loop()
 
         game::update(mn::app_state, mn::inputs.curr());
 
-        window::render(mn::window);
+        window::render(mn::window, mn::inputs.curr().window_size_changed);
 
         mn::inputs.swap();
         cap_framerate(sw, TARGET_NS_PER_FRAME);

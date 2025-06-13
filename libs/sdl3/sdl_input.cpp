@@ -51,7 +51,7 @@ namespace sdl
 
         case SDL_EVENT_QUIT:
             print_message("SDL_QUIT");
-            input::end_program();
+            end_program();
             break;
 
         case SDL_EVENT_KEY_DOWN:
@@ -68,7 +68,7 @@ namespace sdl
                 {
                 case SDLK_F4:
                     print_message("ALT F4");
-                    input::end_program();
+                    end_program();
                     break;
 
                 #ifndef NDEBUG
@@ -89,7 +89,7 @@ namespace sdl
             #ifndef NDEBUG
             case SDLK_ESCAPE:
                 print_message("ESC");
-                input::end_program();
+                end_program();
                 break;
 
             #endif

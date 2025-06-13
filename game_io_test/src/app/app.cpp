@@ -250,6 +250,12 @@ namespace game_io_test
     }
 
 
+    static void map_axis(f32 axis, b8& dst)
+    {
+
+    }
+
+
     static void map_gamepad_input(input::GamepadInput const& src, ControllerBtnOnOff& dst)
     {
         map_button(src.btn_dpad_up, dst.dpad_up);
@@ -290,10 +296,10 @@ namespace game_io_test
         map_button(src.btn_8, dst.back);
         map_button(src.btn_9, dst.start);
 
-        dst.dpad_up = 0;
-        dst.dpad_down = 0;
-        dst.dpad_left = 0;
-        dst.dpad_right = 0;
+        dst.dpad_up != src.axis_1 < 0.0f; // TODO
+        //dst.dpad_down = 0;
+        //dst.dpad_left = 0;
+        //dst.dpad_right = 0;
 
         /*
         Iconic Arcade
@@ -334,6 +340,8 @@ namespace game_io_test
         map_button(src.btn_left, dst.left);
         map_button(src.btn_right, dst.right);
         map_button(src.btn_middle, dst.middle);
+
+        //src.wheel ?
     }
 
 

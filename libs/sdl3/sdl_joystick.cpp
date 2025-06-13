@@ -108,7 +108,7 @@ namespace sdl
         auto gp = SDL_OpenGamepad(id);
         if (!gp)
         {
-            sdl::print_message(SDL_GetError());
+            sdl::print_error("SDL_OpenGamepad()");
             return;
         }
 
@@ -136,7 +136,7 @@ namespace sdl
         auto js = SDL_OpenJoystick(id);
         if (!js)
         {
-            sdl::print_message(SDL_GetError());
+            sdl::print_error("SDL_OpenJoystick()");
             return;
         }
 

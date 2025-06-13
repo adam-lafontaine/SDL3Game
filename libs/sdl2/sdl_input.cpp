@@ -975,17 +975,17 @@ namespace input
     #if GAMEPAD_BTN_BACK
         record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_BACK, old_gamepad.btn_back, new_gamepad.btn_back);
     #endif
-    #if GAMEPAD_BTN_A
-        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_A, old_gamepad.btn_a, new_gamepad.btn_a);
+    #if GAMEPAD_BTN_SOUTH
+        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_A, old_gamepad.btn_south, new_gamepad.btn_south);
     #endif
-    #if GAMEPAD_BTN_B
-        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_B, old_gamepad.btn_b, new_gamepad.btn_b);
+    #if GAMEPAD_BTN_EAST
+        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_B, old_gamepad.btn_east, new_gamepad.btn_east);
     #endif
-    #if GAMEPAD_BTN_X
-        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_X, old_gamepad.btn_x, new_gamepad.btn_x);
+    #if GAMEPAD_BTN_WEST
+        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_X, old_gamepad.btn_west, new_gamepad.btn_west);
     #endif
-    #if GAMEPAD_BTN_Y
-        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_Y, old_gamepad.btn_y, new_gamepad.btn_y);
+    #if GAMEPAD_BTN_NORTH
+        record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_Y, old_gamepad.btn_north, new_gamepad.btn_north);
     #endif
     #if GAMEPAD_BTN_SHOULDER_LEFT
         record_gamepad_button(sdl_gamepad, SDL_CONTROLLER_BUTTON_LEFTSHOULDER, old_gamepad.btn_shoulder_left, new_gamepad.btn_shoulder_left);
