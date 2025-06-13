@@ -272,7 +272,8 @@ namespace audio
 
     static bool is_initialized()
     {
-        return audio_initialized;
+        //return audio_initialized;
+        return true;
     }
 }
 
@@ -334,7 +335,7 @@ namespace audio
 
         return true;*/
 
-        return false;
+        return true;
     }
 
 
@@ -381,7 +382,7 @@ namespace audio
 
         return true;*/
 
-        return false;
+        return true;
     }
 
 
@@ -410,7 +411,7 @@ namespace audio
 
         return true;*/
 
-        return false;
+        return true;
     }
 
 
@@ -449,7 +450,7 @@ namespace audio
 
         return true;*/
 
-        return false;
+        return true;
     }
 
 
@@ -488,7 +489,7 @@ namespace audio
 
         return true;*/
 
-        return false;
+        return true;
     }
 
 

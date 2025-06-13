@@ -65,7 +65,7 @@ namespace sdl
     {
         // these masks are needed to tell SDL_CreateRGBSurface(From)
         // to assume the data it gets is byte-wise RGB(A) data
-        Uint32 rmask, gmask, bmask, amask;
+        /*Uint32 rmask, gmask, bmask, amask;
     #if SDL_BYTEORDER == SDL_BIG_ENDIAN
         int shift = (icon_64.bytes_per_pixel == 3) ? 8 : 0;
         rmask = 0xff000000 >> shift;
@@ -85,10 +85,18 @@ namespace sdl
             icon_64.height,
             icon_64.bytes_per_pixel * 8,
             icon_64.bytes_per_pixel * icon_64.width,
-            rmask, gmask, bmask, amask);
+            rmask, gmask, bmask, amask);*/
+
+        SDL_Surface* icon = SDL_CreateSurfaceFrom(
+            (int)icon_64.width,
+            (int)icon_64.height,
+            SDL_PIXELFORMAT_RGBA8888,
+            (void*)icon_64.pixel_data,
+            icon_64.bytes_per_pixel * icon_64.width
+        );
 
         SDL_SetWindowIcon(window, icon);
 
-        SDL_FreeSurface(icon);
+        SDL_DestroySurface(icon);
     }
 }

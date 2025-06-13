@@ -310,8 +310,10 @@ namespace window
         auto h = window.height_px;
         auto w = window.width_px;
 
+        auto dst_8 = (u8*)dst_data;
+
         u32* src = window.pixel_buffer;
-        u32* dst = (u32*)dst_data;
+        u32* dst = (u32*)dst_8;
 
         for (u32 y = 0; y < h; y++)
         {
@@ -321,8 +323,8 @@ namespace window
             }
 
             src += w;
-            dst_data += dst_pitch;
-            dst = (u32*)dst_data;
+            dst_8 += dst_pitch;
+            dst = (u32*)dst_8;
         }
     }
 }
@@ -337,8 +339,7 @@ namespace window
 
     bool init()
     {
-        auto error = SDL_InitSubSystem(subsystem_flags);
-        if (error)
+        if (!SDL_InitSubSystem(subsystem_flags))
         {
             sdl::print_error("Init Video failed");
             return false;

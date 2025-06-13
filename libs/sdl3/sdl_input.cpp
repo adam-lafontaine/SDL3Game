@@ -122,8 +122,7 @@ namespace input
 
     bool init(InputArray& inputs)
     {
-        auto error = SDL_InitSubSystem(subsystem_flags());
-        if (error)
+        if (!SDL_InitSubSystem(subsystem_flags()))
         {
             sdl::print_error("Init Input failed");
             return false;
