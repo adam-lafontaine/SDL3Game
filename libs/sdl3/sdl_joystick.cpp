@@ -95,21 +95,23 @@ namespace sdl
 
 namespace sdl
 {
-    static void add_gamepad_device(GamepadDeviceArray& devices, SDL_JoystickID id, SDL_JoystickType type)
+    static SDL_Gamepad* add_gamepad_device(GamepadDeviceArray& devices, SDL_JoystickID id, SDL_JoystickType type)
     {
+        SDL_Gamepad* gp = 0;
+
     #ifndef NO_GAMEPAD
 
         if (!SDL_IsGamepad(id))
         {
             sdl::print_message("not a gamepad");
-            return;
+            return gp;
         }
 
-        auto gp = SDL_OpenGamepad(id);
+        gp = SDL_OpenGamepad(id);
         if (!gp)
         {
             sdl::print_error("SDL_OpenGamepad()");
-            return;
+            return gp;
         }
 
         for (u32 i = 0; i < devices.capacity; i++)
@@ -123,21 +125,26 @@ namespace sdl
             device.id = id;
             device.type = type;
             device.gamepad = gp;
+            break;
         }
 
     #endif
+
+        return gp;
     }
 
 
-    static void add_joystick_device(JoystickDeviceArray& devices, SDL_JoystickID id, SDL_JoystickType type)
+    static SDL_Joystick* add_joystick_device(JoystickDeviceArray& devices, SDL_JoystickID id, SDL_JoystickType type)
     {
+        SDL_Joystick* js = 0;
+
     #ifndef NO_JOYSTICK
 
-        auto js = SDL_OpenJoystick(id);
+        js = SDL_OpenJoystick(id);
         if (!js)
         {
             sdl::print_error("SDL_OpenJoystick()");
-            return;
+            return js;
         }
 
         for (u32 i = 0; i < devices.capacity; i++)
@@ -151,25 +158,58 @@ namespace sdl
             device.id = id;
             device.type = type;
             device.joystick = js;
+            break;
         }
 
     #endif
+
+        return js;
     }    
 
 
-    static void add_input_device(InputDeviceList& devices, SDL_JoystickID id)
+    static void add_input_device(InputDeviceList& devices, SDL_JoystickID id, input::InputArray& inputs)
     {
         SDL_JoystickType type = SDL_GetJoystickTypeForID(id);
+
+        auto add_gamepad = [&]()
+        {
+            auto handle = (u64)id;
+            auto i = inputs.n_gamepads;
+            inputs.prev().gamepads[i].handle = handle;
+            inputs.curr().gamepads[i].handle = handle;
+            inputs.n_gamepads++;
+        };
+
+        auto add_joystick = [&]()
+        {
+            auto handle = (u64)id;
+            auto i = inputs.n_joysticks;
+            inputs.prev().joysticks[i].handle = handle;
+            inputs.curr().joysticks[i].handle = handle;
+            inputs.n_joysticks++;
+        };
 
         switch (type)
         {
         case SDL_JOYSTICK_TYPE_GAMEPAD:
-            add_gamepad_device(devices.gamepads, id, type);
-            break;
+        {
+            if (!add_gamepad_device(devices.gamepads, id, type))
+            {
+                return;
+            }
+            
+            add_gamepad();
+        } break;
 
         default:
-            add_joystick_device(devices.joysticks, id, type);
-            break;
+        {
+            if (!add_joystick_device(devices.joysticks, id, type))
+            {
+                return;
+            }
+
+            add_joystick();
+        } break;
         }
     }
     
@@ -183,7 +223,7 @@ namespace sdl
     InputDeviceList input_devices;
 
 
-    static void open_input_devices()
+    static void open_input_devices(input::InputArray& inputs)
     {        
         int n_connected = 0;
         auto ids = SDL_GetJoysticks(&n_connected);
@@ -193,7 +233,7 @@ namespace sdl
 
         for (int i = 0; i < n_connected; i++)
         {
-            add_input_device(input_devices, ids[i]);
+            add_input_device(input_devices, ids[i], inputs);
         }
 
         SDL_free(ids);
@@ -206,13 +246,13 @@ namespace sdl
     }
 
 
-    static i32 find_gamepad(SDL_JoystickID id)
+    static i32 find_gamepad(SDL_JoystickID id, input::Input const& input)
     {
-        auto& devices = input_devices.gamepads;
+        auto handle = (u64)id;
 
-        for (i32 i = 0; i < devices.capacity; i++)
+        for (i32 i = 0; i < input::MAX_GAMEPADS; i++)
         {
-            if (id == devices.data[i].id)
+            if (handle == input.gamepads[i].handle)
             {
                 return i;
             }
@@ -222,13 +262,13 @@ namespace sdl
     }
 
 
-    static i32 find_joystick(SDL_JoystickID id)
+    static i32 find_joystick(SDL_JoystickID id, input::Input const& input)
     {
-        auto& devices = input_devices.joysticks;
+        auto handle = (u64)id;
 
-        for (i32 i = 0; i < devices.capacity; i++)
+        for (i32 i = 0; i < input::MAX_JOYSTICKS; i++)
         {
-            if (id == devices.data[i].id)
+            if (handle == input.joysticks[i].handle)
             {
                 return i;
             }
@@ -369,7 +409,7 @@ namespace sdl
 #endif
 
 
-    static void record_joystick_input(SDL_Event const& event, Input const& prev, Input& curr)
+    static void record_joystick_input_event(SDL_Event const& event, Input const& prev, Input& curr)
     {
     #ifndef NO_JOYSTICK
 
@@ -386,7 +426,7 @@ namespace sdl
         case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
         case SDL_EVENT_JOYSTICK_BUTTON_UP:
         {
-            id = find_joystick(event.jdevice.which);
+            id = find_joystick(event.jdevice.which, curr);
             if (id < 0)
             {
                 return;
@@ -404,7 +444,7 @@ namespace sdl
 
         case SDL_EVENT_JOYSTICK_AXIS_MOTION:
         {
-            id = find_joystick(event.jdevice.which);
+            id = find_joystick(event.jdevice.which, curr);
             if (id < 0)
             {
                 return;
@@ -422,6 +462,12 @@ namespace sdl
         }
 
     #endif
+    }
+
+
+    static void record_joystick_axes()
+    {
+
     }
 
 }
@@ -620,10 +666,64 @@ namespace sdl
         }
     }
 
+
+    static void record_gamepad_axes(GamepadInput& gamepad)
+    {
+        auto gp = SDL_GetGamepadFromID((SDL_JoystickID)gamepad.handle);
+
+        auto get_axis_value = [&](auto axis_id)
+        {
+            auto val = SDL_GetGamepadAxis(gp, axis_id);
+            return normalize_axis_value(val);
+        };
+
+    #if GAMEPAD_AXIS_STICK_LEFT
+        gamepad.stick_left.vec.x = get_axis_value(SDL_GAMEPAD_AXIS_LEFTX);
+        gamepad.stick_left.vec.y = get_axis_value(SDL_GAMEPAD_AXIS_LEFTY);
+    #endif
+
+    #if GAMEPAD_AXIS_STICK_RIGHT
+        gamepad.stick_right.vec.x = get_axis_value(SDL_GAMEPAD_AXIS_RIGHTX);
+        gamepad.stick_right.vec.y = get_axis_value(SDL_GAMEPAD_AXIS_RIGHTY);
+    #endif
+
+    #if GAMEPAD_TRIGGER_LEFT
+        gamepad.trigger_left = get_axis_value(SDL_GAMEPAD_AXIS_LEFT_TRIGGER);
+    #endif
+
+    #if GAMEPAD_TRIGGER_RIGHT
+        gamepad.trigger_right = get_axis_value(SDL_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    #endif
+    }
+
+
+    static void set_gamepad_axis_vectors(GamepadInput& gamepad)
+    {
+    #if GAMEPAD_AXIS_STICK_LEFT
+        set_vector_state(gamepad.stick_left);
+    #endif
+
+    #if GAMEPAD_AXIS_STICK_RIGHT
+        set_vector_state(gamepad.stick_right);
+    #endif
+    }
+    
+    
+    static void set_gamepad_dpad_vector(GamepadInput& gamepad)
+    {
+    #if GAMEPAD_BTN_DPAD_ALL
+
+        int x = gamepad.btn_dpad_right.is_down - gamepad.btn_dpad_left.is_down;
+        int y = gamepad.btn_dpad_down.is_down - gamepad.btn_dpad_up.is_down;
+
+        set_unit_vector_state(gamepad.vec_dpad, x, y);
+    #endif
+    }
+
 #endif
 
 
-    static void record_gamepad_input(SDL_Event const& event, Input const& prev, Input& curr)
+    static void record_gamepad_input_event(SDL_Event const& event, Input const& prev, Input& curr)
     {
     #ifndef NO_GAMEPAD
 
@@ -640,7 +740,7 @@ namespace sdl
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_BUTTON_UP:
     {
-        id = find_gamepad(event.gdevice.which);
+        id = find_gamepad(event.gdevice.which, curr);
         if (id < 0)
         {
             return;
@@ -656,9 +756,9 @@ namespace sdl
 
     } break;
 
-    case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+    /*case SDL_EVENT_GAMEPAD_AXIS_MOTION:
     {
-        id = find_gamepad(event.gdevice.which);
+        id = find_gamepad(event.gdevice.which, curr);
         if (id < 0)
         {
             return;
@@ -671,8 +771,48 @@ namespace sdl
 
         record_gamepad_axis_input(c, axis, value);
 
-    } break;
+    } break;*/
+
+    default:
+        break;
     }
+
+    #endif
+    }
+
+
+    static void record_gamepad_axes(Input& curr)
+    {
+    #ifndef NO_GAMEPAD
+
+        for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+        {
+            auto& gamepad = curr.gamepads[i];
+            if (!gamepad.handle)
+            {
+                continue;
+            }
+
+            record_gamepad_axes(gamepad);
+        }
+
+    #endif
+    }
+
+
+    static void set_gamepad_vector_states(Input& curr)
+    {
+    #ifndef NO_GAMEPAD
+
+        for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+        {
+            auto& gp = curr.gamepads[i];
+            if (gp.is_active)
+            {
+                set_gamepad_axis_vectors(gp);
+                set_gamepad_dpad_vector(gp);
+            }
+        }
 
     #endif
     }

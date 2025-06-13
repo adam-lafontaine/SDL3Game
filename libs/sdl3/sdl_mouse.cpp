@@ -65,7 +65,7 @@ namespace sdl
 #endif
 
 
-    static void record_mouse_input(SDL_Event const& event, MouseInput const& old_mouse, MouseInput& new_mouse)
+    static void record_mouse_input_event(SDL_Event const& event, MouseInput const& old_mouse, MouseInput& new_mouse)
     {
     #ifndef NO_MOUSE
 

@@ -340,7 +340,7 @@ namespace sdl
 #endif
 
 
-    void record_keyboard_input(SDL_Event const& event, KeyboardInput const& old_keyboard, KeyboardInput& new_keyboard)
+    void record_keyboard_input_event(SDL_Event const& event, KeyboardInput const& old_keyboard, KeyboardInput& new_keyboard)
     {
     #ifndef NO_KEYBOARD
 

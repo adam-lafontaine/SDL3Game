@@ -308,7 +308,8 @@ namespace input
     {
     public:
 
-		b8 is_active;
+		b8 is_active= 0;
+		u64 handle = 0;
 	
         union
         {
@@ -389,7 +390,9 @@ namespace input
 	class JoystickInput
 	{
 	public:
-		b8 is_active;
+
+		b8 is_active= 0;
+		u64 handle = 0;
 	
 		union
 		{
@@ -529,8 +532,8 @@ namespace input
 
 	public:	
 		
-		u32 n_gamepads;
-		u32 n_joysticks;
+		u32 n_gamepads = 0;
+		u32 n_joysticks = 0;
 
 		Input& prev() { return inputs[p]; }
 

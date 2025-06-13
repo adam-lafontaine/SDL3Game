@@ -199,17 +199,19 @@ namespace input
         gamepad.is_active = false ||
 
 	#if GAMEPAD_TRIGGER_LEFT
-        gamepad.trigger_left > 0.0f ||
+        gamepad.trigger_left != 0.0f ||
 	#endif
 	#if GAMEPAD_TRIGGER_RIGHT
-        gamepad.trigger_right > 0.0f ||
+        gamepad.trigger_right != 0.0f ||
 	#endif
 
 	#if GAMEPAD_AXIS_STICK_LEFT
-        gamepad.stick_left.magnitude > 0.0f ||
+        gamepad.stick_left.vec.x != 0.0f ||
+		gamepad.stick_left.vec.y != 0.0f ||
 	#endif
 	#if GAMEPAD_AXIS_STICK_RIGHT
-        gamepad.stick_right.magnitude > 0.0f ||
+        gamepad.stick_right.vec.x != 0.0f ||
+		gamepad.stick_right.vec.y != 0.0f ||
 	#endif
         false;
 

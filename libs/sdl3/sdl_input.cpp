@@ -26,16 +26,45 @@ namespace sdl
 
         return num::abs(norm) < 0.3f ? 0.0f : norm;
     }
-}
 
 
-#include "sdl_joystick.cpp"
-#include "sdl_keyboard.cpp"
-#include "sdl_mouse.cpp"
+    static void set_vector_state(input::VectorState<f32>& vs)
+    {
+        auto& vec = vs.vec;
+        auto& unit = vs.unit;
+
+        vs.magnitude = num::magnitude(vec);
+
+        auto mag = vs.magnitude > 0.0f ? vs.magnitude : 1.0f;
+
+        unit.x = vec.x / mag;
+        unit.y = vec.y / mag;
+    }
 
 
-namespace sdl
-{
+    static void set_unit_vector_state(input::VectorState<i8>& vs, int x, int y)
+    {
+        auto& vec = vs.vec;
+        auto& unit = vs.unit;
+
+        vec.x = num::sign_i8(x);
+        vec.y = num::sign_i8(y);
+
+        unit.x = (f32)vec.x;
+        unit.y = (f32)vec.y;
+
+        constexpr f32 hypot = 1.4142135f;
+        constexpr f32 i_hypot = 1.0f / hypot;
+        
+        auto mag = (x || y) ? 1.0f : 0.0f;
+        auto i_mag = (x && y) ? i_hypot : (x || y) ? 1.0f : 0.0f;
+
+        vs.magnitude = mag;
+        unit.x *= i_mag;
+        unit.y *= i_mag;
+    }
+
+
     static void handle_sdl_event(SDL_Event const& event, input::Input& input)
     {
         static bool is_fullscreen = false;
@@ -106,6 +135,10 @@ namespace sdl
 }
 
 
+#include "sdl_joystick.cpp"
+#include "sdl_keyboard.cpp"
+#include "sdl_mouse.cpp"
+
 
 /* api */
 
@@ -131,7 +164,7 @@ namespace input
         reset_input_state(inputs.prev());
         reset_input_state(inputs.curr());
 
-        sdl::open_input_devices();
+        sdl::open_input_devices(inputs);
 
         return true;
     }
@@ -158,12 +191,15 @@ namespace input
         while (SDL_PollEvent(&event))
         {
             sdl::handle_sdl_event(event, curr);
-            sdl::record_keyboard_input(event, prev.keyboard, curr.keyboard);
-            sdl::record_mouse_input(event, prev.mouse, curr.mouse);
-            sdl::record_gamepad_input(event, prev, curr);
-            sdl::record_joystick_input(event, prev, curr);
+            sdl::record_keyboard_input_event(event, prev.keyboard, curr.keyboard);
+            sdl::record_mouse_input_event(event, prev.mouse, curr.mouse);
+            sdl::record_gamepad_input_event(event, prev, curr);
+            sdl::record_joystick_input_event(event, prev, curr);
         }
 
+        sdl::record_gamepad_axes(curr);
+
         set_is_active(curr);
+        sdl::set_gamepad_vector_states(curr);        
     }
 }
