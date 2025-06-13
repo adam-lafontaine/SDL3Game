@@ -364,47 +364,36 @@ namespace sdl
     }
 
 
-    static void record_joystick_axis_input(JoystickInput& jsk, Uint8 axis_id, Sint16 axis_value)
+    static void record_joystick_axes(JoystickInput& joystick)
     {
-        auto val32 = normalize_axis_value(axis_value);
+        auto js = SDL_GetJoystickFromID((SDL_JoystickID)joystick.handle);
 
-        switch (axis_id)
-        {        
-        #if JOYSTICK_AXIS_0
-        case 0:
-            jsk.axis_0 = val32;
-            break;
-        #endif
-        #if JOYSTICK_AXIS_1
-        case 1:
-            jsk.axis_1 = val32;
-            break;
-        #endif
-        #if JOYSTICK_AXIS_2
-        case 2:
-            jsk.axis_2 = val32;
-            break;
-        #endif
-        #if JOYSTICK_AXIS_3
-        case 3:
-            jsk.axis_3 = val32;
-            break;
-        #endif
-        #if JOYSTICK_AXIS_4
-        case 4:
-            jsk.axis_4 = val32;
-            break;
-        #endif
-        #if JOYSTICK_AXIS_5
-        case 5:
-            jsk.axis_5 = val32;
-            break;
-        #endif
+        auto get_axis_value = [&](auto axis_id)
+        {
+            auto val = SDL_GetJoystickAxis(js, axis_id);
+            return normalize_axis_value(val);
+        };
 
-        default:
-            break;
-        }
+    #if JOYSTICK_AXIS_0
+        joystick.axis_0 = get_axis_value(0);
+    #endif
+    #if JOYSTICK_AXIS_1
+        joystick.axis_1 = get_axis_value(1);
+    #endif
+    #if JOYSTICK_AXIS_2
+        joystick.axis_2 = get_axis_value(2);
+    #endif
+    #if JOYSTICK_AXIS_3
+        joystick.axis_3 = get_axis_value(3);
+    #endif
+    #if JOYSTICK_AXIS_4
+        joystick.axis_4 = get_axis_value(4);
+    #endif
+    #if JOYSTICK_AXIS_5
+        joystick.axis_5 = get_axis_value(5);
+    #endif
     }
+    
 
 #endif
 
@@ -442,32 +431,28 @@ namespace sdl
 
         } break;
 
-        case SDL_EVENT_JOYSTICK_AXIS_MOTION:
-        {
-            id = find_joystick(event.jdevice.which, curr);
-            if (id < 0)
-            {
-                return;
-            }
-
-            auto& c = curr.joysticks[id];
-
-            axis = event.jaxis.axis;
-            value = event.jaxis.value;
-            
-            record_joystick_axis_input(c, axis, value);
-            
-        } break;
-
         }
 
     #endif
     }
 
 
-    static void record_joystick_axes()
+    static void record_joystick_axes(Input& curr)
     {
+    #ifndef NO_JOYSTICK
 
+        for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+        {
+            auto& joystick = curr.joysticks[i];
+            if (!joystick.handle)
+            {
+                continue;
+            }
+
+            record_joystick_axes(joystick);
+        }
+
+    #endif
     }
 
 }
@@ -623,50 +608,6 @@ namespace sdl
     }
 
 
-    static void record_gamepad_axis_input(GamepadInput& gamepad, Uint8 axis_id, Sint16 axis_value)
-    {
-        auto val32 = normalize_axis_value(axis_value);
-
-        switch (axis_id)
-        {
-        #if GAMEPAD_AXIS_STICK_LEFT
-        case SDL_GAMEPAD_AXIS_LEFTX:
-            gamepad.stick_left.vec.x = val32;
-            break;
-
-        case SDL_GAMEPAD_AXIS_LEFTY:
-            gamepad.stick_left.vec.y = val32;
-            break;
-        #endif
-
-        #if GAMEPAD_AXIS_STICK_RIGHT
-        case SDL_GAMEPAD_AXIS_RIGHTX:
-            gamepad.stick_right.vec.x = val32;
-            break;
-
-        case SDL_GAMEPAD_AXIS_RIGHTY:
-            gamepad.stick_right.vec.y = val32;
-            break;
-        #endif
-
-        #if GAMEPAD_TRIGGER_LEFT
-        case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
-            gamepad.trigger_left = val32;
-            break;
-        #endif
-
-        #if GAMEPAD_TRIGGER_RIGHT
-        case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
-            gamepad.trigger_right = val32;
-            break;
-        #endif
-
-        default: 
-            break;
-        }
-    }
-
-
     static void record_gamepad_axes(GamepadInput& gamepad)
     {
         auto gp = SDL_GetGamepadFromID((SDL_JoystickID)gamepad.handle);
@@ -731,9 +672,6 @@ namespace sdl
 
     Uint8 btn = 255; // SDL_GamepadButton
     bool is_down = false;
-    
-    Uint8 axis = 255; // SDL_GamepadAxis
-    Sint16 value = 0;
 
     switch (event.type)
     {
@@ -755,23 +693,6 @@ namespace sdl
         record_gamepad_button_input(p, c, btn, is_down);
 
     } break;
-
-    /*case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-    {
-        id = find_gamepad(event.gdevice.which, curr);
-        if (id < 0)
-        {
-            return;
-        }
-
-        auto& c = curr.gamepads[id];
-
-        axis = event.gaxis.axis;
-        value = event.gaxis.value;
-
-        record_gamepad_axis_input(c, axis, value);
-
-    } break;*/
 
     default:
         break;

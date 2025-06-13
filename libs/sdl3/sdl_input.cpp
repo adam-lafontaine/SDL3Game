@@ -198,6 +198,7 @@ namespace input
         }
 
         sdl::record_gamepad_axes(curr);
+        sdl::record_joystick_axes(curr);
 
         set_is_active(curr);
         sdl::set_gamepad_vector_states(curr);        

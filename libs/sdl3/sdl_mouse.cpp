@@ -92,7 +92,7 @@ namespace sdl
         #if MOUSE_WHEEL
         case SDL_EVENT_MOUSE_WHEEL:
         { 
-            record_mouse_wheel_input(mouse, event.wheel); 
+            record_mouse_wheel_input(mouse, event.wheel);
         } break;
         #endif
             
