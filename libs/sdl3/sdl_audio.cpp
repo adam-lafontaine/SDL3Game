@@ -225,9 +225,8 @@ namespace audio
         assert(music.data_ && " *** no music data *** ");
 
         constexpr int FOREVER = -1;
-        auto err = Mix_PlayMusic((music_p)music.data_, FOREVER);
 
-        if (!err)
+        if (Mix_PlayMusic((music_p)music.data_, FOREVER))
         {
             music.is_on = true;
             music.is_paused = false;
@@ -255,9 +254,8 @@ namespace audio
         assert(music.data_ && " *** no music data *** ");
 
         constexpr int FOREVER = -1;
-        auto err = Mix_FadeInMusic((music_p)music.data_, FOREVER, (int)fade_ms);
 
-        if (!err)
+        if (Mix_FadeInMusic((music_p)music.data_, FOREVER, (int)fade_ms))
         {
             music.is_on = true;
             music.is_paused = false;
@@ -315,11 +313,6 @@ namespace audio
             return false;
         }
         Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG);
-
-        int const freq = 44100;
-        auto const format = MIX_DEFAULT_FORMAT;
-        int const channels = MIX_DEFAULT_CHANNELS;
-        int const chunk_size = 2048;
 
         SDL_AudioDeviceID device_id = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
 
