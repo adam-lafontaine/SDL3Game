@@ -70,8 +70,7 @@ namespace input
 		reset_vec_2d(vs.vec);
 		vs.magnitude = 0.0f;
 		reset_vec_2d(vs.unit);
-	}
-	
+	}	
 }
 
 
@@ -303,7 +302,7 @@ namespace input
 }
 
 
-/* joystic */
+/* joystick */
 
 namespace input
 {

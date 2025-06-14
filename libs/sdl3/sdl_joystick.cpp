@@ -88,6 +88,42 @@ namespace sdl
             close_device(devices.joysticks.data[i]);
         }
     }
+
+
+    static void remove_input_device(InputDeviceList& devices, SDL_JoystickID id, input::InputArray& inputs)
+    {
+        for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+        {
+            auto& d_gamepad = devices.gamepads.data[i];
+            if (id == d_gamepad.id)
+            {
+                close_device(d_gamepad);
+            }
+
+            if ((u64)id == inputs.curr().gamepads[i].handle)
+            {
+                inputs.prev().gamepads[i].handle = 0;
+                inputs.curr().gamepads[i].handle = 0;
+                inputs.n_gamepads--;
+            }
+        }
+
+        for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+        {
+            auto& d_joystick = devices.joysticks.data[i];
+            if (id == d_joystick.id)
+            {
+                close_device(d_joystick);
+            }
+
+            if ((u64)id == inputs.curr().joysticks[i].handle)
+            {
+                inputs.prev().joysticks[i].handle = 0;
+                inputs.curr().joysticks[i].handle = 0;
+                inputs.n_joysticks--;
+            }
+        }
+    }
 }
 
 
@@ -754,7 +790,7 @@ namespace sdl
 }
 
 
-/*  */
+/* add remove */
 
 namespace sdl
 {
@@ -791,39 +827,7 @@ namespace sdl
 
         case SDL_EVENT_JOYSTICK_REMOVED:
         {
-            auto id = event.jdevice.which;
-
-            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
-            {
-                auto& d_gamepad = input_devices.gamepads.data[i];
-                if (id == d_gamepad.id)
-                {
-                    close_device(d_gamepad);
-                }
-
-                if ((u64)id == inputs.curr().gamepads[i].handle)
-                {
-                    inputs.prev().gamepads[i].handle = 0;
-                    inputs.curr().gamepads[i].handle = 0;
-                    inputs.n_gamepads--;
-                }
-            }
-
-            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
-            {
-                auto& d_joystick = input_devices.joysticks.data[i];
-                if (id == d_joystick.id)
-                {
-                    close_device(d_joystick);
-                }
-
-                if ((u64)id == inputs.curr().joysticks[i].handle)
-                {
-                    inputs.prev().joysticks[i].handle = 0;
-                    inputs.curr().joysticks[i].handle = 0;
-                    inputs.n_joysticks--;
-                }
-            }
+            remove_input_device(input_devices, event.jdevice.which, inputs);
         } break;
 
         default:
