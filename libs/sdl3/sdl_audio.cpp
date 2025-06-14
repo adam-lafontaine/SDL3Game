@@ -309,7 +309,11 @@ namespace audio
 
     bool init_audio()
     {
-        SDL_Init(SDL_INIT_AUDIO);
+        if (!SDL_Init(SDL_INIT_AUDIO))
+        {
+            sdl::print_error("Init Audio");
+            return false;
+        }
         Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG);
 
         int const freq = 44100;
@@ -317,10 +321,16 @@ namespace audio
         int const channels = MIX_DEFAULT_CHANNELS;
         int const chunk_size = 2048;
 
-        auto rc = Mix_OpenAudio(freq, format, channels, chunk_size);
-        if (rc < 0)
+        SDL_AudioDeviceID device_id = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+
+        SDL_AudioSpec spec{};
+        spec.channels = MIX_DEFAULT_CHANNELS,
+        spec.format = MIX_DEFAULT_FORMAT,
+        spec.freq = 44100;
+
+        if (!Mix_OpenAudio(device_id, &spec))
         {
-            print_message(SDL_GetError());
+            sdl::print_error("Mix_OpenAudio()");
             return false;
         }
 
@@ -420,14 +430,14 @@ namespace audio
             return false;
         }
 
-        auto rw = SDL_RWFromConstMem((void*)bytes.data, (int)bytes.length);
+        auto rw = SDL_IOFromConstMem((void*)bytes.data, (int)bytes.length);
         if (!rw)
         {
             print_message(SDL_GetError());
             return false;
         }
 
-        auto data = Mix_LoadMUS_RW(rw, 1);
+        auto data = Mix_LoadMUS_IO(rw, 1);
         if (!data)
         {
             print_message(SDL_GetError());
@@ -457,14 +467,14 @@ namespace audio
             return false;
         }
 
-        auto rw = SDL_RWFromConstMem((void*)bytes.data, (int)bytes.length);
+        auto rw = SDL_IOFromConstMem((void*)bytes.data, (int)bytes.length);
         if (!rw)
         {
             print_message(SDL_GetError());
             return false;
         }
 
-        auto data = Mix_LoadWAV_RW(rw, 1);
+        auto data = Mix_LoadWAV_IO(rw, 1);
         if (!data)
         {
             print_message(SDL_GetError());
