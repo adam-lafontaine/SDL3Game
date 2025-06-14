@@ -10,19 +10,21 @@ GPP += -mavx -mavx2 -mfma
 #GPP += -DAPP_FULLSCREEN
 
 NO_FLAGS := 
-#SDL2   := `sdl2-config --cflags --libs`
-SDL2 := -lSDL2 -lSDL2_mixer
+#SDL2   := `sdl3-config --cflags --libs`
+SDL3 := -lSDL3
+#SDL3 += -lSDL2_mixer
 
-ALL_LFLAGS := $(SDL2)
+
+ALL_LFLAGS := $(SDL3)
 
 
 root       := ../../../..
 
 app   := $(root)/game_io_test
-build := $(app)/build/ubuntu_sdl2
+build := $(app)/build/ubuntu_sdl3
 src   := $(app)/src
 
-pltfm := $(src)/pltfm/sdl2
+pltfm := $(src)/pltfm/sdl3
 
 libs := $(root)/libs
 
@@ -160,23 +162,30 @@ audio_h := $(output)/audio.hpp
 #*************
 
 
-#*** sdl2 ***
+#*** sdl3 ***
 
-sdl2 := $(libs)/sdl2
+sdl3 := $(libs)/sdl3
 
-sdl_include_h := $(sdl2)/sdl_include.hpp
+sdl_include_h := $(sdl3)/sdl_include.hpp
 
-sdl_input_c := $(sdl2)/sdl_input.cpp
+sdl_joystick_c := $(sdl3)/sdl_joystick.cpp
+sdl_keybord_c  := $(sdl3)/sdl_keyboard.cpp
+sdl_mouse_c    := $(sdl3)/sdl_mouse.cpp
+
+sdl_input_c := $(sdl3)/sdl_input.cpp
 sdl_input_c += $(input_state_h)
 sdl_input_c += $(numeric_h)
 sdl_input_c += $(sdl_include_h)
+sdl_input_c += $(sdl_joystick_c)
+sdl_input_c += $(sdl_keyboard_c)
+sdl_input_c += $(sdl_mouse_c)
 
-sdl_window_c := $(sdl2)/sdl_window.cpp
+sdl_window_c := $(sdl3)/sdl_window.cpp
 sdl_window_c += $(window_h)
 sdl_window_c += $(alloc_type_h)
 sdl_window_c += $(sdl_include_h)
 
-sdl_audio_c := $(sdl2)/sdl_audio.cpp
+sdl_audio_c := $(sdl3)/sdl_audio.cpp
 
 #************
 
@@ -203,7 +212,7 @@ app_c += $(res)/asset_sizes.cpp
 
 #*** main cpp ***
 
-main_c := $(pltfm)/io_test_sdl2_main.cpp
+main_c := $(pltfm)/io_test_sdl3_main.cpp
 main_o := $(build)/main.o
 obj    := $(main_o)
 

@@ -68,6 +68,10 @@
 
 namespace input
 {
+#ifdef NO_KEYBOARD
+	constexpr unsigned N_KEYBOARD_KEYS = 0;
+#else
+
 	constexpr unsigned N_KEYBOARD_KEYS = 
 	KEYBOARD_A + 
 	KEYBOARD_B + 
@@ -129,4 +133,6 @@ namespace input
 	KEYBOARD_NUMPAD_MULTIPLY + 
 	KEYBOARD_NUMPAD_DIVIDE +
 	KEYBOARD_CTRL;
+
+#endif
 }

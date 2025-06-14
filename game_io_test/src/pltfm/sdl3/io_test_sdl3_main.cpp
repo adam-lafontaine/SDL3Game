@@ -123,7 +123,7 @@ static bool is_running()
 
 
 static bool main_init()
-{    
+{  
     if (!window::init())
     {
         return false;
