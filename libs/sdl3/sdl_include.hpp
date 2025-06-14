@@ -66,7 +66,7 @@ namespace sdl
         SDL_Surface* icon = SDL_CreateSurfaceFrom(
             (int)icon_64.width,
             (int)icon_64.height,
-            SDL_PIXELFORMAT_RGBA8888,
+            SDL_PIXELFORMAT_ABGR8888,
             (void*)icon_64.pixel_data,
             icon_64.bytes_per_pixel * icon_64.width
         );

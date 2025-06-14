@@ -79,7 +79,7 @@ bool create_window(Vec2Du32 game_dims)
         game_dims.y > WINDOW_HEIGHT ? game_dims.y : WINDOW_HEIGHT
     };
 
-    if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims))
+    if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims, icon))
     {
         return false;
     }
