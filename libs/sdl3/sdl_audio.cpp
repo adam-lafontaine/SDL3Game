@@ -1,12 +1,12 @@
 #pragma once
 
-//#include "sdl_include.hpp"
+#include "sdl_include.hpp"
 
 #include "../output/audio.hpp"
 #include "../util/numeric.hpp"
 #include "../alloc_type/alloc_type.hpp"
 
-//#include <SDL2/SDL_mixer.h>
+#include <SDL3_mixer/SDL_mixer.h>
 
 
 /* helpers */
@@ -46,12 +46,12 @@ namespace audio
 
     static f32 get_music_volume()
     {
-        /*constexpr int MAX = MIX_MAX_VOLUME;
+        constexpr int MAX = MIX_MAX_VOLUME;
         constexpr int MIN = 0;
         
         auto i_volume = Mix_VolumeMusic(-1);        
 
-        return (f32)(i_volume - MIN) / (MAX - MIN);*/
+        return (f32)(i_volume - MIN) / (MAX - MIN);
 
         return 0.0f;
     }
@@ -59,12 +59,12 @@ namespace audio
 
     static f32 get_sound_channel_volume(int track_channel)
     {
-        /*constexpr int MAX = MIX_MAX_VOLUME;
+        constexpr int MAX = MIX_MAX_VOLUME;
         constexpr int MIN = 0;
 
         auto i_volume = Mix_Volume(track_channel, -1);
 
-        return (f32)(i_volume - MIN) / (MAX - MIN);*/
+        return (f32)(i_volume - MIN) / (MAX - MIN);
 
         return 0.0f;
     }
@@ -72,7 +72,7 @@ namespace audio
 
     static f32 set_sound_channel_volume(int track_channel, f32 volume)
     {
-        /*constexpr int MAX = MIX_MAX_VOLUME;
+        constexpr int MAX = MIX_MAX_VOLUME;
         constexpr int MIN = 0;
 
         volume = num::clamp(volume, 0.0f, 1.0f);
@@ -81,7 +81,7 @@ namespace audio
         if (i_volume != Mix_Volume(track_channel, -1))
         {
             Mix_Volume(track_channel, i_volume);
-        }*/
+        }
         
         return get_sound_channel_volume(track_channel);
     }  
@@ -98,11 +98,8 @@ namespace audio
 
 namespace audio
 {      
-    //using music_p = Mix_Music*;
-    //using sound_p = Mix_Chunk*;
-
-    using music_p = void*;
-    using sound_p = void*;
+    using music_p = Mix_Music*;
+    using sound_p = Mix_Chunk*;
 
 
     constexpr int MAX_SOUND_TRACKS = 16;
@@ -156,7 +153,7 @@ namespace audio
 
     static void play_sound_track_once(Sound& sound)
     {
-        /*assert(sound.data_ && " *** no sound data *** ");
+        assert(sound.data_ && " *** no sound data *** ");
         
         constexpr int N_REPEATS = 0;
 
@@ -169,13 +166,13 @@ namespace audio
             sound_tracks[track_channel] = &sound;
         }
         
-        sound.is_on = true;*/
+        sound.is_on = true;
     }
 
 
     static void play_sound_track_loop(Sound& sound)
     {
-        /*assert(sound.data_ && " *** no sound data *** ");
+        assert(sound.data_ && " *** no sound data *** ");
 
         constexpr int FOREVER = -1;
 
@@ -188,7 +185,7 @@ namespace audio
             sound_tracks[track_channel] = &sound;
         }
         
-        sound.is_on = true;*/
+        sound.is_on = true;
     }
 
 
@@ -212,20 +209,20 @@ namespace audio
 
     static void stop_music_track()
     {
-        /*if ((!music_track) || (!music_track->is_on))
+        if ((!music_track) || (!music_track->is_on))
         {
             return;
         }
 
         Mix_HaltMusic();
         music_track->is_on = false;
-        music_track->is_paused = false;*/
+        music_track->is_paused = false;
     }
 
 
     static void play_music_track(Music& music)
     {
-        /*assert(music.data_ && " *** no music data *** ");
+        assert(music.data_ && " *** no music data *** ");
 
         constexpr int FOREVER = -1;
         auto err = Mix_PlayMusic((music_p)music.data_, FOREVER);
@@ -236,26 +233,26 @@ namespace audio
             music.is_paused = false;
             
             music_track = &music;
-        }*/
+        }
     }
 
 
     static void fade_out_music_track(u32 fade_ms)
     {
-        /*if ((!music_track) || (!music_track->is_on))
+        if ((!music_track) || (!music_track->is_on))
         {
             return;
         }
 
         Mix_FadeOutMusic((int)fade_ms);
         music_track->is_on = false;
-        music_track->is_paused = false;*/
+        music_track->is_paused = false;
     }
 
 
     static void fade_in_music_track(Music& music, u32 fade_ms)
     {
-        /*assert(music.data_ && " *** no music data *** ");
+        assert(music.data_ && " *** no music data *** ");
 
         constexpr int FOREVER = -1;
         auto err = Mix_FadeInMusic((music_p)music.data_, FOREVER, (int)fade_ms);
@@ -266,14 +263,13 @@ namespace audio
             music.is_paused = false;
             
             music_track = &music;
-        }*/
+        }
     }
 
 
     static bool is_initialized()
     {
-        //return audio_initialized;
-        return true;
+        return audio_initialized;
     }
 }
 
@@ -284,7 +280,7 @@ namespace audio
 {
     void destroy_music(Music& music)
     {
-        /*if (music.data_)
+        if (music.data_)
         {
             mem::untag((u8*)music.data_);
             Mix_FreeMusic((music_p)music.data_);
@@ -295,25 +291,25 @@ namespace audio
             music_track = nullptr;
         }
 
-        reset_music(music);*/
+        reset_music(music);
     }
 
 
     void destroy_sound(Sound& sound)
     {
-        /*if (sound.data_)
+        if (sound.data_)
         {
             mem::untag((u8*)sound.data_);
             Mix_FreeChunk((sound_p)sound.data_);
         }        
 
-        reset_sound(sound);*/
+        reset_sound(sound);
     }
 
 
     bool init_audio()
     {
-        /*SDL_Init(SDL_INIT_AUDIO);
+        SDL_Init(SDL_INIT_AUDIO);
         Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG);
 
         int const freq = 44100;
@@ -324,7 +320,7 @@ namespace audio
         auto rc = Mix_OpenAudio(freq, format, channels, chunk_size);
         if (rc < 0)
         {
-            print_message(Mix_GetError());
+            print_message(SDL_GetError());
             return false;
         }
 
@@ -333,32 +329,30 @@ namespace audio
         audio_initialized = true;
         //set_master_volume(0.5f);
 
-        return true;*/
-
         return true;
     }
 
 
     void stop_audio()
     {
-        //Mix_HaltMusic();
-        //Mix_HaltChannel(-1);
+        Mix_HaltMusic();
+        Mix_HaltChannel(-1);
     }
 
 
     void close_audio()
     {
-        /*stop_audio();
+        stop_audio();
         Mix_CloseAudio();
         Mix_Quit();
 
-        audio_initialized = false;*/
+        audio_initialized = false;
     }
 
 
     bool load_music_from_file(cstr music_file_path, Music& music)
     {
-        /*assert(is_initialized() && " *** audio not initialized *** ");
+        assert(is_initialized() && " *** audio not initialized *** ");
         auto is_valid_file = is_valid_audio_file(music_file_path);
         assert(is_valid_file && " *** invalid music file *** ");
 
@@ -372,15 +366,13 @@ namespace audio
         auto data = Mix_LoadMUS(music_file_path);
         if (!data)
         {
-            print_message(Mix_GetError());
+            print_message(SDL_GetError());
             return false;
         }
 
         mem::tag_file((u8*)data, music_file_path);
 
-        set_music_id(music, data);        
-
-        return true;*/
+        set_music_id(music, data);
 
         return true;
     }
@@ -388,7 +380,7 @@ namespace audio
 
     bool load_sound_from_file(cstr sound_file_path, Sound& sound)
     {
-        /*assert(is_initialized() && " *** audio not initialized *** ");
+        assert(is_initialized() && " *** audio not initialized *** ");
         auto is_valid_file = is_valid_audio_file(sound_file_path);
         assert(is_valid_file && " *** invalid music file *** ");
 
@@ -407,9 +399,7 @@ namespace audio
 
         mem::tag_file((u8*)data, sound_file_path);
 
-        set_sound_id(sound, data);        
-
-        return true;*/
+        set_sound_id(sound, data);
 
         return true;
     }
@@ -417,7 +407,7 @@ namespace audio
 
     bool load_music_from_bytes(ByteView const& bytes, Music& music, cstr tag)
     {
-        /*assert(is_initialized() && " *** audio not initialized *** ");
+        assert(is_initialized() && " *** audio not initialized *** ");
         assert(bytes.data && " *** no bytes data *** ");
         assert(bytes.length && " *** no bytes length *** ");
 
@@ -433,14 +423,14 @@ namespace audio
         auto rw = SDL_RWFromConstMem((void*)bytes.data, (int)bytes.length);
         if (!rw)
         {
-            print_message(Mix_GetError());
+            print_message(SDL_GetError());
             return false;
         }
 
         auto data = Mix_LoadMUS_RW(rw, 1);
         if (!data)
         {
-            print_message(Mix_GetError());
+            print_message(SDL_GetError());
             return false;
         }
 
@@ -448,15 +438,13 @@ namespace audio
 
         set_music_id(music, data);
 
-        return true;*/
-
         return true;
     }
 
 
     bool load_sound_from_bytes(ByteView const& bytes, Sound& sound, cstr tag)
     {
-        /*assert(is_initialized() && " *** audio not initialized *** ");
+        assert(is_initialized() && " *** audio not initialized *** ");
         assert(bytes.data && " *** no bytes data *** ");
         assert(bytes.length && " *** no bytes length *** ");
 
@@ -472,22 +460,20 @@ namespace audio
         auto rw = SDL_RWFromConstMem((void*)bytes.data, (int)bytes.length);
         if (!rw)
         {
-            print_message(Mix_GetError());
+            print_message(SDL_GetError());
             return false;
         }
 
         auto data = Mix_LoadWAV_RW(rw, 1);
         if (!data)
         {
-            print_message(Mix_GetError());
+            print_message(SDL_GetError());
             return false;
         }
 
         mem::tag((u8*)data, bytes.length, tag);
 
-        set_sound_id(sound, data);        
-
-        return true;*/
+        set_sound_id(sound, data);
 
         return true;
     }
@@ -495,7 +481,7 @@ namespace audio
 
     f32 set_music_volume(f32 volume)
     {
-        /*constexpr int MAX = MIX_MAX_VOLUME;
+        constexpr int MAX = MIX_MAX_VOLUME;
         constexpr int MIN = 0;
 
         assert(is_initialized() && " *** audio not initialized *** ");
@@ -506,7 +492,7 @@ namespace audio
         if (i_volume != Mix_VolumeMusic(-1))
         {
             Mix_VolumeMusic(i_volume);
-        }*/
+        }
         
         return get_music_volume();
     }
@@ -543,7 +529,7 @@ namespace audio
 
     void toggle_pause_music()
     {
-        /*assert(is_initialized() && " *** audio not initialized *** ");
+        assert(is_initialized() && " *** audio not initialized *** ");
         assert(music_track && " *** music_track not set *** ");
 
         auto& music = *music_track;
@@ -557,7 +543,7 @@ namespace audio
         {
             Mix_PauseMusic();
             music.is_paused = true;
-        }*/
+        }
     }
 
 
@@ -597,7 +583,7 @@ namespace audio
 
     void stop_sound(Sound& sound)
     {
-        /*assert(is_initialized() && " *** audio not initialized *** ");
+        assert(is_initialized() && " *** audio not initialized *** ");
 
         if (!sound.is_on)
         {
@@ -605,13 +591,13 @@ namespace audio
         }
 
         Mix_HaltChannel(sound.id);
-        sound.is_on = false;*/
+        sound.is_on = false;
     }
 
 
     void stop_sound()
     {
-        //Mix_HaltChannel(-1);
+        Mix_HaltChannel(-1);
     }
    
 }

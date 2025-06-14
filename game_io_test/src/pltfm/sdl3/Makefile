@@ -12,7 +12,7 @@ GPP += -mavx -mavx2 -mfma
 NO_FLAGS := 
 #SDL2   := `sdl3-config --cflags --libs`
 SDL3 := -lSDL3
-#SDL3 += -lSDL2_mixer
+SDL3 += -lSDL3_mixer
 
 
 ALL_LFLAGS := $(SDL3)
