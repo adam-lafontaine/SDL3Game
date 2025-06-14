@@ -164,7 +164,7 @@ namespace sdl
     #endif
 
         return js;
-    }    
+    }
 
 
     static void add_input_device(InputDeviceList& devices, SDL_JoystickID id, input::InputArray& inputs)
@@ -174,19 +174,37 @@ namespace sdl
         auto add_gamepad = [&]()
         {
             auto handle = (u64)id;
-            auto i = inputs.n_gamepads;
-            inputs.prev().gamepads[i].handle = handle;
-            inputs.curr().gamepads[i].handle = handle;
-            inputs.n_gamepads++;
+            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            {
+                if (inputs.prev().gamepads[i].handle)
+                {
+                    continue;
+                }
+
+                inputs.prev().gamepads[i].handle = handle;
+                inputs.curr().gamepads[i].handle = handle;
+                inputs.n_gamepads++;
+
+                break;
+            }
         };
 
         auto add_joystick = [&]()
         {
             auto handle = (u64)id;
-            auto i = inputs.n_joysticks;
-            inputs.prev().joysticks[i].handle = handle;
-            inputs.curr().joysticks[i].handle = handle;
-            inputs.n_joysticks++;
+            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            {
+                if (inputs.prev().joysticks[i].handle)
+                {
+                    continue;
+                }
+
+                inputs.prev().joysticks[i].handle = handle;
+                inputs.curr().joysticks[i].handle = handle;
+                inputs.n_joysticks++;
+
+                break;
+            }            
         };
 
         switch (type)
@@ -227,9 +245,6 @@ namespace sdl
     {        
         int n_connected = 0;
         auto ids = SDL_GetJoysticks(&n_connected);
-
-        SDL_JoystickID id;
-        SDL_JoystickType type;
 
         for (int i = 0; i < n_connected; i++)
         {
@@ -393,7 +408,7 @@ namespace sdl
         joystick.axis_5 = get_axis_value(5);
     #endif
     }
-    
+
 
 #endif
 
@@ -406,16 +421,13 @@ namespace sdl
 
         Uint8 btn = 255;
         bool is_down = false;
-        
-        Uint8 axis = 255;
-        Sint16 value = 0;
 
         switch (event.type)
         {
         case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
         case SDL_EVENT_JOYSTICK_BUTTON_UP:
         {
-            id = find_joystick(event.jdevice.which, curr);
+            id = find_joystick(event.jbutton.which, curr);
             if (id < 0)
             {
                 return;
@@ -431,6 +443,8 @@ namespace sdl
 
         } break;
 
+        default:
+            break;
         }
 
     #endif
@@ -678,7 +692,7 @@ namespace sdl
     case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
     case SDL_EVENT_GAMEPAD_BUTTON_UP:
     {
-        id = find_gamepad(event.gdevice.which, curr);
+        id = find_gamepad(event.gbutton.which, curr);
         if (id < 0)
         {
             return;
@@ -736,5 +750,84 @@ namespace sdl
         }
 
     #endif
+    }
+}
+
+
+/*  */
+
+namespace sdl
+{
+    static void update_input_devices(SDL_Event const& event, input::InputArray& inputs)
+    {
+        static int count = 0;
+
+        switch (event.type)
+        {
+
+        case SDL_EVENT_JOYSTICK_ADDED:
+        {
+            auto id = event.jdevice.which;
+
+            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            {
+                if ((u64)id == inputs.curr().gamepads[i].handle)
+                {                    
+                    return; // already added
+                }
+            }
+
+            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            {
+                if ((u64)id == inputs.curr().joysticks[i].handle)
+                {
+                    return; // already added
+                }
+            }
+
+            add_input_device(input_devices, id, inputs);
+
+        } break;
+
+        case SDL_EVENT_JOYSTICK_REMOVED:
+        {
+            auto id = event.jdevice.which;
+
+            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            {
+                auto& d_gamepad = input_devices.gamepads.data[i];
+                if (id == d_gamepad.id)
+                {
+                    close_device(d_gamepad);
+                }
+
+                if ((u64)id == inputs.curr().gamepads[i].handle)
+                {
+                    inputs.prev().gamepads[i].handle = 0;
+                    inputs.curr().gamepads[i].handle = 0;
+                    inputs.n_gamepads--;
+                }
+            }
+
+            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            {
+                auto& d_joystick = input_devices.joysticks.data[i];
+                if (id == d_joystick.id)
+                {
+                    close_device(d_joystick);
+                }
+
+                if ((u64)id == inputs.curr().joysticks[i].handle)
+                {
+                    inputs.prev().joysticks[i].handle = 0;
+                    inputs.curr().joysticks[i].handle = 0;
+                    inputs.n_joysticks--;
+                }
+            }
+        } break;
+
+        default:
+            break;
+        }
     }
 }

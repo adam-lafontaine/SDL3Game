@@ -193,6 +193,7 @@ namespace input
             sdl::handle_sdl_event(event, curr);
             sdl::record_keyboard_input_event(event, prev.keyboard, curr.keyboard);
             sdl::record_mouse_input_event(event, prev.mouse, curr.mouse);
+            sdl::update_input_devices(event, inputs);
             sdl::record_gamepad_input_event(event, prev, curr);
             sdl::record_joystick_input_event(event, prev, curr);
         }
