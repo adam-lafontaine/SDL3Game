@@ -307,7 +307,7 @@ namespace audio
 
     bool init_audio()
     {
-        if (!SDL_Init(SDL_INIT_AUDIO))
+        if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
         {
             sdl::print_error("Init Audio");
             return false;
@@ -348,6 +348,8 @@ namespace audio
         stop_audio();
         Mix_CloseAudio();
         Mix_Quit();
+
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
 
         audio_initialized = false;
     }
