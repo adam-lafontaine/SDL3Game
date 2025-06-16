@@ -2,9 +2,21 @@
 
 namespace sdl
 {
+    static inline u64 to_input_handle(SDL_JoystickID id)
+    {
+        return (u64)(id + 1024);
+    }
+
+
+    static inline SDL_JoystickID to_joystick_id(u64 handle)
+    {
+        return (SDL_JoystickID)(handle - 1024);
+    }
+
+    
     static void add_gamepad_input(input::InputArray& inputs, SDL_JoystickID id)
     {
-        auto handle = (u64)id;
+        auto handle = to_input_handle(id);
         for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
         {
             if (inputs.prev().gamepads[i].handle)
@@ -17,7 +29,7 @@ namespace sdl
             inputs.n_gamepads++;
 
         #ifdef PRINT_MESSAGES
-            printf("Gamepad id %u added\n", i);
+            printf("Gamepad id %u added\n", id);
         #endif
 
             break;
@@ -27,7 +39,7 @@ namespace sdl
 
     static void add_joystick_input(input::InputArray& inputs, SDL_JoystickID id)
     {
-        auto handle = (u64)id;
+        auto handle = to_input_handle(id);
         for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
         {
             if (inputs.prev().joysticks[i].handle)
@@ -40,7 +52,7 @@ namespace sdl
             inputs.n_joysticks++;
 
         #ifdef PRINT_MESSAGES
-            printf("Joystick id %u added\n", i);
+            printf("Joystick id %u added\n", id);
         #endif
 
             break;
@@ -50,7 +62,7 @@ namespace sdl
 
     static void remove_gamepad_input(input::InputArray& inputs, SDL_JoystickID id)
     {
-        auto handle = (u64)id;
+        auto handle = to_input_handle(id);
         for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
         {
             if (inputs.curr().gamepads[i].handle == handle)
@@ -60,7 +72,7 @@ namespace sdl
                 inputs.n_gamepads--;
 
             #ifdef PRINT_MESSAGES
-                printf("Gamepad id %u removed\n", i);
+                printf("Gamepad id %u removed\n", id);
             #endif
 
                 break;
@@ -71,7 +83,7 @@ namespace sdl
 
     static void remove_joystick_input(input::InputArray& inputs, SDL_JoystickID id)
     {
-        auto handle = (u64)id;
+        auto handle = to_input_handle(id);
         for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
         {
             if (inputs.curr().joysticks[i].handle == handle)
@@ -81,12 +93,44 @@ namespace sdl
                 inputs.n_joysticks--;
 
             #ifdef PRINT_MESSAGES
-                printf("Joystick id %u removed\n", i);
+                printf("Joystick id %u removed\n", id);
             #endif
 
                 break;
             }
         }
+    }
+
+
+    static i32 find_gamepad(SDL_JoystickID id, input::Input const& input)
+    {
+        auto handle = to_input_handle(id);
+
+        for (i32 i = 0; i < input::MAX_GAMEPADS; i++)
+        {
+            if (handle == input.gamepads[i].handle)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+
+    static i32 find_joystick(SDL_JoystickID id, input::Input const& input)
+    {
+        auto handle = to_input_handle(id);
+
+        for (i32 i = 0; i < input::MAX_JOYSTICKS; i++)
+        {
+            if (handle == input.joysticks[i].handle)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }
 
@@ -319,58 +363,26 @@ namespace sdl
 
 namespace sdl
 {
-    InputDeviceList input_devices;
+    InputDeviceList device_list;
 
 
-    static void open_input_devices(input::InputArray& inputs)
+    static void open_device_list(input::InputArray& inputs)
     {        
         int n_connected = 0;
         auto ids = SDL_GetJoysticks(&n_connected);
 
         for (int i = 0; i < n_connected; i++)
         {
-            add_input_device(input_devices, ids[i], inputs);
+            add_input_device(device_list, ids[i], inputs);
         }
 
         SDL_free(ids);
     }
 
 
-    static void close_input_devices()
+    static void close_device_list()
     {
-        close_devices(input_devices);
-    }
-
-
-    static i32 find_gamepad(SDL_JoystickID id, input::Input const& input)
-    {
-        auto handle = (u64)id;
-
-        for (i32 i = 0; i < input::MAX_GAMEPADS; i++)
-        {
-            if (handle == input.gamepads[i].handle)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-
-    static i32 find_joystick(SDL_JoystickID id, input::Input const& input)
-    {
-        auto handle = (u64)id;
-
-        for (i32 i = 0; i < input::MAX_JOYSTICKS; i++)
-        {
-            if (handle == input.joysticks[i].handle)
-            {
-                return i;
-            }
-        }
-
-        return -1;
+        close_devices(device_list);
     }
 }
 
@@ -462,7 +474,7 @@ namespace sdl
 
     static void record_joystick_axes(JoystickInput& joystick)
     {
-        auto js = SDL_GetJoystickFromID((SDL_JoystickID)joystick.handle);
+        auto js = SDL_GetJoystickFromID(to_joystick_id(joystick.handle));
 
         auto get_axis_value = [&](auto axis_id)
         {
@@ -705,7 +717,7 @@ namespace sdl
 
     static void record_gamepad_axes(GamepadInput& gamepad)
     {
-        auto gp = SDL_GetGamepadFromID((SDL_JoystickID)gamepad.handle);
+        auto gp = SDL_GetGamepadFromID(to_joystick_id(gamepad.handle));
 
         auto get_axis_value = [&](auto axis_id)
         {
@@ -839,7 +851,7 @@ namespace sdl
 
 namespace sdl
 {
-    static void update_input_devices(SDL_Event const& event, input::InputArray& inputs)
+    static void update_device_list(SDL_Event const& event, input::InputArray& inputs)
     {
         static int count = 0;
 
@@ -849,10 +861,11 @@ namespace sdl
         case SDL_EVENT_JOYSTICK_ADDED:
         {
             auto id = event.jdevice.which;
+            auto handle = to_input_handle(id);
 
             for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
             {
-                if ((u64)id == inputs.curr().gamepads[i].handle)
+                if (handle == inputs.curr().gamepads[i].handle)
                 {                    
                     return; // already added
                 }
@@ -860,19 +873,19 @@ namespace sdl
 
             for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
             {
-                if ((u64)id == inputs.curr().joysticks[i].handle)
+                if (handle == inputs.curr().joysticks[i].handle)
                 {
                     return; // already added
                 }
             }
 
-            add_input_device(input_devices, id, inputs);
+            add_input_device(device_list, id, inputs);
 
         } break;
 
         case SDL_EVENT_JOYSTICK_REMOVED:
         {
-            remove_input_device(input_devices, event.jdevice.which, inputs);
+            remove_input_device(device_list, event.jdevice.which, inputs);
         } break;
 
         default:

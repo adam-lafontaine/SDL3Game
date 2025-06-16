@@ -164,7 +164,7 @@ namespace input
         reset_input_state(inputs.prev());
         reset_input_state(inputs.curr());
 
-        sdl::open_input_devices(inputs);
+        sdl::open_device_list(inputs);
 
         return true;
     }
@@ -172,7 +172,7 @@ namespace input
 
     void close()
     {
-        sdl::close_input_devices();
+        sdl::close_device_list();
         SDL_QuitSubSystem(subsystem_flags());
     }
 
@@ -193,7 +193,7 @@ namespace input
             sdl::handle_sdl_event(event, curr);
             sdl::record_keyboard_input_event(event, prev.keyboard, curr.keyboard);
             sdl::record_mouse_input_event(event, prev.mouse, curr.mouse);
-            sdl::update_input_devices(event, inputs);
+            sdl::update_device_list(event, inputs);
             sdl::record_gamepad_input_event(event, prev, curr);
             sdl::record_joystick_input_event(event, prev, curr);
         }
