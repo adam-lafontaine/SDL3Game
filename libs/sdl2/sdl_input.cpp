@@ -32,7 +32,7 @@ namespace sdl
             inputs.n_gamepads++;
 
         #ifdef PRINT_MESSAGES
-            printf("Gamepad id %u added\n", i);
+            printf("Gamepad id %d added\n", id);
         #endif
 
             break;
@@ -55,7 +55,7 @@ namespace sdl
             inputs.n_joysticks++;
 
         #ifdef PRINT_MESSAGES
-            printf("Joystick id %u added\n", i);
+            printf("Joystick id %d added\n", id);
         #endif
 
             break;
@@ -75,7 +75,7 @@ namespace sdl
                 inputs.n_gamepads--;
 
             #ifdef PRINT_MESSAGES
-                printf("Gamepad id %u removed\n", i);
+                printf("Gamepad id %d removed\n", id);
             #endif
 
                 break;
@@ -96,7 +96,7 @@ namespace sdl
                 inputs.n_joysticks--;
 
             #ifdef PRINT_MESSAGES
-                printf("Joystick id %u removed\n", i);
+                printf("Joystick id %d removed\n", id);
             #endif
 
                 break;
@@ -232,7 +232,27 @@ namespace sdl
 
     static void remove_input_device(InputDeviceList& devices, SDL_JoystickID id, input::InputArray& inputs)
     {
-        // TODO
+        for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+        {
+            auto& d_gamepad = devices.gamepads.data[i];
+            if (id == d_gamepad.id)
+            {
+                close_device(d_gamepad);
+                remove_gamepad_input(inputs, id);
+                return;
+            }
+        }
+
+        for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+        {
+            auto& d_joystick = devices.joysticks.data[i];
+            if (id == d_joystick.id)
+            {
+                close_device(d_joystick);
+                remove_joystick_input(inputs, id);
+                return;
+            }
+        }
     }
 }
 
@@ -1138,7 +1158,7 @@ namespace input
 
 #endif
 
-    static void record_joystick_input(SDL_Event const& event, Input const& prev, Input& curr, u32 n_joysticks)
+    static void record_joystick_input(SDL_Event const& event, Input const& prev, Input& curr)
     {
     #ifndef NO_JOYSTICK
 
@@ -1178,14 +1198,6 @@ namespace input
             }
 
         } break;
-
-        /*case SDL_JOYDEVICEADDED:
-            
-            break;
-
-        case SDL_JOYDEVICEREMOVED:
-
-            break;*/
 
         default:
             break;
@@ -1375,6 +1387,71 @@ namespace input
 }
 
 
+/* add remove */
+
+namespace input
+{
+    static void update_device_list(SDL_Event const& event, input::InputArray& inputs)
+    {
+        static int count = 0;
+
+        switch (event.type)
+        {
+
+        case SDL_JOYDEVICEADDED:
+        {
+            auto id = event.jdevice.which;
+            auto handle = sdl::to_input_handle(id);
+
+            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            {
+                if (handle == inputs.curr().gamepads[i].handle)
+                {                    
+                    return; // already added
+                }
+            }
+
+            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            {
+                if (handle == inputs.curr().joysticks[i].handle)
+                {
+                    return; // already added
+                }
+            }
+
+            if (SDL_IsGameController(id))
+            {
+                id = sdl::add_gamepad_device(sdl::device_list.gamepads, id);
+                if (id >= 0)
+                {
+                    sdl::add_gamepad_input(inputs, id);
+                }
+            }
+            else
+            {
+                id = sdl::add_joystick_device(sdl::device_list.joysticks, id);
+                if (id >= 0)
+                {
+                    sdl::add_joystick_input(inputs, id);
+                }
+            }
+                        
+
+        } break;
+
+        case SDL_JOYDEVICEREMOVED:
+        {
+            sdl::remove_input_device(sdl::device_list, event.jdevice.which, inputs);
+        } break;
+
+        default:
+            break;
+        }
+    }
+
+}
+
+
 /* api */
 
 namespace input
@@ -1417,10 +1494,10 @@ namespace input
     }
 
 
-    void record_input(InputArray& input)
+    void record_input(InputArray& inputs)
     {
-        auto& prev = input.prev();
-        auto& curr = input.curr();
+        auto& prev = inputs.prev();
+        auto& curr = inputs.curr();
 
         copy_input_state(prev, curr);
         curr.frame = prev.frame + 1;
@@ -1433,7 +1510,8 @@ namespace input
             sdl::handle_sdl_event(event, curr);
             record_keyboard_input(event, prev.keyboard, curr.keyboard);
             record_mouse_input(event, prev.mouse, curr.mouse);
-            record_joystick_input(event, prev, curr, input.n_joysticks);
+            update_device_list(event, inputs);
+            record_joystick_input(event, prev, curr);
         }
 
         record_gamepad_input(prev, curr);
@@ -1442,10 +1520,10 @@ namespace input
     }
 
 
-    void record_input(InputArray& input, event_cb handle_event)
+    void record_input(InputArray& inputs, event_cb handle_event)
     {
-        auto& prev = input.prev();
-        auto& curr = input.curr();
+        auto& prev = inputs.prev();
+        auto& curr = inputs.curr();
 
         copy_input_state(prev, curr);
         curr.frame = prev.frame + 1;
@@ -1459,7 +1537,8 @@ namespace input
             sdl::handle_sdl_event(event, curr);
             record_keyboard_input(event, prev.keyboard, curr.keyboard);
             record_mouse_input(event, prev.mouse, curr.mouse);
-            record_joystick_input(event, prev, curr, input.n_joysticks);
+            update_device_list(event, inputs);
+            record_joystick_input(event, prev, curr);
         }
 
         record_gamepad_input(prev, curr);
