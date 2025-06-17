@@ -267,49 +267,49 @@ namespace sdl
 
     #ifndef NO_GAMEPAD
 
-        auto gc = SDL_GameControllerOpen(index);
-        if (!gc)
-        {
-            sdl::print_error("SDL_GameControllerOpen()");
-            return -1;
-        }
-
-        auto js = SDL_GameControllerGetJoystick(gc);
-        if (!js)
-        {
-            SDL_GameControllerClose(gc);
-            sdl::print_error("SDL_GameControllerGetJoystick()");
-            return -1;
-        }
-
-        auto h = SDL_HapticOpenFromJoystick(js);
-        if (!h)
-        {
-            sdl::print_message("no rumble from joystick");
-        }
-        else if (SDL_HapticRumbleInit(h) != 0)
-        {
-            sdl::print_error("SDL_HapticRumbleInit()");
-            SDL_HapticClose(h);
-        }
-        else
-        {
-            sdl::print_message("found a rumble");
-        }
-
-        id = SDL_JoystickInstanceID(js);
-        if (id < 0)
-        {
-            sdl::print_error("SDL_JoystickInstanceID()");
-            return id;
-        }
-
         for (u32 i = 0; i < devices.capacity; i++)
         {
             auto& device = devices.data[i];
             if (device.gamepad)
             {
                 continue;
+            }
+
+            auto gc = SDL_GameControllerOpen(index);
+            if (!gc)
+            {
+                sdl::print_error("SDL_GameControllerOpen()");
+                return -1;
+            }
+
+            auto js = SDL_GameControllerGetJoystick(gc);
+            if (!js)
+            {
+                SDL_GameControllerClose(gc);
+                sdl::print_error("SDL_GameControllerGetJoystick()");
+                return -1;
+            }
+
+            auto h = SDL_HapticOpenFromJoystick(js);
+            if (!h)
+            {
+                sdl::print_message("no rumble from joystick");
+            }
+            else if (SDL_HapticRumbleInit(h) != 0)
+            {
+                sdl::print_error("SDL_HapticRumbleInit()");
+                SDL_HapticClose(h);
+            }
+            else
+            {
+                sdl::print_message("found a rumble");
+            }
+
+            id = SDL_JoystickInstanceID(js);
+            if (id < 0)
+            {
+                sdl::print_error("SDL_JoystickInstanceID()");
+                return id;
             }
 
             device.id = id;
@@ -329,27 +329,27 @@ namespace sdl
         SDL_JoystickID id = -1;
 
     #ifndef NO_JOYSTICK
-
-        auto js = SDL_JoystickOpen(index);
-        if (!js)
-        {
-            sdl::print_error("SDL_JoystickOpen()");
-            return -1;
-        }
-        
-        id = SDL_JoystickInstanceID(js);
-        if (id < 0)
-        {
-            sdl::print_error("SDL_JoystickInstanceID()");
-            return id;
-        }
-
+    
         for (u32 i = 0; i < devices.capacity; i++)
         {
             auto& device = devices.data[i];
             if (device.joystick)
             {
                 continue;
+            }
+
+            auto js = SDL_JoystickOpen(index);
+            if (!js)
+            {
+                sdl::print_error("SDL_JoystickOpen()");
+                return -1;
+            }
+            
+            id = SDL_JoystickInstanceID(js);
+            if (id < 0)
+            {
+                sdl::print_error("SDL_JoystickInstanceID()");
+                return id;
             }
 
             device.id = id;
@@ -396,10 +396,9 @@ namespace sdl
                     continue;
                 }
 
-                auto id = add_gamepad_device(devices.gamepads, i);
-                if (id >= 0)
+                if (add_gamepad_device(devices.gamepads, i))
                 {
-                    add_gamepad_input(inputs, id);
+                    add_gamepad_input(inputs, i);
                     ++c;
                 }
             }

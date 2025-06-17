@@ -213,7 +213,7 @@ namespace sdl
     }
 
 
-    static void close_devices(InputDeviceList& devices)
+    static void close_input_devices(InputDeviceList& devices)
     {
         for (u32 i = 0; i < devices.gamepads.capacity; i++)
         {
@@ -264,25 +264,25 @@ namespace sdl
 
     #ifndef NO_GAMEPAD
 
-        if (!SDL_IsGamepad(id))
-        {
-            sdl::print_message("not a gamepad");
-            return gp;
-        }
-
-        gp = SDL_OpenGamepad(id);
-        if (!gp)
-        {
-            sdl::print_error("SDL_OpenGamepad()");
-            return gp;
-        }
-
         for (u32 i = 0; i < devices.capacity; i++)
         {
             auto& device = devices.data[i];
             if (device.gamepad)
             {
                 continue;
+            }
+
+            if (!SDL_IsGamepad(id))
+            {
+                sdl::print_message("not a gamepad");
+                return gp;
+            }
+
+            gp = SDL_OpenGamepad(id);
+            if (!gp)
+            {
+                sdl::print_error("SDL_OpenGamepad()");
+                return gp;
             }
 
             device.id = id;
@@ -303,19 +303,19 @@ namespace sdl
 
     #ifndef NO_JOYSTICK
 
-        js = SDL_OpenJoystick(id);
-        if (!js)
-        {
-            sdl::print_error("SDL_OpenJoystick()");
-            return js;
-        }
-
         for (u32 i = 0; i < devices.capacity; i++)
         {
             auto& device = devices.data[i];
             if (device.joystick)
             {
                 continue;
+            }
+
+            js = SDL_OpenJoystick(id);
+            if (!js)
+            {
+                sdl::print_error("SDL_OpenJoystick()");
+                return js;
             }
 
             device.id = id;
@@ -341,7 +341,7 @@ namespace sdl
             if (add_gamepad_device(devices.gamepads, id, type))
             {
                 add_gamepad_input(inputs, id);
-            }            
+            }
             
         } break;
 
@@ -382,7 +382,7 @@ namespace sdl
 
     static void close_device_list()
     {
-        close_devices(device_list);
+        close_input_devices(device_list);
     }
 }
 
