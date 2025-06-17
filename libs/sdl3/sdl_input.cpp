@@ -155,14 +155,14 @@ namespace input
 
     bool init(InputArray& inputs)
     {
+        reset_input_state(inputs.prev());
+        reset_input_state(inputs.curr());
+
         if (!SDL_InitSubSystem(subsystem_flags()))
         {
             sdl::print_error("Init Input failed");
             return false;
         }
-
-        reset_input_state(inputs.prev());
-        reset_input_state(inputs.curr());
 
         sdl::open_device_list(inputs);
 

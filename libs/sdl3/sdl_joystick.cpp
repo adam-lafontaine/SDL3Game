@@ -332,12 +332,22 @@ namespace sdl
 
     static void add_input_device(InputDeviceList& devices, SDL_JoystickID id, input::InputArray& inputs)
     {
+        auto handle = to_input_handle(id);
+
         SDL_JoystickType type = SDL_GetJoystickTypeForID(id);
 
         switch (type)
         {
         case SDL_JOYSTICK_TYPE_GAMEPAD:
         {
+            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            {
+                if (handle == inputs.curr().gamepads[i].handle)
+                {                    
+                    return; // already added
+                }
+            }
+
             if (add_gamepad_device(devices.gamepads, id, type))
             {
                 add_gamepad_input(inputs, id);
@@ -347,6 +357,14 @@ namespace sdl
 
         default:
         {
+            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            {
+                if (handle == inputs.curr().joysticks[i].handle)
+                {
+                    return; // already added
+                }
+            }
+
             if (add_joystick_device(devices.joysticks, id, type))
             {
                 add_joystick_input(inputs, id);
@@ -860,26 +878,7 @@ namespace sdl
 
         case SDL_EVENT_JOYSTICK_ADDED:
         {
-            auto id = event.jdevice.which;
-            auto handle = to_input_handle(id);
-
-            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
-            {
-                if (handle == inputs.curr().gamepads[i].handle)
-                {                    
-                    return; // already added
-                }
-            }
-
-            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
-            {
-                if (handle == inputs.curr().joysticks[i].handle)
-                {
-                    return; // already added
-                }
-            }
-
-            add_input_device(device_list, id, inputs);
+            add_input_device(device_list, event.jdevice.which, inputs);
 
         } break;
 

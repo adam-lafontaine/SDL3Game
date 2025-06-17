@@ -366,57 +366,58 @@ namespace sdl
 
         return id;
     }
+
+
+    static void add_input_device(InputDeviceList& devices, SDL_JoystickID id, input::InputArray& inputs)
+    {
+        auto handle = to_input_handle(id);
+
+        if (SDL_IsGameController(id))
+        {
+            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            {
+                if (handle == inputs.curr().gamepads[i].handle)
+                {                    
+                    return; // already added
+                }
+            }
+
+            sdl::print_message("found a gamepad");
+
+            id = add_gamepad_device(devices.gamepads, id);
+            if (id >= 0)
+            {
+                add_gamepad_input(inputs, id);
+            }
+        }
+        else
+        {
+            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            {
+                if (handle == inputs.curr().joysticks[i].handle)
+                {
+                    return; // already added
+                }
+            }
+
+            sdl::print_message("found a joystick");
+
+            id = add_joystick_device(devices.joysticks, id);
+            if (id >= 0)
+            {
+                add_joystick_input(inputs, id);
+            }
+        }
+    }
     
     
     static void open_input_devices(InputDeviceList& devices, input::InputArray& inputs)
-    {   
-        int cmax = (int)input::MAX_GAMEPADS;
-        int jmax = (int)input::MAX_JOYSTICKS;
-
-        #ifdef NO_GAMEPAD
-        cmax = 0;
-        #endif
-
-        #ifdef NO_JOYSTICK
-        jmax = 0;
-        #endif
-        
-        int c = 0;
-        int j = 0;
-
+    { 
         int num_sdl_joysticks = SDL_NumJoysticks();
 
         for(int i = 0; i < num_sdl_joysticks; ++i)
         {
-            if (SDL_IsGameController(i))
-            {
-                sdl::print_message("found a gamepad");
-                if (c >= cmax)
-                {
-                    continue;
-                }
-
-                if (add_gamepad_device(devices.gamepads, i))
-                {
-                    add_gamepad_input(inputs, i);
-                    ++c;
-                }
-            }
-            else
-            {
-                sdl::print_message("found a joystick");
-                if (j >= jmax)
-                {
-                    continue;
-                }
-
-                auto id = add_joystick_device(devices.joysticks, i);
-                if (id >= 0)
-                {
-                    add_joystick_input(inputs, id);
-                    ++j;
-                }
-            }            
+            add_input_device(devices, i, inputs);
         }
     }
 }
@@ -1392,49 +1393,12 @@ namespace input
 {
     static void update_device_list(SDL_Event const& event, input::InputArray& inputs)
     {
-        static int count = 0;
-
         switch (event.type)
         {
 
         case SDL_JOYDEVICEADDED:
         {
-            auto id = event.jdevice.which;
-            auto handle = sdl::to_input_handle(id);
-
-            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
-            {
-                if (handle == inputs.curr().gamepads[i].handle)
-                {                    
-                    return; // already added
-                }
-            }
-
-            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
-            {
-                if (handle == inputs.curr().joysticks[i].handle)
-                {
-                    return; // already added
-                }
-            }
-
-            if (SDL_IsGameController(id))
-            {
-                id = sdl::add_gamepad_device(sdl::device_list.gamepads, id);
-                if (id >= 0)
-                {
-                    sdl::add_gamepad_input(inputs, id);
-                }
-            }
-            else
-            {
-                id = sdl::add_joystick_device(sdl::device_list.joysticks, id);
-                if (id >= 0)
-                {
-                    sdl::add_joystick_input(inputs, id);
-                }
-            }
-                        
+            sdl::add_input_device(sdl::device_list, event.jdevice.which, inputs);                        
 
         } break;
 
@@ -1470,15 +1434,15 @@ namespace input
 
     bool init(InputArray& inputs)
     {
+        reset_input_state(inputs.prev());
+        reset_input_state(inputs.curr());
+
         auto error = SDL_InitSubSystem(subsystem_flags());
         if (error)
         {
             sdl::print_error("Init Input failed");
             return false;
         }
-
-        reset_input_state(inputs.prev());
-        reset_input_state(inputs.curr());
 
         sdl::open_input_devices(sdl::device_list, inputs);
 
