@@ -374,15 +374,10 @@ namespace sdl
 
         if (SDL_IsGameController(id))
         {
-            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            if (find_gamepad(id, inputs.curr()) >= 0)
             {
-                if (handle == inputs.curr().gamepads[i].handle)
-                {                    
-                    return; // already added
-                }
+                return;
             }
-
-            sdl::print_message("found a gamepad");
 
             id = add_gamepad_device(devices.gamepads, id);
             if (id >= 0)
@@ -392,15 +387,10 @@ namespace sdl
         }
         else
         {
-            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            if (find_joystick(id, inputs.curr()) >= 0)
             {
-                if (handle == inputs.curr().joysticks[i].handle)
-                {
-                    return; // already added
-                }
+                return;
             }
-
-            sdl::print_message("found a joystick");
 
             id = add_joystick_device(devices.joysticks, id);
             if (id >= 0)

@@ -340,12 +340,9 @@ namespace sdl
         {
         case SDL_JOYSTICK_TYPE_GAMEPAD:
         {
-            for (u32 i = 0; i < input::MAX_GAMEPADS; i++)
+            if (find_gamepad(id, inputs.curr()) >= 0)
             {
-                if (handle == inputs.curr().gamepads[i].handle)
-                {                    
-                    return; // already added
-                }
+                return;
             }
 
             if (add_gamepad_device(devices.gamepads, id, type))
@@ -357,12 +354,9 @@ namespace sdl
 
         default:
         {
-            for (u32 i = 0; i < input::MAX_JOYSTICKS; i++)
+            if (find_joystick(id, inputs.curr()) >= 0)
             {
-                if (handle == inputs.curr().joysticks[i].handle)
-                {
-                    return; // already added
-                }
+                return;
             }
 
             if (add_joystick_device(devices.joysticks, id, type))
@@ -871,8 +865,6 @@ namespace sdl
 {
     static void update_device_list(SDL_Event const& event, input::InputArray& inputs)
     {
-        static int count = 0;
-
         switch (event.type)
         {
 
