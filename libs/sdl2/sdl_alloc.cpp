@@ -4,7 +4,7 @@
 #include "sdl_include.hpp"
 
 
-#define LOG_ALLOC_TYPE
+//#define LOG_ALLOC_TYPE
 #define ASSERT_ALLOC_TYPE
 
 
@@ -76,7 +76,7 @@ namespace mem
     void free_memory(void* ptr, u32 element_size)
     {
         alloc_type_log("free_memory(%p, %u)\n", ptr, element_size);
-        sdl_free(ptr, element_size);
+        sdl_free(ptr);
     }
 
 

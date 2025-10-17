@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../../libs/input/input.hpp"
+#include "../../../libs/io/input/input.hpp"
 #include "../../../libs/image/image.hpp"
 
 

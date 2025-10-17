@@ -1,5 +1,5 @@
-#include "../../../../libs/output/window.hpp"
-#include "../../../../libs/input/input.hpp"
+#include "../../../../libs/io/window.hpp"
+#include "../../../../libs/io/input/input.hpp"
 #include "../../../../libs/util/stopwatch.hpp"
 
 #include "../../app/app.hpp"
