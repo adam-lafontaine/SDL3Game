@@ -1,4 +1,4 @@
-#include "../input/input_state.hpp"
+#include "../io/input/input_state.hpp"
 #include "../util/numeric.hpp"
 #include "sdl_include.hpp"
 
@@ -80,7 +80,7 @@ namespace sdl
 
         case SDL_EVENT_QUIT:
             print_message("SDL_QUIT");
-            end_program();
+            input.cmd_end_program = 1;
             break;
 
         case SDL_EVENT_KEY_DOWN:
@@ -97,7 +97,7 @@ namespace sdl
                 {
                 case SDLK_F4:
                     print_message("ALT F4");
-                    end_program();
+                    input.cmd_end_program = 1;
                     break;
 
                 #ifndef NDEBUG
@@ -118,7 +118,7 @@ namespace sdl
             #ifndef NDEBUG
             case SDLK_ESCAPE:
                 print_message("ESC");
-                end_program();
+                input.cmd_end_program = 1;
                 break;
 
             #endif
@@ -185,7 +185,7 @@ namespace input
         copy_input_state(prev, curr);
         curr.frame = prev.frame + 1;
         curr.dt_frame = 1.0f / 60.0f; // TODO
-        curr.window_size_changed = 0;
+        curr.flags = 0;
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -202,6 +202,36 @@ namespace input
         sdl::record_joystick_axes(curr);
 
         set_is_active(curr);
-        sdl::set_gamepad_vector_states(curr);        
+        sdl::set_gamepad_vector_states(curr);
+    }
+
+
+    void record_input(InputArray& inputs, event_cb handle_event)
+    {
+        auto& prev = inputs.prev();
+        auto& curr = inputs.curr();
+
+        copy_input_state(prev, curr);
+        curr.frame = prev.frame + 1;
+        curr.dt_frame = 1.0f / 60.0f; // TODO
+        curr.flags = 0;
+
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            //sdl::handle_sdl_event(event, curr);
+            handle_event(&event);
+            sdl::record_keyboard_input_event(event, prev.keyboard, curr.keyboard);
+            sdl::record_mouse_input_event(event, prev.mouse, curr.mouse);
+            sdl::update_device_list(event, inputs);
+            sdl::record_gamepad_input_event(event, prev, curr);
+            sdl::record_joystick_input_event(event, prev, curr);
+        }
+
+        sdl::record_gamepad_axes(curr);
+        sdl::record_joystick_axes(curr);
+
+        set_is_active(curr);
+        sdl::set_gamepad_vector_states(curr);
     }
 }

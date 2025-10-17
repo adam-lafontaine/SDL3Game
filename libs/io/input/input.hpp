@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../util/types.hpp"
+#include "../../util/types.hpp"
 #include "keyboard_input.hpp"
 #include "mouse_input.hpp"
 #include "gamepad_input.hpp"
@@ -491,7 +491,16 @@ namespace input
 		u64 frame;
 		f32 dt_frame;
 
-		b32 window_size_changed;
+		union 
+		{
+			b32 flags = 0;
+
+			struct
+			{
+				b8 window_size_changed;
+				b8 cmd_end_program;
+			};
+		};
 		
 	#ifdef SINGLE_GAMEPAD
 
@@ -561,5 +570,3 @@ namespace input
 	void record_input(InputArray& inputs, event_cb handle_event);
 
 }
-
-void end_program(); // define in main.cpp

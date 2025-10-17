@@ -1,10 +1,9 @@
-#include "../../../../libs/output/window.hpp"
-#include "../../../../libs/input/input.hpp"
-#include "../../../../libs/util/stopwatch.hpp"
+#include "../../../../libs/io/window.hpp"
+#include "../../../../libs/io/input/input.hpp"
 
 #include "../../app/app.hpp"
 
-#include <thread>
+#include "main_o.cpp"
 
 namespace game = game_io_test;
 namespace img = image;
@@ -24,14 +23,14 @@ constexpr f64 TARGET_FPS = 60.0;
 constexpr f64 TARGET_NS_PER_FRAME = NANO / TARGET_FPS;
 
 
-static void cap_framerate(Stopwatch& sw, f64 target_ns)
+static void cap_framerate(sdl::Stopwatch& sw, f64 target_ns)
 {
     constexpr f64 fudge = 0.9;
 
-    auto sleep_ns = target_ns - sw.get_time_nano();
+    auto sleep_ns = target_ns - sw.get_time_nano_f64();
     if (sleep_ns > 0.0)
     {
-        std::this_thread::sleep_for(std::chrono::nanoseconds((i64)(sleep_ns * fudge)));
+        SDL_DelayNS((u64)(sleep_ns * fudge));
     }
 
     sw.start();
@@ -167,16 +166,22 @@ void main_close()
 
 static void main_loop()
 {
-    Stopwatch sw;
+    sdl::Stopwatch sw;
     sw.start();
 
     while(is_running())
     {
         input::record_input(mn::inputs);
+        auto& input = mn::inputs.curr();
 
-        game::update(mn::app_state, mn::inputs.curr());
+        if (input.cmd_end_program)
+        {
+            end_program();
+        }
 
-        window::render(mn::window, mn::inputs.curr().window_size_changed);
+        game::update(mn::app_state, input);
+
+        window::render(mn::window, input.window_size_changed);
 
         mn::inputs.swap();
         cap_framerate(sw, TARGET_NS_PER_FRAME);
@@ -202,4 +207,3 @@ int main()
 }
 
 
-#include "main_o.cpp"

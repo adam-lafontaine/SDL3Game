@@ -52,9 +52,6 @@ alloc_type := $(libs)/alloc_type
 alloc_type_h := $(alloc_type)/alloc_type.hpp
 alloc_type_h += $(types_h)
 
-alloc_type_c := $(alloc_type)/alloc_type.cpp
-alloc_type_c += $(alloc_type_h)
-
 #*************
 
 
@@ -96,8 +93,6 @@ span_h += $(memory_buffer_h)
 span_h += $(stack_buffer_h)
 span_h += $(qsprintf_h)
 
-span_c := $(span)/span.cpp
-
 #************
 
 
@@ -133,9 +128,11 @@ ascii_image_c += $(ascii_image)/ascii_joystick_8.cpp
 #************
 
 
-#*** input ***
+#*** io ***
 
-input := $(libs)/input
+io := $(libs)/io
+
+input := $(io)/input
 
 input_h := $(input)/input.hpp
 input_h += $(types_h)
@@ -147,15 +144,9 @@ input_h += $(input)/joystick_input.hpp
 input_state_h := $(input)/input_state.hpp
 input_state_h += $(input_h)
 
-#*************
-
-
-#*** output ***
-
-output := $(libs)/output
-
-window_h := $(output)/window.hpp
-audio_h := $(output)/audio.hpp
+window_h := $(io)/window.hpp
+audio_h := $(io)/audio.hpp
+filesystem_h := $(io)/filesystem.hpp
 
 #*************
 
@@ -166,17 +157,39 @@ sdl2 := $(libs)/sdl2
 
 sdl_include_h := $(sdl2)/sdl_include.hpp
 
+sdl_span_c := $(sdl2)/sdl_span.cpp
+sdl_span_c += $(span_h)
+sdl_span_c += $(sdl_include_h)
+
+sdl_alloc_c := $(sdl2)/sdl_alloc.cpp
+sdl_alloc_c += $(alloc_type_h)
+sdl_alloc_c += $(sdl_include_h)
+sdl_alloc_c += $(span_h)
+
+sdl_audio_c := $(sdl2)/sdl_audio.cpp
+sdl_audio_c += $(audio_h)
+sdl_audio_c += $(filesystem_h)
+sdl_audio_c += $(numeric_h)
+sdl_audio_c += $(alloc_type_h)
+sdl_audio_c += $(sdl_include_h)
+
+sdl_filesystem_c := $(sdl2)/sdl_filesystem.cpp
+sdl_filesystem_c += $(filesystem_h)
+sdl_filesystem_c += $(alloc_type_h)
+sdl_filesystem_c += $(sdl_include_h)
+
 sdl_input_c := $(sdl2)/sdl_input.cpp
 sdl_input_c += $(input_state_h)
 sdl_input_c += $(numeric_h)
 sdl_input_c += $(sdl_include_h)
 
+sdl_stb_libs_c := $(sdl2)/sdl_stb_libs.cpp
+sdl_stb_libs_c += $(stb_libs_c)
+
 sdl_window_c := $(sdl2)/sdl_window.cpp
 sdl_window_c += $(window_h)
 sdl_window_c += $(alloc_type_h)
 sdl_window_c += $(sdl_include_h)
-
-sdl_audio_c := $(sdl2)/sdl_audio.cpp
 
 #************
 
@@ -196,6 +209,7 @@ app_c += $(ascii_image_h)
 # assets.cpp
 app_c += $(app)/assets.cpp
 app_c += $(audio_h)
+app_c += $(filesystem_h)
 app_c += $(res)/asset_sizes.cpp
 
 #************
@@ -215,14 +229,15 @@ main_dep += $(app_h)
 # main_o.cpp
 main_dep += $(pltfm)/main_o.cpp
 main_dep += $(app_c)
-main_dep += $(alloc_type_c)
-main_dep += $(span_c)
 main_dep += $(image_c)
-main_dep += $(stb_libs_c)
 main_dep += $(ascii_image_c)
+main_dep += $(sdl_span_c)
+main_dep += $(sdl_alloc_c)
 main_dep += $(sdl_input_c)
 main_dep += $(sdl_window_c)
 main_dep += $(sdl_audio_c)
+main_dep += $(sdl_filesystem_c)
+main_dep += $(sdl_stb_libs_c)
 
 #*************
 

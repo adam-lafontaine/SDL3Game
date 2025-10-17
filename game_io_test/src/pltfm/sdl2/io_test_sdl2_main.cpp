@@ -1,8 +1,10 @@
-#include "../../../../libs/output/window.hpp"
-#include "../../../../libs/input/input.hpp"
+#include "../../../../libs/io/window.hpp"
+#include "../../../../libs/io/input/input.hpp"
 #include "../../../../libs/util/stopwatch.hpp"
 
 #include "../../app/app.hpp"
+
+#include "main_o.cpp"
 
 #include <thread>
 
@@ -173,10 +175,16 @@ static void main_loop()
     while(is_running())
     {
         input::record_input(mn::inputs);
+        auto& input = mn::inputs.curr();
 
-        game::update(mn::app_state, mn::inputs.curr());
+        if (input.cmd_end_program)
+        {
+            end_program();
+        }
 
-        window::render(mn::window, mn::inputs.curr().window_size_changed);
+        game::update(mn::app_state, input);
+
+        window::render(mn::window, input.window_size_changed);
 
         mn::inputs.swap();
         cap_framerate(sw, TARGET_NS_PER_FRAME);
@@ -200,6 +208,3 @@ int main()
 
     return mn::MAIN_OK;
 }
-
-
-#include "main_o.cpp"

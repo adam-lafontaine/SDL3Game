@@ -1,7 +1,7 @@
 #pragma once
 
 #include "app.hpp"
-#include "../../../libs/output/audio.hpp"
+#include "../../../libs/io/audio.hpp"
 
 //#define __EMSCRIPTEN__ 1
 
@@ -11,8 +11,7 @@
 
 #else
 
-#include <filesystem>
-#include <fstream>
+#include "../../../libs/io/filesystem.hpp"
 
 #endif
 
@@ -22,52 +21,23 @@
 namespace game_io_test
 {
 
-    namespace fs = std::filesystem;
+    
 
 /* bin data */
 
 namespace assets
 {
-    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+#ifdef _WIN32
+
+    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\GameEPC2\engine\src\io_test\res\io_test_data.bin)";
+
+#else
+
+    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/GameEPC2/engine/src/io_test/res/io_test_data.bin";
+
+#endif
+    
     constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
-
-    static cstr get_file_name(cstr full_path)
-    {
-        auto str = span::to_string_view(full_path);
-        auto c = str.data + str.length;
-
-        for (; c >= str.data && *c != '/'; c--)
-        { }
-
-        //return (cstr)(c + 1); // no leading '/'
-        return (cstr)c; // keep leading '/'
-    }
-
-
-    static MemoryBuffer<u8> read_bytes(cstr path)
-    {
-        MemoryBuffer<u8> buffer;
-
-        auto size = fs::file_size(path);
-        if (size == 0 || !mb::create_buffer(buffer, size, get_file_name(path)))
-        {
-            assert(false && " *** no file memory *** ");
-            return buffer;
-        }
-
-        std::ifstream file(path, std::ios::binary);
-        if (!file.is_open())
-        {
-            assert(false && " *** file error *** ");
-            mb::destroy_buffer(buffer);
-            return buffer;
-        }
-
-        file.read((char*)buffer.data_, size);
-
-        file.close();
-        return buffer;
-    }
 
 
     class AssetMemory
@@ -107,10 +77,13 @@ namespace assets
 
     static void destroy_asset_memory(AssetMemory& memory)
     {
+        // -03 optimizer bug?
+    #if 0
         img::destroy_image(memory.image.controller);
         img::destroy_image(memory.image.keyboard);
         img::destroy_image(memory.image.mouse);
         img::destroy_image(memory.image.arrow);
+    #endif
 
         mb::destroy_buffer(memory.buffer);
     }
@@ -120,18 +93,10 @@ namespace assets
     {
     #include "../res/asset_sizes.cpp"
 
-        img::Buffer8 buffer;
-        if (fs::exists(BIN_DATA_PATH))
+        auto buffer = fs::read_bytes(BIN_DATA_PATH);
+        if (!buffer.ok)
         {
-            buffer = read_bytes(BIN_DATA_PATH);
-        }
-        else if (fs::exists(BIN_DATA_FALLBACK))
-        {
-            buffer = read_bytes(BIN_DATA_FALLBACK);
-        }
-        else
-        {
-            return false;
+            buffer = fs::read_bytes(BIN_DATA_FALLBACK);
         }
         
         if (!buffer.ok)

@@ -5,12 +5,12 @@
 
 // activate keys to accept input from
 #define KEYBOARD_A 1
-#define KEYBOARD_B 0
+#define KEYBOARD_B 1
 #define KEYBOARD_C 0
 #define KEYBOARD_D 1
 #define KEYBOARD_E 0
 #define KEYBOARD_F 0
-#define KEYBOARD_G 0
+#define KEYBOARD_G 1
 #define KEYBOARD_H 0
 #define KEYBOARD_I 0
 #define KEYBOARD_J 0

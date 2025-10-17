@@ -547,7 +547,7 @@ namespace game_io_test
 
     static bool create_state_data(AppState& state)
     {
-        auto state_data = mem::alloc<StateData>("StateData");
+        auto state_data = mem::alloc<StateData>(1, "StateData");
         if (!state_data)
         {
             return false;

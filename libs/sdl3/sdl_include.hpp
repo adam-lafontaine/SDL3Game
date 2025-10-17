@@ -18,17 +18,13 @@
 #endif
 #endif
 
-#ifdef PRINT_MESSAGES
-#include <cstdio>
-#endif
-
 
 namespace sdl
 {
     inline void print_message(const char* msg)
     {
     #ifdef PRINT_MESSAGES
-        printf("%s\n", msg);
+        SDL_Log("%s\n", msg);
     #endif
     }
 
@@ -36,7 +32,7 @@ namespace sdl
     inline void print_error(const char* msg)
     {
     #ifdef PRINT_MESSAGES
-        printf("%s\n%s\n", msg, SDL_GetError());
+        SDL_Log("%s\n%s\n", msg, SDL_GetError());
     #endif
     }
 
@@ -75,4 +71,24 @@ namespace sdl
 
         SDL_DestroySurface(icon);
     }
+}
+
+
+namespace sdl
+{
+    class Stopwatch
+    {
+    private:
+        u64 start_ = 0;
+
+        u64 now() { return SDL_GetTicksNS(); }
+
+    public:
+
+        void start() { start_ = now(); }
+
+        u64 get_time_nano() { return now() - start_; }
+
+        f64 get_time_nano_f64() { return (f64)get_time_nano(); }
+    };
 }
