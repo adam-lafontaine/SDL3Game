@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../output/window.hpp"
+#include "../io/window.hpp"
 #include "../alloc_type/alloc_type.hpp"
 #include "sdl_include.hpp"
 

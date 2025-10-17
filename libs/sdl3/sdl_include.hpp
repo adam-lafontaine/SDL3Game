@@ -18,17 +18,13 @@
 #endif
 #endif
 
-#ifdef PRINT_MESSAGES
-#include <cstdio>
-#endif
-
 
 namespace sdl
 {
     inline void print_message(const char* msg)
     {
     #ifdef PRINT_MESSAGES
-        printf("%s\n", msg);
+        SDL_Log("%s\n", msg);
     #endif
     }
 
@@ -36,7 +32,7 @@ namespace sdl
     inline void print_error(const char* msg)
     {
     #ifdef PRINT_MESSAGES
-        printf("%s\n%s\n", msg, SDL_GetError());
+        SDL_Log("%s\n%s\n", msg, SDL_GetError());
     #endif
     }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../output/window.hpp"
+#include "../io/window.hpp"
 #include "../alloc_type/alloc_type.hpp"
 #include "sdl_include.hpp"
 
@@ -310,21 +310,17 @@ namespace window
         auto h = window.height_px;
         auto w = window.width_px;
 
-        auto dst_8 = (u8*)dst_data;
+        auto dst = (u8*)dst_data;
+        auto src = (u8*)window.pixel_buffer;
 
-        u32* src = window.pixel_buffer;
-        u32* dst = (u32*)dst_8;
+        auto row_bytes = w * sizeof(u32);
 
         for (u32 y = 0; y < h; y++)
         {
-            for (u32 x = 0; x < w; x++)
-            {
-                dst[x] = src[x];
-            }
+            SDL_memcpy(dst, src, row_bytes);
 
-            src += w;
-            dst_8 += dst_pitch;
-            dst = (u32*)dst_8;
+            src += row_bytes;
+            dst += dst_pitch;
         }
     }
 }
