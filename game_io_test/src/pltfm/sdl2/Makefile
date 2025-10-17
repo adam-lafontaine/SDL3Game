@@ -52,9 +52,6 @@ alloc_type := $(libs)/alloc_type
 alloc_type_h := $(alloc_type)/alloc_type.hpp
 alloc_type_h += $(types_h)
 
-#alloc_type_c := $(alloc_type)/alloc_type.cpp
-#alloc_type_c += $(alloc_type_h)
-
 #*************
 
 
@@ -95,8 +92,6 @@ span_h := $(span)/span.hpp
 span_h += $(memory_buffer_h)
 span_h += $(stack_buffer_h)
 span_h += $(qsprintf_h)
-
-#span_c := $(span)/span.cpp
 
 #************
 
