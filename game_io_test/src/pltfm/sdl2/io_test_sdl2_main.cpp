@@ -4,6 +4,8 @@
 
 #include "../../app/app.hpp"
 
+#include "main_o.cpp"
+
 #include <thread>
 
 namespace game = game_io_test;
@@ -206,6 +208,3 @@ int main()
 
     return mn::MAIN_OK;
 }
-
-
-#include "main_o.cpp"
