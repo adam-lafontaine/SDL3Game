@@ -262,6 +262,8 @@ namespace input
 
 		b8 is_active;
 
+		u64 window_id;
+
 	#if MOUSE_POSITION
 
 		Point2Di32 window_pos;

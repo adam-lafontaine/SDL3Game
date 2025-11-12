@@ -96,6 +96,16 @@ span_h += $(qsprintf_h)
 #************
 
 
+#*** datetime ***
+
+datetime := $(libs)/datetime
+
+datetime_h := $(datetime)/datetime.hpp
+datetime_h += $(types_h)
+
+#***********
+
+
 #*** image ***
 
 image := $(libs)/image
@@ -190,6 +200,9 @@ sdl_input_c += $(sdl_joystick_c)
 sdl_input_c += $(sdl_keyboard_c)
 sdl_input_c += $(sdl_mouse_c)
 
+sdl_datetime_c := $(sdl3)/sdl_datetime.cpp
+sdl_datetime_c += $(datetime_h)
+
 sdl_stb_libs_c := $(sdl3)/sdl_stb_libs.cpp
 sdl_stb_libs_c += $(stb_libs_c)
 
@@ -231,6 +244,7 @@ obj    := $(main_o)
 main_dep := $(window_h)
 main_dep += $(input_h)
 main_dep += $(app_h)
+main_dep += $(datetime_h)
 
 # main_o.cpp
 main_dep += $(pltfm)/main_o.cpp
@@ -244,6 +258,7 @@ main_dep += $(sdl_window_c)
 main_dep += $(sdl_audio_c)
 main_dep += $(sdl_filesystem_c)
 main_dep += $(sdl_stb_libs_c)
+main_dep += $(datetime_c)
 
 #*************
 

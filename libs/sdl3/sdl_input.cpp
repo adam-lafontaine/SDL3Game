@@ -6,6 +6,32 @@
 namespace num = numeric;
 
 
+#define ASSERT_INPUT
+#define LOG_INPUT
+
+
+#ifndef NDEBUG
+
+#ifdef LOG_INPUT
+#define input_log(...) SDL_Log(__VA_ARGS__)
+#else
+#define input_log(...)
+#endif
+
+#ifdef ASSERT_INPUT
+#define input_assert(condition) SDL_assert(condition)
+#else
+#define input_assert(...)
+#endif
+
+#else
+
+#define input_log(...)
+#define input_assert(...)
+
+#endif
+
+
 /* helpers */
 
 namespace sdl

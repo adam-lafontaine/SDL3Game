@@ -7,6 +7,32 @@
 namespace num = numeric;
 
 
+#define ASSERT_INPUT
+#define LOG_INPUT
+
+
+#ifndef NDEBUG
+
+#ifdef LOG_INPUT
+#define input_log(...) SDL_Log(__VA_ARGS__)
+#else
+#define input_log(...)
+#endif
+
+#ifdef ASSERT_INPUT
+#define input_assert(condition) SDL_assert(condition)
+#else
+#define input_assert(...)
+#endif
+
+#else
+
+#define input_log(...)
+#define input_assert(...)
+
+#endif
+
+
 /* add/remove inputs */
 
 namespace sdl
@@ -30,10 +56,8 @@ namespace sdl
             inputs.prev().gamepads[i].handle = handle;
             inputs.curr().gamepads[i].handle = handle;
             inputs.n_gamepads++;
-
-        #ifdef PRINT_MESSAGES
-            printf("Gamepad id %d added\n", id);
-        #endif
+            
+            input_log("Gamepad id %d added\n", id);
 
             break;
         }
@@ -53,10 +77,8 @@ namespace sdl
             inputs.prev().joysticks[i].handle = handle;
             inputs.curr().joysticks[i].handle = handle;
             inputs.n_joysticks++;
-
-        #ifdef PRINT_MESSAGES
-            printf("Joystick id %d added\n", id);
-        #endif
+            
+            input_log("Joystick id %d added\n", id);
 
             break;
         }
@@ -73,10 +95,8 @@ namespace sdl
                 inputs.prev().gamepads[i].handle = 0;
                 inputs.curr().gamepads[i].handle = 0;
                 inputs.n_gamepads--;
-
-            #ifdef PRINT_MESSAGES
-                printf("Gamepad id %d removed\n", id);
-            #endif
+                
+                input_log("Gamepad id %d removed\n", id);
 
                 break;
             }
@@ -94,10 +114,8 @@ namespace sdl
                 inputs.prev().joysticks[i].handle = 0;
                 inputs.curr().joysticks[i].handle = 0;
                 inputs.n_joysticks--;
-
-            #ifdef PRINT_MESSAGES
-                printf("Joystick id %d removed\n", id);
-            #endif
+                
+                input_log("Joystick id %d removed\n", id);
 
                 break;
             }
@@ -360,7 +378,7 @@ namespace sdl
         //auto name = SDL_JoystickName(js);
         //auto axes = SDL_JoystickNumAxes(js);
         //auto buttons = SDL_JoystickNumButtons(js);
-        //printf("%s | %d | %d\n", name, axes, buttons);
+        //input_log("%s | %d | %d\n", name, axes, buttons);
 
     #endif
 
