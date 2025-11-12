@@ -79,12 +79,15 @@ namespace sdl
             bool is_down = event.type == SDL_EVENT_MOUSE_BUTTON_DOWN;
             auto button_code = event.button.button;
 
+            mouse.window_id = event.button.windowID;
+
             record_mouse_button_input(button_code, old_mouse, mouse, is_down);
         } break;
 
         #if MOUSE_POSITION
         case SDL_EVENT_MOUSE_MOTION:
         { 
+            mouse.window_id = event.motion.windowID;
             record_mouse_position_input(mouse, event.motion); 
         } break;
         #endif
@@ -92,6 +95,7 @@ namespace sdl
         #if MOUSE_WHEEL
         case SDL_EVENT_MOUSE_WHEEL:
         { 
+            mouse.window_id = event.wheel.windowID;
             record_mouse_wheel_input(mouse, event.wheel);
         } break;
         #endif

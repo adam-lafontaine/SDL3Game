@@ -1,12 +1,16 @@
 #pragma once
 
 #include "input.hpp"
+#include "../../util/numeric.hpp"
 
 
 /* helpers */
 
 namespace input
 {
+	namespace num = numeric;
+
+	
 	inline void record_button_input(ButtonState const& old_state, ButtonState& new_state, b32 is_down)
 	{
 		new_state.pressed = !old_state.is_down && is_down;

@@ -27,11 +27,9 @@ namespace sdl
             inputs.prev().gamepads[i].handle = handle;
             inputs.curr().gamepads[i].handle = handle;
             inputs.n_gamepads++;
-
-        #ifdef PRINT_MESSAGES
-            printf("Gamepad id %u added\n", id);
-        #endif
-
+            
+            input_log("Gamepad id %u added\n", id);
+            
             break;
         }
     }
@@ -50,10 +48,8 @@ namespace sdl
             inputs.prev().joysticks[i].handle = handle;
             inputs.curr().joysticks[i].handle = handle;
             inputs.n_joysticks++;
-
-        #ifdef PRINT_MESSAGES
-            printf("Joystick id %u added\n", id);
-        #endif
+            
+            input_log("Joystick id %u added\n", id);
 
             break;
         }
@@ -70,11 +66,9 @@ namespace sdl
                 inputs.prev().gamepads[i].handle = 0;
                 inputs.curr().gamepads[i].handle = 0;
                 inputs.n_gamepads--;
-
-            #ifdef PRINT_MESSAGES
-                printf("Gamepad id %u removed\n", id);
-            #endif
-
+                
+                input_log("Gamepad id %u removed\n", id);
+                
                 break;
             }
         }
@@ -91,10 +85,8 @@ namespace sdl
                 inputs.prev().joysticks[i].handle = 0;
                 inputs.curr().joysticks[i].handle = 0;
                 inputs.n_joysticks--;
-
-            #ifdef PRINT_MESSAGES
-                printf("Joystick id %u removed\n", id);
-            #endif
+                
+                input_log("Joystick id %u removed\n", id);
 
                 break;
             }

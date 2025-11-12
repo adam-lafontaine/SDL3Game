@@ -72,23 +72,3 @@ namespace sdl
         SDL_DestroySurface(icon);
     }
 }
-
-
-namespace sdl
-{
-    class Stopwatch
-    {
-    private:
-        u64 start_ = 0;
-
-        u64 now() { return SDL_GetTicksNS(); }
-
-    public:
-
-        void start() { start_ = now(); }
-
-        u64 get_time_nano() { return now() - start_; }
-
-        f64 get_time_nano_f64() { return (f64)get_time_nano(); }
-    };
-}

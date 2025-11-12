@@ -1,7 +1,8 @@
 #pragma once
 
 #include "../span/span.hpp"
-#include "sdl_include.hpp"
+
+#include <SDL3/SDL.h>
 
 
 /* api */

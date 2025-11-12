@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../alloc_type/alloc_type.hpp"
-#include "sdl_include.hpp"
+
+
+#include <SDL3/SDL.h>
 
 
 //#define LOG_ALLOC_TYPE
@@ -200,7 +202,7 @@ namespace counts
             log.n_allocs[i] = n_allocations;
             log.n_bytes[i] = bytes_allocated;
 
-            alloc_type_log("%s<%u>(%s) | %s(%p) | %u/%u (%u)\n", action, element_size, type_name, tags[slot], ptr, n_allocations, max_allocations, bytes_allocated);
+            alloc_type_log("%s<%u>(%s) | %s (%p) | %u/%u (%u)\n", action, element_size, type_name, tags[slot], ptr, n_allocations, max_allocations, bytes_allocated);
         }
 
 
@@ -389,7 +391,9 @@ namespace mem
             return;
         }
         
-        alloc_type_assert("*** Allocation not found ***" && false);
+        //alloc_type_assert("*** Allocation not found ***" && false);
+
+        alloc_type_log("Allocation not found (%p)\n", ptr);
 
         sdl_free(ptr);
     }
