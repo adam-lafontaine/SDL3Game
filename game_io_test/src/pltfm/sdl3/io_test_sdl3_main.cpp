@@ -1,5 +1,6 @@
 #include "../../../../libs/io/window.hpp"
 #include "../../../../libs/io/input/input.hpp"
+#include "../../../../libs/datetime/datetime.hpp"
 
 #include "../../app/app.hpp"
 
@@ -7,6 +8,8 @@
 
 namespace game = game_io_test;
 namespace img = image;
+
+using Stopwatch = datetime::StopwatchNS;
 
 
 #ifndef APP_FULLSCREEN
@@ -23,7 +26,7 @@ constexpr f64 TARGET_FPS = 60.0;
 constexpr f64 TARGET_NS_PER_FRAME = NANO / TARGET_FPS;
 
 
-static void cap_framerate(sdl::Stopwatch& sw, f64 target_ns)
+static void cap_framerate(Stopwatch& sw, f64 target_ns)
 {
     constexpr f64 fudge = 0.9;
 
@@ -166,7 +169,7 @@ void main_close()
 
 static void main_loop()
 {
-    sdl::Stopwatch sw;
+    Stopwatch sw;
     sw.start();
 
     while(is_running())

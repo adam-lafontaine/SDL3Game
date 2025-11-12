@@ -14,3 +14,4 @@
 #include "../../../../libs/sdl3/sdl_audio.cpp"
 #include "../../../../libs/sdl3/sdl_filesystem.cpp"
 #include "../../../../libs/sdl3/sdl_stb_libs.cpp"
+#include "../../../../libs/sdl3/sdl_datetime.cpp"
