@@ -17,8 +17,8 @@
 #include "../../../../libs/sdl2/sdl_audio.cpp"
 #include "../../../../libs/sdl2/sdl_filesystem.cpp"
 #include "../../../../libs/sdl2/sdl_stb_libs.cpp"
-#include "../../../../libs/math/math.cpp"
 
+#include "../../../../libs/math/math.cpp"
 #include "../../../../libs/datetime/datetime.cpp"
 
 #ifdef NDEBUG
