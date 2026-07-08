@@ -1,4 +1,7 @@
-#pragma once
+
+#ifndef NDEBUG
+#include "../io_test_main.cpp"
+#endif
 
 #define IMAGE_READ
 
@@ -17,3 +20,7 @@
 #include "../../../../libs/math/math.cpp"
 
 #include "../../../../libs/datetime/datetime.cpp"
+
+#ifdef NDEBUG
+#include "../io_test_main.cpp"
+#endif

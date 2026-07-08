@@ -1,10 +1,8 @@
-#include "../../../../libs/io/window.hpp"
-#include "../../../../libs/io/input/input.hpp"
-#include "../../../../libs/datetime/datetime.hpp"
+#include "../../../libs/io/window.hpp"
+#include "../../../libs/io/input/input.hpp"
+#include "../../../libs/datetime/datetime.hpp"
 
-#include "../../app/app.hpp"
-
-#include "main_o.cpp"
+#include "../app/app.hpp"
 
 
 namespace game = game_io_test;
@@ -88,7 +86,7 @@ bool create_window(Vec2Du32 game_dims)
 
 #endif
 
-#include "../../../../res/icon/icon_64.cpp"
+#include "../../../res/icon/icon_64.cpp"
     window::Icon64 icon{};
 
     static_assert(sizeof(icon_64.pixel_data) >= icon.min_data_size);
@@ -212,6 +210,3 @@ int main()
 
     return mn::MAIN_OK;
 }
-
-
-#include "main_o.cpp"

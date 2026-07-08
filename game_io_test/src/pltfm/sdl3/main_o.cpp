@@ -1,4 +1,7 @@
-#pragma once
+
+#ifndef NDEBUG
+#include "../io_test_main.cpp"
+#endif
 
 #define IMAGE_READ
 
@@ -14,4 +17,9 @@
 #include "../../../../libs/sdl3/sdl_audio.cpp"
 #include "../../../../libs/sdl3/sdl_filesystem.cpp"
 #include "../../../../libs/sdl3/sdl_stb_libs.cpp"
+#include "../../../../libs/sdl3/sdl_math.cpp"
 #include "../../../../libs/sdl3/sdl_datetime.cpp"
+
+#ifdef NDEBUG
+#include "../io_test_main.cpp"
+#endif
