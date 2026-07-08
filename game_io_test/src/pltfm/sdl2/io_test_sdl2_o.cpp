@@ -16,12 +16,8 @@
 #endif
 
 #ifndef NDEBUG
-#include "../io_test_main.cpp"
-#endif
-
-#define IMAGE_READ
-
 #include "../../../src/app/app.cpp"
+#endif
 
 #include "../../../../libs/image/image.cpp"
 #include "../../../../libs/ascii_image/ascii_image.cpp"
@@ -38,5 +34,5 @@
 #include "../../../../libs/datetime/datetime.cpp"
 
 #ifdef NDEBUG
-#include "../io_test_main.cpp"
+#include "../../../src/app/app.cpp"
 #endif

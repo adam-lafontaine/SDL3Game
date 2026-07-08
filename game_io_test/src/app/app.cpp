@@ -592,8 +592,6 @@ namespace game_io_test
         state.data = state_data;
 
         auto& data = get_data(state);
-
-        auto asset_data = assets::load_asset_binary();
         
         assets::AssetMemory am{};
         assets::load_asset_memory_async(am);

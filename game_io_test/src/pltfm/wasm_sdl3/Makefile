@@ -13,14 +13,18 @@ EPP := em++
 
 EPPFLAGS := -std=c++23
 EPPFLAGS += -DMATH_NO_SIMD
+EPPFLAGS += -DNO_FILESYSTEM
 EPPFLAGS += -DAPP_ASSERT_LOG
 #EPPFLAGS += -DNDEBUG -O3
 
-EPPFLAGS += -sUSE_SDL=3
-EPPFLAGS += -sUSE_SDL_MIXER=3
-EPPFLAGS += -sUSE_OGG=1
-EPPFLAGS += -sFETCH=1
-EPPFLAGS += -sALLOW_MEMORY_GROWTH=1
+EPPFLAGS += -s USE_SDL=3
+
+# SDL3_Mixer not available
+EPPFLAGS += -DNO_AUDIO
+#EPPFLAGS += -s USE_SDL_MIXER=3
+#EPPFLAGS += -s USE_OGG=1
+EPPFLAGS += -s FETCH=1
+EPPFLAGS += -s ALLOW_MEMORY_GROWTH=1
 
 HTMLFLAGS := 
 HTMLFLAGS += --shell-file out_template.html
@@ -29,17 +33,46 @@ LDFLAGS :=
 
 EXE := io_test
 
-ROOT := := ../../../..
+ROOT := ../../../..
 
 APP := $(ROOT)/game_io_test
 BUILD := $(APP)/build/wasm_sdl3
 
+OUT := $(BUILD)/$(EXE).html
+
 OUT_WASM := $(BUILD)/$(EXE).wasm
 OUT_JS   := $(BUILD)/$(EXE).js
 
-RES := $(APP)/res
+RES := $(APP)/src/res
 
 BIN_DATA := $(RES)/io_test_data.bin
 
-SRC := ./io_test_wasm_main.cpp
+SRC := ./io_test_wasm_sdl3.cpp
+
+
+#**********************
+
+build:
+	$(EPP) $(EPPFLAGS) $(HTMLFLAGS) -o $(OUT) $(SRC) $(LDFLAGS)
+	cp $(BIN_DATA) $(BUILD)
+
+
+clean:
+	rm -rfv $(BUILD)/*
+
+
+setup:
+	mkdir -p $(BUILD)
+
+
+delete:
+	rm -rfv $(BUILD)
+
+
+source:
+	source ~/Repos/zRepos/emsdk/emsdk_env.sh
+	
+
+serve:
+	python3 -m http.server --directory $(BUILD) 8333
 
