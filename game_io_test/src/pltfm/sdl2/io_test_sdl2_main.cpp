@@ -1,15 +1,16 @@
 #include "../../../../libs/io/window.hpp"
 #include "../../../../libs/io/input/input.hpp"
-#include "../../../../libs/util/stopwatch.hpp"
+#include "../../../../libs/datetime/datetime.hpp"
 
 #include "../../app/app.hpp"
 
 #include "main_o.cpp"
 
-#include <thread>
 
 namespace game = game_io_test;
 namespace img = image;
+
+using Stopwatch = datetime::Stopwatch;
 
 
 #ifndef APP_FULLSCREEN
@@ -29,11 +30,12 @@ constexpr f64 TARGET_NS_PER_FRAME = NANO / TARGET_FPS;
 static void cap_framerate(Stopwatch& sw, f64 target_ns)
 {
     constexpr f64 fudge = 0.9;
-
-    auto sleep_ns = target_ns - sw.get_time_nano();
-    if (sleep_ns > 0.0)
+    
+    u64 ns = sw.get_time_nano();
+    if (ns < target_ns)
     {
-        std::this_thread::sleep_for(std::chrono::nanoseconds((i64)(sleep_ns * fudge)));
+        auto sleep_ns = target_ns - sw.get_time_nano();
+        datetime::delay_nano((u64)(sleep_ns * fudge));
     }
 
     sw.start();
@@ -65,6 +67,27 @@ namespace mn
 
 bool create_window(Vec2Du32 game_dims)
 {
+#ifndef APP_FULLSCREEN
+
+    Vec2Du32 window_dims = {
+        game_dims.x > WINDOW_WIDTH ? game_dims.x : WINDOW_WIDTH,
+        game_dims.y > WINDOW_HEIGHT ? game_dims.y : WINDOW_HEIGHT
+    };
+
+    if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims))
+    {
+        return false;
+    }
+
+#else
+
+    if (!window::create_fullscreen(mn::window, game::APP_TITLE, game_dims))
+    {
+        return false;
+    }
+
+#endif
+
 #include "../../../../res/icon/icon_64.cpp"
     window::Icon64 icon{};
 
@@ -74,26 +97,7 @@ bool create_window(Vec2Du32 game_dims)
 
     icon.pixel_data = (u8*)icon_64.pixel_data;
 
-#ifndef APP_FULLSCREEN
-
-    Vec2Du32 window_dims = {
-        game_dims.x > WINDOW_WIDTH ? game_dims.x : WINDOW_WIDTH,
-        game_dims.y > WINDOW_HEIGHT ? game_dims.y : WINDOW_HEIGHT
-    };
-
-    if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims, icon))
-    {
-        return false;
-    }
-
-#else
-
-    if (!window::create_fullscreen(mn::window, game::APP_TITLE, game_dims, icon))
-    {
-        return false;
-    }
-
-#endif
+    window::set_window_icon(mn::window, icon);
 
     return true;
 }
@@ -208,3 +212,6 @@ int main()
 
     return mn::MAIN_OK;
 }
+
+
+#include "main_o.cpp"

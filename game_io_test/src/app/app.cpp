@@ -1,5 +1,5 @@
 #include "app.hpp"
-#include "../../../libs/util/numeric.hpp"
+#include "../../../libs/math/math.hpp"
 #include "../../../libs/ascii_image/ascii_image.hpp"
 #include "../../../libs/stb_libs/qsprintf.hpp"
 
@@ -10,8 +10,6 @@
 
 namespace game_io_test
 {
-    namespace num = numeric;
-
     using Input = input::Input;
 
     template <typename T>
@@ -75,8 +73,8 @@ namespace game_io_test
         auto& k = masks.keyboard_view;
         auto& m = masks.mouse_view;
 
-        auto w = num::max(c.width * 2, k.width + m.width);
-        auto h = num::max(c.height + k.height, c.height + m.height);
+        auto w = math::max(c.width * 2, k.width + m.width);
+        auto h = math::max(c.height + k.height, c.height + m.height);
 
         return { w, h };
     }
@@ -436,7 +434,7 @@ namespace game_io_test
 
     static void draw_thumstick_directions(ControllerStickMaskViewMap const& m, ControllerStickRotation const& rot)
     {
-        auto const is_on = [](Vec2Df32 v) { return num::abs((v.x * v.x + v.y * v.y) - 1.0f) < 0.001f; };
+        auto const is_on = [](Vec2Df32 v) { return math::abs((v.x * v.x + v.y * v.y) - 1.0f) < 0.001f; };
 
         auto const f = [](u8 s) { return s ? COLOR_BLACK : COLOR_TRANSPARENT; };
 
@@ -651,7 +649,7 @@ namespace game_io_test
         auto scale_w = screen.width / dim.x;
         auto scale_h = screen.height / dim.y;
 
-        auto scale = num::min(scale_w, scale_h);
+        auto scale = math::min(scale_w, scale_h);
 
         if (!scale)
         {

@@ -221,23 +221,7 @@ main_c := $(pltfm)/io_test_sdl2_main.cpp
 main_o := $(build)/main.o
 obj    := $(main_o)
 
-main_dep := $(window_h)
-main_dep += $(input_h)
-main_dep += $(stopwatch_h)
-main_dep += $(app_h)
-
-# main_o.cpp
-main_dep += $(pltfm)/main_o.cpp
-main_dep += $(app_c)
-main_dep += $(image_c)
-main_dep += $(ascii_image_c)
-main_dep += $(sdl_span_c)
-main_dep += $(sdl_alloc_c)
-main_dep += $(sdl_input_c)
-main_dep += $(sdl_window_c)
-main_dep += $(sdl_audio_c)
-main_dep += $(sdl_filesystem_c)
-main_dep += $(sdl_stb_libs_c)
+main_dep := $(pltfm)/main_o.cpp
 
 #*************
 
