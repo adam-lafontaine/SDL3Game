@@ -4,25 +4,29 @@
 // zig fetch --save=SDL git+https://github.com/allyourcodebase/SDL3
 
 // SDL3 Mixer binding not yet available 2026-07-08
+// Compile with -DNO_AUDIO
 
 const std = @import("std");
 
 const root = "../../../..";
-const app = root ++ "/game_io_test";
+const app = root ++ "/game_io_test/src";
 const res = app ++ "/res";
-const bin = res ++ "/io_test_data.bin";
+
+const bin_name = "io_test_data.bin";
+const bin_path = res ++ "/" ++ bin_name;
 
 const app_name = "io_test";
 
-const main_cpp = app ++ "/src/pltfm/sdl3/main_o.cpp";
+const main_cpp = app ++ "/pltfm/sdl3/main_o.cpp";
 
 const cpp_flags = &[_][]const u8{
     "-std=c++20",
-    "-mavx",
-    "-mavx2",
-    "-mfma",
+    //"-mavx",
+    //"-mavx2",
+    //"-mfma",
     "-O3",
     "-DNDEBUG",
+    "-DNO_AUDIO",
     //"-DALLOC_COUNT",
     //"-DAPP_FULLSCREEN"
 };
@@ -35,7 +39,7 @@ const targets: []const std.Target.Query = &.{
     .{ .cpu_arch = .x86_64, .os_tag = .windows },
 };
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .ReleaseFast;
 
     for (targets) |t| {
@@ -67,12 +71,17 @@ pub fn build(b: *std.Build) void {
         });
         exe.root_module.linkLibrary(sdl_dep.artifact("SDL3"));
 
-        b.installArtifact(exe);
+        const triple = try t.zigTriple(b.allocator);
 
-        const copy_data = b.addInstallBinFile(
-            b.path(bin),
-            "punk_run.bin",
-        );
-        b.getInstallStep().dependOn(&copy_data.step);
+        // Install the executable into target subdir
+        const install_exe = b.addInstallArtifact(exe, .{
+            .dest_dir = .{ .override = .{ .custom = triple } },
+        });
+
+        // Copy the data file into the SAME subdirectory
+        const install_data = b.addInstallFileWithDir(b.path(bin_path), .{ .custom = triple }, "io_test_data.bin");
+
+        b.getInstallStep().dependOn(&install_exe.step);
+        b.getInstallStep().dependOn(&install_data.step);
     }
 }

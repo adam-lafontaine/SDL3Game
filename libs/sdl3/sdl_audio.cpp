@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef NO_AUDIO
+
 #include "../io/audio.hpp"
 #include "../io/filesystem.hpp"
 #include "../math/math.hpp"
@@ -819,3 +821,6 @@ namespace audio
     }
    
 }
+
+
+#endif // NO_AUDIO
