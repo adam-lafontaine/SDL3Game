@@ -4,7 +4,7 @@
 #include "../../../libs/io/audio.hpp"
 
 
-//#define IO_TEST_EDITING_WASM
+#define IO_TEST_EDITING_WASM
 
 #ifdef IO_TEST_EDITING_WASM
 
@@ -197,6 +197,8 @@ namespace assets
 
 namespace assets
 {
+#ifndef IO_TEST_ASSETS_WEB
+
     static MemoryBuffer<u8> load_asset_binary()
     {
         auto buffer = fs::read_bytes(BIN_DATA_PATH);
@@ -228,6 +230,70 @@ namespace assets
         std::thread th(load);
         th.detach();
     }
+
+#endif
+}
+
+
+/* load binary data web */
+
+namespace assets
+{
+#ifdef IO_TEST_ASSETS_WEB
+
+    namespace emf = em_fetch;
+
+
+    static void process_asset_data(ByteView const& bytes, void* user_data)
+    {
+        if (!bytes.data || !bytes.length || !user_data)
+        {
+            return;
+        }
+
+        auto& memory = *(AssetMemory*)user_data;
+        auto& buffer = memory.buffer;
+
+        bool ok = true;
+
+        ok &= mb::create_buffer(buffer, bytes.length, "assets");
+        span::copy(bytes, span::make_view(buffer));
+
+        ok &= read_asset_memory(memory);
+
+        memory.status = ok ? AssetStatus::Success : AssetStatus::Fail;
+    }
+
+
+    static void asset_load_fail(void* user_data)
+    {
+        if (!user_data)
+        {
+            return;
+        }
+
+        auto& memory = *(AssetMemory*)user_data;
+
+        memory.status = AssetStatus::Fail;
+    }
+
+
+    static void load_asset_memory_async(AssetMemory& memory)
+    {
+        memory.status = AssetStatus::Loading;
+
+        emf::FetchContext ctx{};
+
+        ctx.url = BIN_DATA_PATH;
+        ctx.url_backup = BIN_DATA_FALLBACK;
+        ctx.read_bytes = process_asset_data;
+        ctx.fetch_failed = asset_load_fail;
+        ctx.user_data = &memory;
+
+        emf::fetch_async(ctx);
+    }
+
+#endif
 }
 
 
