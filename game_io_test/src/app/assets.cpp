@@ -23,22 +23,20 @@ namespace game_io_test
 
     
 
-/* bin data */
+/* binary data */
 
 namespace assets
 {
-#ifdef _WIN32
-
-    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\SDL3Game\engine\src\io_test\res\io_test_data.bin)";
-
-#else
-
-    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
-
-#endif
-    
+    // The build system needs to copy the binary data to the executable's directory
     constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
 
+
+     // Hard code a backup path for testing
+#ifdef _WIN32
+    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\SDL3Game\engine\src\io_test\res\io_test_data.bin)";
+#else
+    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+#endif
 
     class AssetMemory
     {
@@ -77,14 +75,10 @@ namespace assets
 
     static void destroy_asset_memory(AssetMemory& memory)
     {
-        // -03 optimizer bug?
-    #if 0
         img::destroy_image(memory.image.controller);
         img::destroy_image(memory.image.keyboard);
         img::destroy_image(memory.image.mouse);
         img::destroy_image(memory.image.arrow);
-    #endif
-
         mb::destroy_buffer(memory.buffer);
     }
 

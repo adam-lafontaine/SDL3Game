@@ -21,6 +21,7 @@ root       := ../../../..
 app   := $(root)/game_io_test
 build := $(app)/build/ubuntu_sdl2
 src   := $(app)/src
+res := $(src)/res
 
 pltfm := $(src)/pltfm/sdl2
 
@@ -29,6 +30,8 @@ libs := $(root)/libs
 exe := io_test
 
 program_exe := $(build)/$(exe)
+
+bin_data := $(res)/io_test_data.bin
 
 
 
@@ -58,7 +61,7 @@ $(program_exe): $(obj)
 
 
 build: $(program_exe)
-
+	cp $(bin_data) $(build)
 
 run: build
 	$(program_exe)
