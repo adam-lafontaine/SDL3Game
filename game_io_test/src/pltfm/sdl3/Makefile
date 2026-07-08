@@ -10,7 +10,7 @@ GPP += -mavx -mavx2 -mfma
 #GPP += -DAPP_FULLSCREEN
 
 NO_FLAGS := 
-#SDL2   := `sdl3-config --cflags --libs`
+
 SDL3 := -lSDL3
 SDL3 += -lSDL3_mixer
 
