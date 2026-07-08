@@ -3,23 +3,70 @@
 #include "app.hpp"
 #include "../../../libs/io/audio.hpp"
 
-//#define __EMSCRIPTEN__ 1
 
-#ifdef __EMSCRIPTEN__
+//#define IO_TEST_EDITING_WASM
 
-#include <emscripten/fetch.h>
+#ifdef IO_TEST_EDITING_WASM
 
-#else
+#ifndef IO_TEST_WASM
+#define IO_TEST_WASM
+#endif
 
-#include "../../../libs/io/filesystem.hpp"
+#ifdef NDEBUG
+#error IO_TEST_EDITING_WASM
+#endif
 
 #endif
 
 
+#if defined(__EMSCRIPTEN__) || defined(IO_TEST_WASM)
+
+#define IO_TEST_ASSETS_WEB
+
+#include "../../../libs/em_fetch/em_fetch.hpp"
+
+#else
+
+#include "../../../libs/io/filesystem.hpp"
+#include <thread>
+
+#endif
 
 
 namespace game_io_test
 {
+    // The build system needs to copy the binary data to the executable's directory
+    constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
+}
+
+
+namespace game_io_test
+{
+
+
+/* binary data paths */
+
+namespace assets
+{
+    
+
+
+#ifdef IO_TEST_ASSETS_WEB
+
+    // Look for bin data from the public repo
+    constexpr auto BIN_DATA_FALLBACK = "https://raw.githubusercontent.com/adam-lafontaine/SDL3Game/game_io_test/src/res/io_test_data.bin";
+
+#else
+
+    // Hard code a backup path for testing
+#ifdef _WIN32
+    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\SDL3Game\engine\src\io_test\res\io_test_data.bin)";
+#else
+    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+#endif
+
+#endif
+}
 
     
 
@@ -27,17 +74,15 @@ namespace game_io_test
 
 namespace assets
 {
-    // The build system needs to copy the binary data to the executable's directory
-    constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
-
-
-     // Hard code a backup path for testing
-#ifdef _WIN32
-    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\SDL3Game\engine\src\io_test\res\io_test_data.bin)";
-#else
-    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
-#endif
-
+    enum class AssetStatus : u8
+    {
+        None = 0,
+        Loading,
+        Success,
+        Fail
+    };
+    
+    
     class AssetMemory
     {
     public:
@@ -70,6 +115,8 @@ namespace assets
         } sound;
 
         MemoryBuffer<u8> buffer;
+
+        AssetStatus status = AssetStatus::None;
     };
 
 
@@ -80,19 +127,17 @@ namespace assets
         img::destroy_image(memory.image.mouse);
         img::destroy_image(memory.image.arrow);
         mb::destroy_buffer(memory.buffer);
+
+        memory.status = AssetStatus::None;
     }
 
 
-    static bool load_asset_memory(AssetMemory& memory)
+    static bool read_asset_memory(AssetMemory& memory)
     {
     #include "../res/asset_sizes.cpp"
 
-        auto buffer = fs::read_bytes(BIN_DATA_PATH);
-        if (!buffer.ok)
-        {
-            buffer = fs::read_bytes(BIN_DATA_FALLBACK);
-        }
-        
+        auto& buffer = memory.buffer;
+
         if (!buffer.ok)
         {
             return false;
@@ -141,6 +186,47 @@ namespace assets
         memory.sound.select = make_view(asset_sizes.sfx.open_001);
 
         return true;
+    }
+    
+    
+    
+}
+
+
+/* load binary data */
+
+namespace assets
+{
+    static MemoryBuffer<u8> load_asset_binary()
+    {
+        auto buffer = fs::read_bytes(BIN_DATA_PATH);
+        if (!buffer.ok)
+        {
+            buffer = fs::read_bytes(BIN_DATA_FALLBACK);
+        }
+
+        return buffer;
+    }
+
+
+    static void load_asset_memory(AssetMemory& memory)
+    {
+        memory.status = AssetStatus::Loading;
+        memory.buffer = load_asset_binary();
+        auto ok = read_asset_memory(memory);
+        memory.status = ok ? AssetStatus::Success : AssetStatus::Fail;
+    }
+
+
+    static void load_asset_memory_async(AssetMemory& memory)
+    {
+        auto const load = [&]()
+        {
+            load_asset_memory(memory);
+        };
+
+        std::thread th(load);
+        th.detach();
     }
 }
 

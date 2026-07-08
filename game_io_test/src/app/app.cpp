@@ -2,6 +2,7 @@
 #include "../../../libs/math/math.hpp"
 #include "../../../libs/ascii_image/ascii_image.hpp"
 #include "../../../libs/stb_libs/qsprintf.hpp"
+#include "../../../libs/datetime/datetime.hpp"
 
 #include "assets.cpp"
 
@@ -10,6 +11,9 @@
 
 namespace game_io_test
 {
+    namespace dt = datetime;
+
+
     using Input = input::Input;
 
     template <typename T>
@@ -543,6 +547,25 @@ namespace game_io_test
     }
 
 
+    static bool wait_for_assets(assets::AssetMemory const& am)
+    {
+        // NOT RECOMMENDED
+        // asset data needs to be fetched async for web
+
+        using S = assets::AssetStatus;
+
+        auto status = am.status;
+
+        while (status != S::Success && status != S::Fail)
+        {
+            dt::delay_milli(15);
+            status = am.status;
+        }
+
+        return status == S::Success;
+    }
+
+
     static bool create_state_data(AppState& state)
     {
         auto state_data = mem::alloc<StateData>(1, "StateData");
@@ -554,9 +577,12 @@ namespace game_io_test
         state.data = state_data;
 
         auto& data = get_data(state);
+
+        auto asset_data = assets::load_asset_binary();
         
-        assets::AssetMemory am;
-        if (!assets::load_asset_memory(am))
+        assets::AssetMemory am{};
+        assets::load_asset_memory_async(am);
+        if (!wait_for_assets(am))
         {
             assert(" *** ASSET MEMORY ERROR *** " && false);
         }
