@@ -17,7 +17,7 @@ const bin_path = res ++ "/" ++ bin_name;
 
 const app_name = "io_test";
 
-const main_cpp = app ++ "/pltfm/sdl3/main_o.cpp";
+const main_cpp = app ++ "/pltfm/sdl3/io_test_sdl3.cpp";
 
 const cpp_flags = &[_][]const u8{
     "-std=c++20",
@@ -26,6 +26,7 @@ const cpp_flags = &[_][]const u8{
     //"-mfma",
     "-O3",
     "-DNDEBUG",
+    "-DIMAGE_READ",
     "-DNO_AUDIO",
     //"-DALLOC_COUNT",
     //"-DAPP_FULLSCREEN"

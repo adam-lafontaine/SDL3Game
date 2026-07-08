@@ -2,6 +2,9 @@ GPP := g++-15
 
 GPP += -std=c++20
 GPP += -mavx -mavx2 -mfma
+GPP += -DIMAGE_READ
+GPP += -DAPP_ASSERT_LOG
+
 #GPP += -O3
 #GPP += -DNDEBUG
 
@@ -38,7 +41,7 @@ bin_data := $(res)/io_test_data.bin
 
 #*** main cpp ***
 
-main_c := $(pltfm)/main_o.cpp
+main_c := $(pltfm)/io_test_sdl3.cpp
 main_o := $(build)/main.o
 obj    := $(main_o)
 

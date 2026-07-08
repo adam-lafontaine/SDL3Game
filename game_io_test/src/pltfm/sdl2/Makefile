@@ -2,6 +2,8 @@ GPP := g++-15
 
 GPP += -std=c++20
 GPP += -mavx -mavx2 -mfma
+GPP += -DAPP_ASSERT_LOG
+
 #GPP += -O3
 #GPP += -DNDEBUG
 

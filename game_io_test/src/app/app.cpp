@@ -7,6 +7,21 @@
 #include "assets.cpp"
 
 
+#ifndef app_assert
+#include <cassert>
+#define app_assert(condition) assert(condition)
+#endif
+
+#ifndef app_log
+#include <cstdio>
+#define app_log(...) printf(__VA_ARGS__)
+#endif
+
+#ifndef app_crash
+#define app_crash(message) assert(false && message)
+#endif
+
+
 /* definitions */
 
 namespace game_io_test
@@ -584,7 +599,7 @@ namespace game_io_test
         assets::load_asset_memory_async(am);
         if (!wait_for_assets(am))
         {
-            assert(" *** ASSET MEMORY ERROR *** " && false);
+            app_crash(" *** ASSET MEMORY ERROR *** ");
         }
 
         data.buffer8 = img::create_buffer8(assets::draw_mask_size(am), "buffer8");

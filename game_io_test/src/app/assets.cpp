@@ -4,7 +4,7 @@
 #include "../../../libs/io/audio.hpp"
 
 
-#define IO_TEST_EDITING_WASM
+//#define IO_TEST_EDITING_WASM
 
 #ifdef IO_TEST_EDITING_WASM
 
