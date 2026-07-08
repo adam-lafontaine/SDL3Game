@@ -1,4 +1,4 @@
-GPP := g++-11
+GPP := g++-15
 
 GPP += -std=c++20
 GPP += -mavx -mavx2 -mfma
