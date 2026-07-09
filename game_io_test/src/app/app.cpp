@@ -1,7 +1,25 @@
 #include "app.hpp"
-#include "../../../libs/util/numeric.hpp"
+#include "../../../libs/math/math.hpp"
 #include "../../../libs/ascii_image/ascii_image.hpp"
 #include "../../../libs/stb_libs/qsprintf.hpp"
+#include "../../../libs/datetime/datetime.hpp"
+
+
+
+#ifndef app_assert
+#include <cassert>
+#define app_assert(condition) assert(condition)
+#endif
+
+#ifndef app_log
+#include <cstdio>
+#define app_log(...) printf(__VA_ARGS__)
+#endif
+
+#ifndef app_crash
+#define app_crash(message) assert(false && message)
+#endif
+
 
 #include "assets.cpp"
 
@@ -10,7 +28,8 @@
 
 namespace game_io_test
 {
-    namespace num = numeric;
+    namespace dt = datetime;
+
 
     using Input = input::Input;
 
@@ -61,7 +80,27 @@ namespace game_io_test
 
         ControllerStickMaskViewMap controller1_thumbsticks;
         ControllerStickMaskViewMap controller2_thumbsticks;
-    };    
+    };
+
+
+    constexpr Vec2Du32 app_screen_dimensions()
+    {
+        /*
+        | ctlr ctlr |
+        | kbd   mse |
+        */
+
+        // Need screen dimensions before loading assets
+
+        Vec2Du32 c = { 192, 92 };  // controller
+        Vec2Du32 k = { 272,  92 }; // keyboard
+        Vec2Du32 m = { 80, 92 };   // mouse
+        
+        auto w = math::cxpr::max(c.x * 2, k.x + m.x);
+        auto h = math::cxpr::max(c.y + k.y, c.y + m.y);
+
+        return { w, h };
+    }
 
 
     static Vec2Du32 app_screen_dimensions(assets::DrawMaskData const& masks)
@@ -71,12 +110,12 @@ namespace game_io_test
         | kbd   mse |
         */
 
-        auto& c = masks.controller_view;
-        auto& k = masks.keyboard_view;
-        auto& m = masks.mouse_view;
+        auto& c = masks.controller_view; // 192 x 92
+        auto& k = masks.keyboard_view;   // 272 x 92
+        auto& m = masks.mouse_view;      // 80 x 92
 
-        auto w = num::max(c.width * 2, k.width + m.width);
-        auto h = num::max(c.height + k.height, c.height + m.height);
+        auto w = math::max(c.width * 2, k.width + m.width);
+        auto h = math::max(c.height + k.height, c.height + m.height);
 
         return { w, h };
     }
@@ -247,12 +286,6 @@ namespace game_io_test
         {
             audio::stop_music();
         }
-    }
-
-
-    static void map_axis(f32 axis, b8& dst)
-    {
-
     }
 
 
@@ -436,7 +469,7 @@ namespace game_io_test
 
     static void draw_thumstick_directions(ControllerStickMaskViewMap const& m, ControllerStickRotation const& rot)
     {
-        auto const is_on = [](Vec2Df32 v) { return num::abs((v.x * v.x + v.y * v.y) - 1.0f) < 0.001f; };
+        auto const is_on = [](Vec2Df32 v) { return math::abs((v.x * v.x + v.y * v.y) - 1.0f) < 0.001f; };
 
         auto const f = [](u8 s) { return s ? COLOR_BLACK : COLOR_TRANSPARENT; };
 
@@ -512,9 +545,9 @@ namespace game_io_test
     public:
 
         assets::SoundList sound_list;
-        assets::MusicList music_list;
-        
+        assets::MusicList music_list;        
         assets::DrawMaskData masks;
+        assets::AssetMemory asset_memory;
 
         MaskViewMapList mask_views;
         InputList inputs;
@@ -539,9 +572,69 @@ namespace game_io_test
     {
         auto& data = get_data(state);
 
+        // must exist for life of the program (SDL2 Mixer)
+        assets::destroy_asset_memory(data.asset_memory);
+
         mb::destroy_buffer(data.buffer32);
         mb::destroy_buffer(data.buffer8);
         mem::free(state.data);
+    }
+
+
+    static assets::AssetStatus process_asset_memory(StateData& data)
+    {
+        using S = assets::AssetStatus;
+
+        auto& am = data.asset_memory;
+
+        if (am.status != S::Process)
+        {
+            return am.status;
+        }
+
+        data.buffer8 = img::create_buffer8(assets::draw_mask_size(am), "buffer8");
+        if (!data.buffer8.ok)
+        {
+            am.status = S::Fail;
+            return am.status;
+        }
+
+        data.masks = assets::create_draw_mask_data(am, data.buffer8);
+
+        auto dim = app_screen_dimensions(data.masks);
+        data.buffer32 = img::create_buffer32(dim.x * dim.y, "buffer32");
+        if (!data.buffer32.ok)
+        {
+            am.status = S::Fail;
+            return am.status;
+        }
+
+        data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
+        set_mask_views(data.masks, data.out_src, data.mask_views);
+
+        data.sound_list = assets::create_sound_list(am);
+        if (!data.sound_list.ok)
+        {
+            am.status = S::Fail;
+            return am.status;
+        }
+
+        data.music_list = assets::create_music_list(am);
+        if (!data.music_list.ok)
+        {
+            am.status = S::Fail;
+            return am.status;
+        }
+        
+        // Can destroy here (SDL3 Mixer only)
+        //assets::destroy_asset_memory(am);
+
+        audio::set_sound_volume(0.5f);
+        audio::set_music_volume(1.0f);
+
+        am.status = S::Ready;
+
+        return am.status;
     }
 
 
@@ -557,48 +650,7 @@ namespace game_io_test
 
         auto& data = get_data(state);
         
-        assets::AssetMemory am;
-        if (!assets::load_asset_memory(am))
-        {
-            assert(" *** ASSET MEMORY ERROR *** " && false);
-        }
-
-        data.buffer8 = img::create_buffer8(assets::draw_mask_size(am), "buffer8");
-        if (!data.buffer8.ok)
-        {
-            return false;
-        }
-
-        data.masks = assets::create_draw_mask_data(am, data.buffer8);
-
-        auto dim = app_screen_dimensions(data.masks);
-        data.buffer32 = img::create_buffer32(dim.x * dim.y, "buffer32");
-        if (!data.buffer32.ok)
-        {
-            return false;
-        }
-
-        data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
-        set_mask_views(data.masks, data.out_src, data.mask_views);
-
-        data.sound_list = assets::create_sound_list(am);
-        if (!data.sound_list.ok)
-        {
-            return false;
-        }
-
-        data.music_list = assets::create_music_list(am);
-        if (!data.music_list.ok)
-        {
-            return false;
-        }
-
-        clear_input_list(data.inputs);
-
-        assets::destroy_asset_memory(am);
-
-        audio::set_sound_volume(0.5f);
-        audio::set_music_volume(1.0f);
+        assets::load_asset_memory_async(data.asset_memory);
 
         return true;
     }
@@ -632,7 +684,7 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        res.screen_dimensions = app_screen_dimensions(data.masks);
+        res.screen_dimensions = app_screen_dimensions();
 
         res.success = true;
 
@@ -646,12 +698,12 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        auto dim = app_screen_dimensions(data.masks);        
+        auto dim = app_screen_dimensions();        
 
         auto scale_w = screen.width / dim.x;
         auto scale_h = screen.height / dim.y;
 
-        auto scale = num::min(scale_w, scale_h);
+        auto scale = math::min(scale_w, scale_h);
 
         if (!scale)
         {
@@ -669,15 +721,46 @@ namespace game_io_test
         data.out_dst = img::sub_view(screen, r);
         data.out_scale = scale;
 
-        return true;
+        // process assets if ready
+        using S = assets::AssetStatus;
+
+        auto status = process_asset_memory(data);
+        auto ok = status == S::Load || status == S::Process || status == S::Ready;
+
+        return ok;
     }
 
 
     void update(AppState& state, Input const& input)
     {
-        auto& kbd = input.keyboard;
+        using S = assets::AssetStatus;
 
         auto& data = get_data(state);
+
+        switch (data.asset_memory.status)
+        {
+        case S::None:
+            img::fill(data.out_dst, img::to_pixel(255, 50, 255));
+            return;
+
+        case S::Load:
+        case S::Process:
+            process_asset_memory(data);
+            img::fill(data.out_dst, COLOR_BACKGROUND);
+            return;
+
+        case S::Ready:
+            // ok
+            break;
+
+        case S::Fail:
+            img::fill(data.out_dst, img::to_pixel(255, 50, 50));
+            return;
+
+        default: return;            
+        }
+
+        clear_input_list(data.inputs);
 
         update_visual(input, data.inputs);
         update_sound(input, data.sound_list);

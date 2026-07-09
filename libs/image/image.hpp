@@ -10,16 +10,23 @@ namespace image
     namespace mb = memory_buffer;
 
 
-    class RGBAu8
+    union Pixel
     {
-    public:
-        u8 red;
-        u8 green;
-        u8 blue;
-        u8 alpha;
-    };
+        struct
+        {
+            u8 red;
+            u8 green;
+            u8 blue;
+            u8 alpha;
+        };
 
-    using Pixel = RGBAu8;
+        u32 rgba;
+
+
+        bool operator == (Pixel other) { return other.rgba == rgba; }
+    };  
+
+    //using Pixel = RGBAu8;
     using Image = Matrix2D<Pixel>;
     using ImageView = MatrixView2D<Pixel>;    
     using ImageGray = Matrix2D<u8>;
@@ -36,10 +43,10 @@ namespace image
     void destroy_image(ImageGray& image);
 
 
-    inline u32 as_u32(Pixel p)
+    /*inline u32 as_u32(Pixel p)
     {
         return  *((u32*)(&p));
-    }
+    }*/
 
 
     inline Image as_image(ImageView const& view)
@@ -73,6 +80,44 @@ namespace image
 
     using SubView = MatrixSubView2D<Pixel>;    
     using GraySubView = MatrixSubView2D<u8>;
+}
+
+
+/* row_begin */
+
+namespace image
+{
+    template <typename T>
+    static inline T* row_begin(MatrixView2D<T> const& view, u32 y)
+    {
+        return view.matrix_data_ + (u64)y * view.width;
+    }
+
+
+    template <typename T>
+    static inline T* row_begin(MatrixSubView2D<T> const& view, u32 y)
+    {
+        return view.matrix_data_ + (u64)(view.y_begin + y) * view.matrix_width + view.x_begin;
+    }
+}
+
+
+/* xy_at */
+
+namespace image
+{
+    template <typename T>
+    static inline T* xy_at(MatrixView2D<T> const& view, u32 x, u32 y)
+    {
+        return row_begin(view, y) + x;
+    }
+
+
+    template <typename T>
+    static inline T* xy_at(MatrixSubView2D<T> const& view, u32 x, u32 y)
+    {
+        return row_begin(view, y) + x;
+    }
 }
 
 
@@ -151,6 +196,19 @@ namespace image
 
 namespace image
 {
+
+    template <typename T>
+    inline MatrixView2D<T> make_view(T* data, u32 width, u32 height)
+    {
+        MatrixView2D<T> view{};
+        view.matrix_data_ = data;
+        view.width = width;
+        view.height = height;
+
+        return view;
+    }
+
+
     ImageView make_view(u32 width, u32 height, Pixel* data);
 
     GrayView make_view(u32 width, u32 height, u8* data);
@@ -189,6 +247,36 @@ namespace image
         MatrixSubView2D<T> sub_view{};
 
         sub_view.matrix_data_ = view.matrix_data_;
+        sub_view.matrix_width = view.width;
+        sub_view.x_begin = range.x_begin;
+        sub_view.y_begin = range.y_begin;
+        sub_view.width = range.x_end - range.x_begin;
+        sub_view.height = range.y_end - range.y_begin;
+
+        return sub_view;
+    }
+
+
+    template <typename T>
+    inline MatrixSubView2D<T> sub_view(Matrix2D<T> const& view, Rect2Du32 const& range)
+    {
+        assert(view.data_);
+        assert(view.width);
+        assert(view.height);
+        assert(range.x_end > 0);
+        assert(range.x_begin < view.width);
+        assert(range.x_end <= view.width);
+        assert(range.x_begin < range.x_end);
+        assert(range.x_end - range.x_begin <= view.width);
+        assert(range.y_end > 0);
+        assert(range.y_begin < view.height);
+        assert(range.y_end <= view.height);
+        assert(range.y_begin < range.y_end);
+        assert(range.y_end - range.y_begin <= view.height);
+
+        MatrixSubView2D<T> sub_view{};
+
+        sub_view.matrix_data_ = view.data_;
         sub_view.matrix_width = view.width;
         sub_view.x_begin = range.x_begin;
         sub_view.y_begin = range.y_begin;
@@ -247,10 +335,28 @@ namespace image
 
         return pt;
     }
+    
+}
 
+
+/* span */
+
+namespace image
+{
+    template <typename T>
+    inline SpanView<T> to_span(Matrix2D<T> const& view)
+    {
+        SpanView<T> span{};
+
+        span.data = view.data_;
+        span.length = view.width * view.height;
+
+        return span;
+    }
+    
 
     template <typename T>
-    static inline SpanView<T> to_span(Matrix2D<T> const& view)
+    inline SpanView<T> to_span(MatrixView2D<T> const& view)
     {
         SpanView<T> span{};
 
@@ -259,15 +365,57 @@ namespace image
 
         return span;
     }
-    
+
+    // HACK!
+    inline auto to_span(auto const& a)
+    {
+        return span::make_view(a.data_, a.width * a.height);
+    }
+
 
     template <typename T>
-    static inline SpanView<T> to_span(MatrixView2D<T> const& view)
+	inline SpanView<T> row_span(MatrixView2D<T> const& view, u32 y)
+	{
+        SpanView<T> span{};
+
+        span.data = view.matrix_data_ + (u64)y * view.width;
+        span.length = view.width;
+
+        return span;
+	}
+
+
+    template <typename T>
+    inline SpanView<T> row_span(MatrixSubView2D<T> const& view, u32 y)
     {
         SpanView<T> span{};
 
-        span.data = view.matrix_data_;
-        span.length = view.width * view.height;
+        span.data = view.matrix_data_ + (u64)(view.y_begin + y) * view.matrix_width + view.x_begin;
+        span.length = view.width;
+
+        return span;
+    }
+
+
+    template <typename T>
+    inline SpanView<T> sub_span(MatrixView2D<T> const& view, u32 y, u32 x_begin, u32 x_end)
+    {
+        SpanView<T> span{};
+
+        span.data = view.matrix_data_ + (u64)(y * view.width) + x_begin;
+        span.length = x_end - x_begin;
+
+        return span;
+    }
+
+
+    template <typename T>
+    inline SpanView<T> sub_span(MatrixSubView2D<T> const& view, u32 y, u32 x_begin, u32 x_end)
+    {
+        SpanView<T> span{};
+
+        span.data = view.matrix_data_ + (u64)((view.y_begin + y) * view.matrix_width + view.x_begin) + x_begin;
+        span.length = x_end - x_begin;
 
         return span;
     }
@@ -280,9 +428,14 @@ namespace image
 {
     Pixel pixel_at(ImageView const& view, u32 x, u32 y);
 
+    Pixel pixel_at(SubView const& view, u32 x, u32 y);
+
     u8 pixel_at(GrayView const& view, u32 x, u32 y);
 
     u8 pixel_at(GraySubView const& view, u32 x, u32 y);
+
+
+    Pixel& pixel_ref_at(ImageView const& view, u32 x, u32 y);
 }
 
 
@@ -299,6 +452,8 @@ namespace image
     void fill_blend(SubView const& view, Pixel color);
 
 
+    void fill_row(ImageView const& view, u32 y, Pixel color);
+    
     void fill_row(SubView const& view, u32 y, Pixel color);
 
     void fill_row_blend(SubView const& view, u32 y, Pixel color);
@@ -318,11 +473,26 @@ namespace image
     void copy(SubView const& src, SubView const& dst);
 
 
+    void copy_blend(ImageView const& src, ImageView const& dst);
+    
     void copy_blend(ImageView const& src, SubView const& dst);
 
     void copy_blend(SubView const& src, ImageView const& dst);
 
     void copy_blend(SubView const& src, SubView const& dst);
+
+
+    void copy_blend(ImageView const& src, SubView const& dst, u8 alpha);
+
+    void copy_blend(SubView const& src, SubView const& dst, u8 alpha);
+
+
+    void copy_if_alpha(ImageView const& src, ImageView const& dst);
+
+    void copy_if_alpha(SubView const& src, SubView const& dst);
+
+
+    void copy(GrayView const& src, GraySubView const& dst);
 }
 
 
@@ -355,6 +525,15 @@ namespace image
 
 namespace image
 {
+    void transform(ImageView const& src, ImageView const& dst, fn<Pixel(Pixel)> const& func);
+
+    void transform(ImageView const& src, SubView const& dst, fn<Pixel(Pixel)> const& func);
+
+    void transform(SubView const& src, ImageView const& dst, fn<Pixel(Pixel)> const& func);
+
+    void transform(SubView const& src, SubView const& dst, fn<Pixel(Pixel)> const& func);
+
+
     void transform(ImageView const& src, SubView const& dst, fn<Pixel(Pixel, Pixel)> const& func);
 
     void transform(SubView const& src, SubView const& dst, fn<Pixel(Pixel, Pixel)> const& func);
@@ -422,7 +601,12 @@ namespace image
 
     void rotate_90(ImageView const& src, SubView const& dst);
 
+    void rotate_90(SubView const& src, ImageView const& dst);
+
     void rotate_90(SubView const& src, SubView const& dst);
+
+
+    void rotate_90(GrayView const& src, GrayView const& dst);
 
 
     void rotate_180(ImageView const& src, ImageView const& dst);
@@ -435,6 +619,8 @@ namespace image
     void rotate_270(ImageView const& src, ImageView const& dst);
 
     void rotate_270(ImageView const& src, SubView const& dst);
+
+    void rotate_270(SubView const& src, ImageView const& dst);
 
     void rotate_270(SubView const& src, SubView const& dst);
 
@@ -465,6 +651,8 @@ namespace image
     void flip_h(SubView const& src, SubView const& dst);
 
 
+     void flip_v(ImageView const& src, ImageView const& dst);
+
     void flip_v(ImageView const& src, SubView const& dst);
     
 
@@ -488,7 +676,13 @@ namespace image
 
     void scale_up(ImageView const& src, SubView const& dst, u32 scale);
 
+    void scale_up(SubView const& src, ImageView const& dst, u32 scale);
+
+    void scale_up(SubView const& src, SubView const& dst, u32 scale);
+
     bool resize(ImageView const& src, ImageView const& dst);
+
+    bool resize(GrayView const& src, GrayView const& dst);
 }
 
 
@@ -501,4 +695,11 @@ namespace image
     bool read_image_from_memory(ByteView const& data, Image& image_dst);
 
     bool write_image(Image const& image_src, const char* file_path_dst);
+
+
+    bool read_image_from_file(const char* img_path_src, ImageGray& image_dst);
+
+    bool read_image_from_memory(ByteView const& data, ImageGray& image_dst);
+
+    bool write_image(ImageGray const& image_src, const char* file_path_dst);
 }

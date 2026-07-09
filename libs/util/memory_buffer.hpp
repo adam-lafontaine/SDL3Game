@@ -20,8 +20,8 @@ namespace memory_buffer
 	template <typename T>
 	inline bool create_buffer(MemoryBuffer<T>& buffer, u32 n_elements, cstr tag)
 	{
-		assert(n_elements > 0);
-		assert(!buffer.data_);
+		assert("*** No elements specified ***" && n_elements > 0);
+		assert("*** Data already allocated ***" && !buffer.data_);
 
 		if (n_elements == 0 || buffer.data_)
 		{
@@ -29,7 +29,7 @@ namespace memory_buffer
 		}
 
 		buffer.data_ = mem::alloc<T>(n_elements, tag);
-		assert(buffer.data_);
+		assert("*** Allocation failed ***" && buffer.data_);
 
 		if (!buffer.data_)
 		{
@@ -79,15 +79,15 @@ namespace memory_buffer
 	template <typename T>
 	inline T* push_elements(MemoryBuffer<T>& buffer, u32 n_elements)
 	{
-		assert(n_elements > 0);
+		assert("*** No elements to push ***" && n_elements > 0);
 
 		if (n_elements == 0)
 		{
 			return nullptr;
 		}
 
-		assert(buffer.data_);
-		assert(buffer.capacity_);
+		assert("*** Buffer not allocated ***" && buffer.data_);
+		assert("*** Capacity not set ***" && buffer.capacity_);
 
 		auto is_valid =
 			buffer.data_ &&
@@ -95,7 +95,7 @@ namespace memory_buffer
 			buffer.size_ < buffer.capacity_;
 
 		auto elements_available = (buffer.capacity_ - buffer.size_) >= n_elements;
-		assert(elements_available > 0);
+		assert("*** Buffer full ***" && elements_available > 0);
 
 		if (!is_valid || !elements_available)
 		{
@@ -118,9 +118,9 @@ namespace memory_buffer
 			return;
 		}
 
-		assert(buffer.data_);
-		assert(buffer.capacity_);
-		assert(n_elements <= buffer.size_);
+		assert("*** Buffer not allocated ***" && buffer.data_);
+		assert("*** Capacity not set ***" && buffer.capacity_);
+		assert("*** Too many elements ***" && n_elements <= buffer.size_);
 
 		if(n_elements > buffer.size_)
 		{

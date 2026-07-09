@@ -1,10 +1,12 @@
 #pragma once
+// 2025-09-17
 
 #include "../util/memory_buffer.hpp"
 #include "../util/stack_buffer.hpp"
 
 #define SPAN_TRANSFORM
 #define SPAN_STRING
+//#define SPAN_NUMERIC
 
 
 template <typename T>
@@ -28,7 +30,7 @@ namespace span
 
 
     template <typename T>
-    inline SpanView<T> make_view(T* data, u32 len)
+    constexpr SpanView<T> make_view(T* data, u32 len)
     {
         SpanView<T> span{};
         span.data = data;
@@ -40,6 +42,13 @@ namespace span
 
     template <typename T>
     inline SpanView<T> make_view(MemoryBuffer<T> const& buffer)
+    {
+        return make_view(buffer.data_, buffer.capacity_);
+    }
+
+
+    template <typename T, u32 N>
+    inline SpanView<T> make_view(StackBuffer<T, N> const& buffer)
     {
         return make_view(buffer.data_, buffer.capacity_);
     }
@@ -69,6 +78,27 @@ namespace span
         }
 
         return view;
+    }
+}
+
+
+/* sub_span */
+
+namespace span
+{
+    template <typename T>
+    inline SpanView<T> sub_view(SpanView<T> const& view, u32 offset, u32 length)
+    {
+        assert(view.length >= offset + length);
+
+        return make_view(view.data + offset, length);
+    }
+
+
+    template <typename T>
+    inline SpanView<T> sub_view(MemoryBuffer<T> const& buffer, u32 offset, u32 length)
+    {
+        return make_view(buffer.data_ + offset, length);
     }
 }
 
@@ -131,6 +161,9 @@ namespace span
         case 4:
             fill_32(dst, value);
             return;
+
+        default:
+            break;
         }
 
         T* d = dst.data;
@@ -403,7 +436,19 @@ namespace span
     }
 
 
-    inline StringView make_view(u32 capacity, MemoryBuffer<u8>& buffer)
+    inline StringView make_string_view(u32 capacity, char* buffer)
+    {
+        StringView view{};
+
+        view.data = buffer;
+        view.capacity = capacity;
+        view.length = 0;
+
+        return view;
+    }
+
+
+    inline StringView make_string_view(u32 capacity, MemoryBuffer<u8>& buffer)
     {
         StringView view{};
 
@@ -421,13 +466,27 @@ namespace span
     }
 
 
-    inline StringView make_view(u32 capacity, char* buffer)
+    template <u32 N>
+    inline StringView make_string_view(StackBuffer<u8, N> const& buffer)
+    {
+        return make_string_view(buffer.capacity_, (char*)buffer.data_);
+    }
+
+
+    template <u32 N>
+    inline StringView make_string_view(u32 capacity, StackBuffer<u8, N>& buffer)
     {
         StringView view{};
 
-        view.data = buffer;
-        view.capacity = capacity;
-        view.length = 0;
+        auto data = sb::push_elements(buffer, capacity);
+        if (data)
+        {
+            view.data = (char*)data;
+            view.capacity = capacity;
+            view.length = 0;
+            
+            zero_string(view);
+        }
 
         return view;
     }
@@ -454,10 +513,19 @@ namespace span
         view.length = (u32)stb::qsnprintf(view.data, (int)view.capacity, fmt, va_args...);
     }
 
+
+    template <typename... VA_ARGS>
+    inline void sprintf(StringView& view, u32 max_len, cstr fmt, VA_ARGS... va_args)
+    {
+        view.length = (u32)stb::qsnprintf(view.data, (int)max_len, fmt, va_args...);
+    }
+
 }
+
 
 #endif // SPAN_STRING
 
+#ifdef SPAN_NUMERIC
 
 namespace span
 {
@@ -504,3 +572,5 @@ namespace span
 
     void floor(SVf32 const& values, SVf32 const& dst);
 }
+
+#endif // SPAN_NUMERIC

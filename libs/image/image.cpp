@@ -1,14 +1,13 @@
 #pragma once
 
 #include "image.hpp"
-#include "../util/numeric.hpp"
+#include "../math/math.hpp"
 
 #include "../stb_libs/stb_image_options.hpp"
 
 namespace image
 {
     namespace sp = span;
-    namespace num = numeric;
 }
 
 
@@ -18,12 +17,14 @@ namespace image
 {
     bool create_image(Image& image, u32 width, u32 height)
     {
+        //auto data = mem::alloc_stbi(width * height * sizeof(Pixel));
         auto data = mem::alloc<Pixel>(width * height, "create_image");
         if (!data)
         {
             return false;
         }
 
+        //image.data_ = (Pixel*)data;
         image.data_ = data;
         image.width = width;
         image.height = height;
@@ -36,8 +37,9 @@ namespace image
     {
         if (image.data_)
 		{
-			mem::free(image.data_);
-			image.data_ = nullptr;
+			//mem::free_stbi(image.data_);
+            mem::free(image.data_);
+			image.data_ = 0;
 		}
 
 		image.width = 0;
@@ -47,12 +49,14 @@ namespace image
 
     bool create_image(ImageGray& image, u32 width, u32 height)
     {
+        //auto data = mem::alloc_stbi(width * height);
         auto data = mem::alloc<u8>(width * height, "create_image");
         if (!data)
         {
             return false;
         }
 
+        //image.data_ = (u8*)data;
         image.data_ = data;
         image.width = width;
         image.height = height;
@@ -65,103 +69,13 @@ namespace image
     {
         if (image.data_)
 		{
-			mem::free(image.data_);
-			image.data_ = nullptr;
+			//mem::free_stbi(image.data_);
+            mem::free(image.data_);
+			image.data_ = 0;
 		}
 
 		image.width = 0;
 		image.height = 0;
-    }
-}
-
-
-/* row_begin */
-
-namespace image
-{
-    template <typename T>
-    static inline T* row_begin(MatrixView2D<T> const& view, u32 y)
-    {
-        return view.matrix_data_ + (u64)y * view.width;
-    }
-
-
-    template <typename T>
-    static inline T* row_begin(MatrixSubView2D<T> const& view, u32 y)
-    {
-        return view.matrix_data_ + (u64)(view.y_begin + y) * view.matrix_width + view.x_begin;
-    }
-}
-
-
-/* xy_at */
-
-namespace image
-{
-    template <typename T>
-    static inline T* xy_at(MatrixView2D<T> const& view, u32 x, u32 y)
-    {
-        return row_begin(view, y) + x;
-    }
-
-
-    template <typename T>
-    static inline T* xy_at(MatrixSubView2D<T> const& view, u32 x, u32 y)
-    {
-        return row_begin(view, y) + x;
-    }
-}
-
-
-/* row_span */
-
-namespace image
-{
-    template <typename T>
-	static inline SpanView<T> row_span(MatrixView2D<T> const& view, u32 y)
-	{
-        SpanView<T> span{};
-
-        span.data = view.matrix_data_ + (u64)y * view.width;
-        span.length = view.width;
-
-        return span;
-	}
-
-
-    template <typename T>
-    static inline SpanView<T> row_span(MatrixSubView2D<T> const& view, u32 y)
-    {
-        SpanView<T> span{};
-
-        span.data = view.matrix_data_ + (u64)(view.y_begin + y) * view.matrix_width + view.x_begin;
-        span.length = view.width;
-
-        return span;
-    }
-
-
-    template <typename T>
-    static inline SpanView<T> sub_span(MatrixView2D<T> const& view, u32 y, u32 x_begin, u32 x_end)
-    {
-        SpanView<T> span{};
-
-        span.data = view.matrix_data_ + (u64)(y * view.width) + x_begin;
-        span.length = x_end - x_begin;
-
-        return span;
-    }
-
-
-    template <typename T>
-    static inline SpanView<T> sub_span(MatrixSubView2D<T> const& view, u32 y, u32 x_begin, u32 x_end)
-    {
-        SpanView<T> span{};
-
-        span.data = view.matrix_data_ + (u64)((view.y_begin + y) * view.matrix_width + view.x_begin) + x_begin;
-        span.length = x_end - x_begin;
-
-        return span;
     }
 }
 
@@ -247,6 +161,12 @@ namespace image
     }
 
 
+    Pixel pixel_at(SubView const& view, u32 x, u32 y)
+    {
+        return *xy_at(view, x, y);
+    }
+
+
     u8 pixel_at(GrayView const& view, u32 x, u32 y)
     {
         return *xy_at(view, x, y);
@@ -257,6 +177,12 @@ namespace image
     {
         return *xy_at(view, x, y);
     }
+
+
+    Pixel& pixel_ref_at(ImageView const& view, u32 x, u32 y)
+    {
+        return *xy_at(view, x, y);
+    }
 }
 
 
@@ -264,28 +190,28 @@ namespace image
 
 namespace image
 {  
-    static inline void alpha_blend(Pixel src, Pixel* dst, f32 alpha)
-    {        
-        auto const i = 1.0f - alpha;
-
-        auto& d = *dst;
-        d.red = num::round_to_unsigned<u8>(num::fmaf(alpha, src.red, i * d.red) /* a * s.red + i * d.red */);
-        d.green = num::round_to_unsigned<u8>(num::fmaf(alpha, src.green, i * d.green) /* a * s.green + i * d.green */);
-        d.blue = num::round_to_unsigned<u8>(num::fmaf(alpha, src.blue, i * d.blue) /* a * s.blue + i * d.blue */);
-    }
-
-
-    static inline void alpha_blend(Pixel* src, Pixel* dst, f32 alpha)
+    static inline Pixel alpha_blend_pixels(Pixel src, Pixel dst, f32 alpha)
     {
-        alpha_blend(*src, dst, alpha);
+        f32 a = alpha;
+        f32 ia = 1.0f - alpha;
+
+        auto r_pma = alpha * src.red + 0.5f;
+        auto g_pma = alpha * src.green + 0.5f;
+        auto b_pma = alpha * src.blue + 0.5f;
+
+        auto r = (u8)(ia * dst.red + r_pma);
+        auto g = (u8)(ia * dst.green + g_pma);
+        auto b = (u8)(ia * dst.blue + b_pma);
+
+        return to_pixel(r, g, b);
     }
 
 
     static void alpha_blend(Pixel s, Pixel* dst)
     {
-        constexpr auto scale = 1.0f / 255.0f;
+        constexpr auto scale = 1.0f / 255.0f;        
 
-        f32 a = 1.0f;
+        f32 a = s.alpha * scale;
 
         switch (s.alpha)
         {
@@ -303,16 +229,15 @@ namespace image
             a = 0.5f;
             break;
 
-        default: 
-            a = s.alpha * scale;
+        default:
             break;
         }
 
-        alpha_blend(s, dst, a);
-    }    
+        *dst = alpha_blend_pixels(s, *dst, a);
+    }
 
 
-    static void alpha_blend(Pixel* src, Pixel* dst)
+    static inline void alpha_blend(Pixel* src, Pixel* dst)
     {
         alpha_blend(*src, dst);
     }
@@ -320,18 +245,55 @@ namespace image
 
     static void alpha_blend_span(SpanView<Pixel> const& src, SpanView<Pixel> const& dst)
     {
-        for (u32 i = 0; i < dst.length; ++i) // TODO: simd
+        constexpr auto scale = 1.0f / 255.0f;
+
+        Pixel ps;
+        Pixel pd;
+
+        f32 a;
+
+        for (u32 i = 0; i < dst.length; ++i)
         {
-            alpha_blend(src.data + i, dst.data + i);
+            ps = src.data[i];
+            pd = dst.data[i];
+
+            switch (ps.alpha)
+            {
+            case 0: 
+                continue;
+
+            case 255: 
+                dst.data[i] = ps;
+                continue;
+
+            case 126:
+            case 127:
+            case 128:
+            case 129:
+                a = 0.5f;
+                break;
+
+            default:
+                a = ps.alpha * scale;
+                break;
+            }
+
+            dst.data[i] = alpha_blend_pixels(ps, pd, a);
         }
     }
 
 
     static void alpha_blend_span(SpanView<Pixel> const& src, SpanView<Pixel> const& dst, f32 alpha)
     {
-        for (u32 i = 0; i < dst.length; ++i) // TODO: simd
+        Pixel ps;
+        Pixel pd;
+
+        for (u32 i = 0; i < dst.length; ++i)
         {
-            alpha_blend(src.data + i, dst.data + i, alpha);
+            ps = src.data[i];
+            pd = dst.data[i];
+
+            dst.data[i] = alpha_blend_pixels(ps, pd, alpha);
         }
     }
 }
@@ -404,6 +366,12 @@ namespace image
     }
 
 
+    void fill_row(ImageView const& view, u32 y, Pixel color)
+    {
+        sp::fill_32(row_span(view, y), color);
+    }
+
+
     void fill_row(SubView const& view, u32 y, Pixel color)
     {
         sp::fill_32(row_span(view, y), color);
@@ -435,6 +403,13 @@ namespace image
         {
             sp::copy(row_span(src, y), row_span(dst, y));
         }
+    }
+
+
+    template <class VIEW_S, class VIEW_D>
+    static void copy_blend_view(VIEW_S const& src, VIEW_D const& dst)
+    {
+        alpha_blend_span(to_span(src), to_span(dst));
     }
 
 
@@ -489,6 +464,17 @@ namespace image
         assert(dst.height == src.height);
 
         copy_sub_view(src, dst);
+    }
+
+
+    void copy_blend(ImageView const& src, ImageView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        copy_blend_view(src, dst);
     }
 
 
@@ -559,6 +545,111 @@ namespace image
         {
             alpha_blend_span(row_span(src, y), row_span(dst, y), a);
         }
+    }
+
+
+    void copy_blend(SubView const& src, SubView const& dst, u8 alpha)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        constexpr auto scale = 1.0f / 255.0f;
+
+        f32 a = 1.0f;
+
+        switch (alpha)
+        {
+        case 0: 
+            return;
+
+        case 255:
+            copy(src, dst);
+            return;
+
+        case 127:
+        case 128:
+            a = 0.5f;
+            break;
+
+        default: 
+            a = alpha * scale;
+            break;
+        }
+
+        for (u32 y = 0; y < src.height; y++)
+        {
+            alpha_blend_span(row_span(src, y), row_span(dst, y), a);
+        }
+    }
+
+
+    void copy_if_alpha(ImageView const& src, ImageView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        auto s = to_span(src);
+        auto d = to_span(dst);
+
+        Pixel ps;
+        Pixel pd;
+
+        for (u32 i = 0; i < s.length; i++)
+        {
+            ps = s.data[i];
+            pd = d.data[i];
+            d.data[i] = ps.alpha ? ps : pd;
+        }
+    }
+
+
+    void copy_if_alpha(SubView const& src, SubView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        Pixel ps;
+        //Pixel pd;
+
+        for (u32 y = 0; y < src.height; y++)
+        {
+            auto s = row_span(src, y);
+            auto d = row_span(dst, y);
+
+            for (u32 i = 0; i < s.length; i++)
+            {
+                ps = s.data[i];
+                //pd = d.data[i];
+                //d.data[i] = ps.alpha ? ps : pd;
+
+                if (ps.alpha)
+                {
+                    d.data[i] = ps;
+                }
+            }
+        }
+    }
+}
+
+
+/* copy gray */
+
+namespace image
+{
+    void copy(GrayView const& src, GraySubView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        copy_sub_view(src, dst);
     }
 }
 
@@ -689,10 +780,35 @@ namespace image
     template <typename P_SRC, typename P_DST>
     static void transform_span(SpanView<P_SRC> const& src, SpanView<P_DST> const& dst, fn<P_DST(P_SRC)> const& func)
     {
-        auto s = src.data;
+        /*auto s = src.data;
         auto d = dst.data;
 
         for (u32 i = 0; i < src.length; i++)
+        {
+            d[i] = func(s[i]);
+        }*/
+
+        constexpr u32 N = 8;
+        auto len = (src.length / N) * N;
+
+        auto s = src.data;
+        auto d = dst.data;
+
+        u32 i = 0;
+        for (; i < len; i += N)
+        {
+            d[i] = func(s[i]);
+            d[i + 1] = func(s[i + 1]);
+            d[i + 2] = func(s[i + 2]);
+            d[i + 3] = func(s[i + 3]);
+            d[i + 4] = func(s[i + 4]);
+            d[i + 5] = func(s[i + 5]);
+            d[i + 6] = func(s[i + 6]);
+            d[i + 7] = func(s[i + 7]);
+        }
+
+        len = src.length;
+        for (; i < len; i++)
         {
             d[i] = func(s[i]);
         }
@@ -722,6 +838,49 @@ namespace image
 
 namespace image
 {   
+    void transform(ImageView const& src, ImageView const& dst, fn<Pixel(Pixel)> const& func)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        transform_view(src, dst, func);
+    }
+
+
+    void transform(SubView const& src, ImageView const& dst, fn<Pixel(Pixel)> const& func)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        transform_sub_view(src, dst, func);
+    }
+
+
+    void transform(ImageView const& src, SubView const& dst, fn<Pixel(Pixel)> const& func)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        transform_sub_view(src, dst, func);
+    }
+
+
+    void transform(SubView const& src, SubView const& dst, fn<Pixel(Pixel)> const& func)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width);
+        assert(dst.height == src.height);
+
+        transform_sub_view(src, dst, func);
+    }
+
     
     void transform(ImageView const& src, SubView const& dst, fn<Pixel(Pixel, Pixel)> const& func)
     {
@@ -1132,8 +1291,8 @@ namespace draw
         {
             if (y >= 0 & y < height && x_end > 0 && x_begin < width)
             {
-                x_begin = num::clamp(x_begin, 0, width - 1);
-                x_end = num::clamp(x_end, 1, width);
+                x_begin = math::cxpr::clamp(x_begin, 0, width - 1);
+                x_end = math::cxpr::clamp(x_end, 1, width);
                 sp::fill(sub_span(view, y, x_begin, x_end), color);
             }
         };
@@ -1201,18 +1360,23 @@ namespace image
     template <class VIEW_S, class VIEW_D>
     static void rotate_view_90(VIEW_S const& src, VIEW_D const& dst)
     {
-        auto const dw = dst.width;
-        auto const dh = dst.height;
+        u32 sw = src.width;
+        u32 sh = src.height;
 
-        for (u32 dy = 0; dy < dh; dy++)
-        {
-            auto const sx = dy;
+        u32 sx = 0;
+        u32 sy = 0;
 
-            auto d = row_begin(dst, dy);            
-            for (u32 dx = 0; dx < dw; dx++)
+        u32 dx = 0;
+        u32 dy = 0;
+
+        for (sy = 0; sy < sh; sy++)
+        {          
+            dx = sh - sy - 1;
+            auto s = row_begin(src, sy);
+            for (sx = 0; sx < sw; sx++)
             {
-                auto sy = dw - 1 - dx;
-                d[dx] = *xy_at(src, sx, sy);
+                dy = sx;
+                *xy_at(dst, dx, dy) = s[sx];
             }
         }
     }
@@ -1242,18 +1406,23 @@ namespace image
     template <class VIEW_S, class VIEW_D>
     static void rotate_view_270(VIEW_S const& src, VIEW_D const& dst)
     {
-        auto const dw = dst.width;
-        auto const dh = dst.height;
+        u32 sw = src.width;
+        u32 sh = src.height;
 
-        for (u32 dy = 0; dy < dh; dy++)
-        {
-            auto const sx = dh - 1 - dy;
+        u32 sx = 0;
+        u32 sy = 0;
 
-            auto d = row_begin(dst, dy);
-            for (u32 dx = 0; dx < dw; dx++)
+        u32 dx = 0;
+        u32 dy = 0;
+
+        for (sy = 0; sy < sh; sy++)
+        {          
+            dx = sy;
+            auto s = row_begin(src, sy);
+            for (sx = 0; sx < sw; sx++)
             {
-                auto sy = dx;
-                d[dx] = *xy_at(src, sx, sy);
+                dy = sw - sx - 1;
+                *xy_at(dst, dx, dy) = s[sx];
             }
         }
     }
@@ -1297,8 +1466,8 @@ namespace image
                     continue;
                 }
 
-                sx = num::round_to_unsigned<u32>(sxf);
-                sy = num::round_to_unsigned<u32>(syf);
+                sx = math::cxpr::round_to_unsigned<u32>(sxf);
+                sy = math::cxpr::round_to_unsigned<u32>(syf);
 
                 if (sx >= sw || sy >= sh)
                 {
@@ -1317,8 +1486,8 @@ namespace image
     template <class VIEW_S, class VIEW_D>
     static void rotate_view_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot)
     {
-        auto const cos = num::cos(rot);
-        auto const sin = num::sin(rot);
+        auto const cos = math::cos(rot);
+        auto const sin = math::sin(rot);
 
         rotate_view_any(src, dst, src_pivot, dst_pivot, cos, sin);
     }    
@@ -1367,8 +1536,8 @@ namespace image
                     continue;
                 }
 
-                sx = num::round_to_unsigned<u32>(sxf);
-                sy = num::round_to_unsigned<u32>(syf);
+                sx = math::cxpr::round_to_unsigned<u32>(sxf);
+                sy = math::cxpr::round_to_unsigned<u32>(syf);
 
                 if (sx >= sw || sy >= sh)
                 {
@@ -1387,8 +1556,8 @@ namespace image
     template <class VIEW_S, class VIEW_D>
     static void rotate_blend_any(VIEW_S const& src, VIEW_D const& dst, Point2Di32 src_pivot, Point2Di32 dst_pivot, uangle rot)
     {
-        auto const cos = num::cos(rot);
-        auto const sin = num::sin(rot);
+        auto const cos = math::cos(rot);
+        auto const sin = math::sin(rot);
 
         rotate_blend_any(src, dst, src_pivot, dst_pivot, cos, sin);
     }
@@ -1436,8 +1605,8 @@ namespace image
                     continue;
                 }
 
-                sx = num::round_to_unsigned<u32>(sxf);
-                sy = num::round_to_unsigned<u32>(syf);
+                sx = math::cxpr::round_to_unsigned<u32>(sxf);
+                sy = math::cxpr::round_to_unsigned<u32>(syf);
 
                 if (sx >= sw || sy >= sh)
                 {
@@ -1483,7 +1652,29 @@ namespace image
     }
 
 
+    void rotate_90(SubView const& src, ImageView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(src.width == dst.height);
+        assert(src.height == dst.width);
+
+        rotate_view_90(src, dst);
+    }
+
+
     void rotate_90(SubView const& src, SubView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(src.width == dst.height);
+        assert(src.height == dst.width);
+
+        rotate_view_90(src, dst);
+    }
+
+
+    void rotate_90(GrayView const& src, GrayView const& dst)
     {
         assert(src.matrix_data_);
         assert(dst.matrix_data_);
@@ -1539,6 +1730,17 @@ namespace image
 
 
     void rotate_270(ImageView const& src, SubView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(src.width == dst.height);
+        assert(src.height == dst.width);
+
+        rotate_view_270(src, dst);
+    }
+
+
+    void rotate_270(SubView const& src, ImageView const& dst)
     {
         assert(src.matrix_data_);
         assert(dst.matrix_data_);
@@ -1721,6 +1923,17 @@ namespace image
         assert(src.height == dst.height);
 
         flip_view_h(src, dst);
+    }
+
+
+    void flip_v(ImageView const& src, ImageView const& dst)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(src.width == dst.width);
+        assert(src.height == dst.height);
+
+        flip_view_v(src, dst);
     }
 
 
@@ -1914,9 +2127,71 @@ namespace image
     }
 
 
+    void scale_up(SubView const& src, ImageView const& dst, u32 scale)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width * scale);
+        assert(dst.height == src.height * scale);
+
+        for (u32 ys = 0; ys < src.height; ys++)
+        {
+            auto yd = scale * ys;
+            auto rs = row_begin(src, ys);
+
+            for (u32 xs = 0; xs < src.width; xs++)
+            {
+                auto xd = scale * xs;
+
+                auto p = rs[xs];
+
+                for (u32 v = 0; v < scale; v++)
+                {
+                    auto rd = row_begin(dst, yd + v) + xd;
+                    for (u32 u = 0; u < scale; u++)
+                    {
+                        rd[u] = p;
+                    }
+                }
+            }
+        }
+    }
+
+
+    void scale_up(SubView const& src, SubView const& dst, u32 scale)
+    {
+        assert(src.matrix_data_);
+        assert(dst.matrix_data_);
+        assert(dst.width == src.width * scale);
+        assert(dst.height == src.height * scale);
+
+        for (u32 ys = 0; ys < src.height; ys++)
+        {
+            auto yd = scale * ys;
+            auto rs = row_begin(src, ys);
+
+            for (u32 xs = 0; xs < src.width; xs++)
+            {
+                auto xd = scale * xs;
+
+                auto p = rs[xs];
+
+                for (u32 v = 0; v < scale; v++)
+                {
+                    auto rd = row_begin(dst, yd + v) + xd;
+                    for (u32 u = 0; u < scale; u++)
+                    {
+                        rd[u] = p;
+                    }
+                }
+            }
+        }
+    }
+
+
     bool resize(ImageView const& src, ImageView const& dst)
     {
-#ifdef IMAGE_RESIZE
+    #ifdef IMAGE_RESIZE
         assert(src.width);
 		assert(src.height);
 		assert(src.matrix_data_);
@@ -1950,17 +2225,75 @@ namespace image
         }
 
 		return true;
-#else
+    #else
 
         assert(false && " *** IMAGE_RESIZE not enabled *** ");
         return false;
 
-#endif
+    #endif
+    }
+    
+
+    bool resize(GrayView const& src, GrayView const& dst)
+    {
+    #ifdef IMAGE_RESIZE
+        assert(src.width);
+		assert(src.height);
+		assert(src.matrix_data_);
+		assert(dst.width);
+		assert(dst.height);
+        assert(dst.matrix_data_);
+
+		int channels = 1;
+        auto layout = stbir_pixel_layout::STBIR_1CHANNEL;
+
+		int width_src = (int)(src.width);
+		int height_src = (int)(src.height);
+		int stride_bytes_src = width_src * channels;
+        u8* data_src = (u8*)src.matrix_data_;
+
+		int width_dst = (int)(dst.width);
+		int height_dst = (int)(dst.height);
+		int stride_bytes_dst = width_dst * channels;
+        u8* data_dst = (u8*)dst.matrix_data_;
+
+        auto data = stbir_resize_uint8_linear(
+			data_src, width_src, height_src, stride_bytes_src,
+			data_dst, width_dst, height_dst, stride_bytes_dst,
+			layout);
+
+		assert(data && " *** stbir_resize_uint8_linear() failed *** ");
+
+        if (!data)
+        {
+            return false;
+        }
+
+		return true;
+    #else
+
+        assert(false && " *** IMAGE_RESIZE not enabled *** ");
+        return false;
+
+    #endif
     }
 }
 
 
 /* read write */
+
+//#define EDITING_IMAGE_READ_WRITE
+
+#ifdef EDITING_IMAGE_READ_WRITE
+
+#ifndef IMAGE_READ
+#define IMAGE_READ
+#endif
+#ifndef IMAGE_WRITE
+#define IMAGE_WRITE
+#endif
+
+#endif
 
 namespace image
 {
@@ -1988,8 +2321,8 @@ namespace image
     static bool is_valid_image_file(const char* filename)
     {
         return 
-            has_extension(filename, ".bmp") || 
-            has_extension(filename, ".BMP") ||
+            //has_extension(filename, ".bmp") || 
+            //has_extension(filename, ".BMP") ||
             has_extension(filename, ".png")||
             has_extension(filename, ".PNG");
     }
@@ -2022,11 +2355,18 @@ namespace image
 			return false;
 		}
 
-		image_dst.data_ = (Pixel*)data;
+        auto len = (u32)(width * height);
+        auto aligned = mem::alloc<Pixel>(len, "img file");
+
+        auto src = span::make_view((Pixel*)data, len);
+        auto dst = span::make_view(aligned, len);
+
+        span::copy(src, dst);
+        mem::free_any((void*)data);
+
+		image_dst.data_ = aligned;
 		image_dst.width = width;
 		image_dst.height = height;
-
-        mem::tag(data, image_dst.width * image_dst.height, "stbi_load");
 
 		return true;
     #else
@@ -2043,13 +2383,13 @@ namespace image
     #ifdef IMAGE_READ
 
         auto buffer = (unsigned char*)bytes.data;
-        int len = (int)bytes.length;
+        int n_bytes = (int)bytes.length;
         int width = 0;
 		int height = 0;
 		int image_channels = 0;
 		int desired_channels = 4;
 
-        auto data = stbi_load_from_memory(buffer, len, &width, &height, &image_channels, desired_channels);
+        auto data = stbi_load_from_memory(buffer, n_bytes, &width, &height, &image_channels, desired_channels);
 
         assert(data && "stbi_load_from_memory() - no image data");
 		assert(width && "stbi_load_from_memory() - no image width");
@@ -2060,11 +2400,18 @@ namespace image
 			return false;
 		}
 
-		image_dst.data_ = (Pixel*)data;
+		auto len = (u32)(width * height);
+        auto aligned = mem::alloc<Pixel>(len, "img mem");
+
+        auto src = span::make_view((Pixel*)data, len);
+        auto dst = span::make_view(aligned, len);
+
+        span::copy(src, dst);
+        mem::free_stbi(data);
+
+		image_dst.data_ = aligned;
 		image_dst.width = width;
 		image_dst.height = height;
-
-        mem::tag(data, image_dst.width * image_dst.height, "stbi_load");
 
 		return true;
 
@@ -2079,7 +2426,7 @@ namespace image
 
     bool write_image(Image const& image_src, const char* file_path_dst)
 	{
-#ifdef IMAGE_WRITE
+    #ifdef IMAGE_WRITE
 		assert(image_src.width);
 		assert(image_src.height);
 		assert(image_src.data_);
@@ -2091,12 +2438,12 @@ namespace image
 
 		int result = 0;
 
-		if(is_bmp(file_path_dst))
+		/*if(is_bmp(file_path_dst))
 		{
 			result = stbi_write_bmp(file_path_dst, width, height, channels, data);
 			assert(result);
 		}
-		else if(is_png(file_path_dst))
+		else*/ if(is_png(file_path_dst))
 		{
 			int stride_in_bytes = width * channels;
 
@@ -2110,12 +2457,153 @@ namespace image
 		}
 
 		return (bool)result;
-#else
+
+    #else
 
         assert(false && " *** IMAGE_WRITE not enabled *** ");
         return false;
 
-#endif
+    #endif
 	}
+
+
+    bool read_image_from_file(const char* img_path_src, ImageGray& image_dst)
+	{
+    #ifdef IMAGE_READ
+        auto is_valid_file = is_valid_image_file(img_path_src);
+        assert(is_valid_file && "invalid image file");
+
+        if (!is_valid_file)
+        {
+            return false;
+        }
+
+		int width = 0;
+		int height = 0;
+		int image_channels = 0;
+		int desired_channels = 1;
+
+		auto data = stbi_load(img_path_src, &width, &height, &image_channels, desired_channels);
+
+		assert(data && "stbi_load() - no image data");
+		assert(width && "stbi_load() - no image width");
+		assert(height && "stbi_load() - no image height");
+
+		if (!data)
+		{
+			return false;
+		}
+
+        auto len = (u32)(width * height);
+        auto aligned = mem::alloc<u8>(len, "img file");
+
+        auto src = span::make_view((u8*)data, len);
+        auto dst = span::make_view(aligned, len);
+
+        span::copy(src, dst);
+        mem::free_any((void*)data);
+
+		image_dst.data_ = aligned;
+		image_dst.width = width;
+		image_dst.height = height;
+
+		return true;
+    #else
+
+        assert(false && " *** IMAGE_READ not enabled *** ");
+        return false;
+
+    #endif
+	}    
+    
+    
+    bool read_image_from_memory(ByteView const& bytes, ImageGray& image_dst)
+    {
+    #ifdef IMAGE_READ
+
+        auto buffer = (unsigned char*)bytes.data;
+        int n_bytes = (int)bytes.length;
+        int width = 0;
+		int height = 0;
+		int image_channels = 0;
+		int desired_channels = 1;
+
+        auto data = stbi_load_from_memory(buffer, n_bytes, &width, &height, &image_channels, desired_channels);
+
+        assert(data && "stbi_load_from_memory() - no image data");
+		assert(width && "stbi_load_from_memory() - no image width");
+		assert(height && "stbi_load_from_memory() - no image height");
+
+		if (!data)
+		{
+			return false;
+		}
+
+		auto len = (u32)(width * height);
+        auto aligned = mem::alloc<u8>(len, "img mem");
+
+        auto src = span::make_view((u8*)data, len);
+        auto dst = span::make_view(aligned, len);
+
+        span::copy(src, dst);
+        mem::free_stbi(data);
+
+		image_dst.data_ = aligned;
+		image_dst.width = width;
+		image_dst.height = height;
+
+		return true;
+
+    #else
+
+        assert(false && " *** IMAGE_READ not enabled *** ");
+        return false;
+
+    #endif
+    }    
+    
+    
+    bool write_image(ImageGray const& image_src, const char* file_path_dst)
+    {
+    #ifdef IMAGE_WRITE
+
+        assert(image_src.width);
+		assert(image_src.height);
+		assert(image_src.data_);
+
+		int width = (int)(image_src.width);
+		int height = (int)(image_src.height);
+		int channels = 1;
+		auto const data = image_src.data_;
+
+		int result = 0;
+
+        /*if(is_bmp(file_path_dst))
+		{
+			result = stbi_write_bmp(file_path_dst, width, height, channels, data);
+			assert(result);
+		}
+		else*/ if(is_png(file_path_dst))
+		{
+			int stride_in_bytes = width * channels;
+
+			result = stbi_write_png(file_path_dst, width, height, channels, data, stride_in_bytes);
+			assert(result);
+		}
+		else
+		{
+			assert(false && " *** bad image file type *** ");
+            return false;
+		}
+
+		return (bool)result;
+
+    #else
+
+        assert(false && " *** IMAGE_WRITE not enabled *** ");
+        return false;
+
+    #endif
+    }
 
 }

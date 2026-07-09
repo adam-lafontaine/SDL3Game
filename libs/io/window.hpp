@@ -2,6 +2,8 @@
 
 #include "../util/types.hpp"
 
+//#define SCREEN_DBG_MSG
+
 
 namespace window
 {
@@ -30,6 +32,18 @@ namespace window
         u32 height_px = 0;
 
         u64 handle = 0;
+
+    #ifdef SCREEN_DBG_MSG
+        cstr dbg_message = 0;
+    #endif
+    };
+
+
+    enum class Rotate : u8
+    {
+        None = 0,
+        Clockwise_90,
+        CounterClockwise_90
     };
 }
 
@@ -40,19 +54,23 @@ namespace window
 
     void close();
 
-    bool create(Window& window, cstr title, Vec2Du32 window_size, Vec2Du32 pixel_size, Icon64 const& icon);
-
     bool create(Window& window, cstr title, Vec2Du32 window_size, Vec2Du32 pixel_size);
 
-    bool create_fullscreen(Window& window, cstr title, Vec2Du32 pixel_size, Icon64 const& icon);
+    bool create(Window& window, cstr title, Vec2Du32 window_size, Vec2Du32 pixel_size, Rotate rotate);
 
     bool create_fullscreen(Window& window, cstr title, Vec2Du32 pixel_size);
+
+    bool create_fullscreen(Window& window, cstr title, Vec2Du32 pixel_size, Rotate rotate);
+
+    void set_window_icon(Window& window, Icon64 const& icon);    
 
     void destroy(Window& window);
 
     bool resize_pixel_buffer(Window& window, u32 width, u32 height);
 
     void render(Window const& window, b32 size_changed = 0);
+
+    void render(Window const& window, Rotate rotate, b32 size_changed = 0);
 
     void hide_mouse_cursor();
 

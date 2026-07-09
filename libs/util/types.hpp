@@ -27,6 +27,15 @@ using cstr = const char*;
 
 
 template <typename T>
+class Result
+{
+public:
+	bool ok = false;
+	T data;
+};
+
+
+template <typename T>
 class Vec2D
 {
 public:
@@ -71,23 +80,35 @@ public:
 template <typename T>
 using Point2D = Vec2D<T>;
 
+/*template <typename T>
+class Point2D
+{
+public:
+	T x;
+	T y;
+};*/
+
+using Vec2Di8 = Vec2D<i8>;
+using Vec2Du8 = Vec2D<u8>;
 using Vec2Di32 = Vec2D<i32>;
 using Vec2Df32 = Vec2D<f32>;
 using Vec2Du32 = Vec2D<u32>;
 using Vec2Di64 = Vec2D<i64>;
-using Vec2Df64 = Vec2D<f64>;
+//using Vec2Du64 = Vec2D<u64>;
+//using Vec2Df64 = Vec2D<f64>;
 
 using Point2Di32 = Point2D<i32>;
 using Point2Df32 = Point2D<f32>;
 using Point2Du32 = Point2D<u32>;
+using Point2Du64 = Point2D<u64>;
 using Point2Di64 = Point2D<i64>;
-using Point2Df64 = Point2D<f64>;
+//using Point2Df64 = Point2D<f64>;
 
 using Rect2Di32 = Rect2D<i32>;
 using Rect2Df32 = Rect2D<f32>;
 using Rect2Du32 = Rect2D<u32>;
-using Rect2Di64 = Rect2D<i64>;
-using Rect2Df64 = Rect2D<f64>;
+//using Rect2Di64 = Rect2D<i64>;
+//using Rect2Df64 = Rect2D<f64>;
 
 
 
@@ -100,3 +121,15 @@ public:
 };
 
 using Circle2Df32 = Circle2D<f32>;
+
+
+//#define CAN_TBB
+
+#ifdef CAN_TBB
+
+#if __has_include(<tbb/parallel_for.h>)
+#include <tbb/parallel_for.h>
+#define HAS_TBB
+#endif
+
+#endif

@@ -24,4 +24,17 @@ namespace datetime
 
         return ticks * res;
     }
+
+
+    void delay_milli(u64 milli)
+    {
+        SDL_Delay(milli);
+    }
+
+
+    void delay_nano(u64 nano)
+    {
+        SDL_DelayNS(nano);
+    }    
+    
 }

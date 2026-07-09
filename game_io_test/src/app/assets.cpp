@@ -3,43 +3,87 @@
 #include "app.hpp"
 #include "../../../libs/io/audio.hpp"
 
-//#define __EMSCRIPTEN__ 1
 
-#ifdef __EMSCRIPTEN__
+//#define IO_TEST_EDITING_WASM
 
-#include <emscripten/fetch.h>
+#ifdef IO_TEST_EDITING_WASM
 
-#else
+#ifndef IO_TEST_WASM
+#define IO_TEST_WASM
+#endif
 
-#include "../../../libs/io/filesystem.hpp"
+#ifdef NDEBUG
+#error IO_TEST_EDITING_WASM
+#endif
 
 #endif
 
 
+#if defined(__EMSCRIPTEN__) || defined(IO_TEST_WASM)
+
+#define IO_TEST_ASSETS_WEB
+
+#include "../../../libs/em_fetch/em_fetch.hpp"
+
+#else
+
+#include "../../../libs/io/filesystem.hpp"
+#include <thread>
+
+#endif
+
+
+namespace game_io_test
+{
+    // The build system needs to copy the binary data to the executable's directory
+    constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
+}
 
 
 namespace game_io_test
 {
 
-    
 
-/* bin data */
+/* binary data paths */
 
 namespace assets
 {
-#ifdef _WIN32
+    
 
-    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\GameEPC2\engine\src\io_test\res\io_test_data.bin)";
+
+#ifdef IO_TEST_ASSETS_WEB
+
+    // Look for bin data from the public repo
+    constexpr auto BIN_DATA_FALLBACK = "https://raw.githubusercontent.com/adam-lafontaine/SDL3Game/game_io_test/src/res/io_test_data.bin";
 
 #else
 
-    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/GameEPC2/engine/src/io_test/res/io_test_data.bin";
+    // Hard code a backup path for testing
+#ifdef _WIN32
+    constexpr auto BIN_DATA_FALLBACK = R"(C:\D_Data\Repos\SDL3Game\engine\src\io_test\res\io_test_data.bin)";
+#else
+    constexpr auto BIN_DATA_FALLBACK = "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_data.bin";
+#endif
 
 #endif
+}
+
     
-    constexpr auto BIN_DATA_PATH = "./io_test_data.bin";
 
+/* asset binary data */
 
+namespace assets
+{
+    enum class AssetStatus : u8
+    {
+        None = 0,
+        Load,
+        Process,
+        Ready,
+        Fail
+    };
+    
+    
     class AssetMemory
     {
     public:
@@ -72,33 +116,29 @@ namespace assets
         } sound;
 
         MemoryBuffer<u8> buffer;
+
+        AssetStatus status = AssetStatus::None;
     };
 
 
     static void destroy_asset_memory(AssetMemory& memory)
     {
-        // -03 optimizer bug?
-    #if 0
         img::destroy_image(memory.image.controller);
         img::destroy_image(memory.image.keyboard);
         img::destroy_image(memory.image.mouse);
         img::destroy_image(memory.image.arrow);
-    #endif
-
         mb::destroy_buffer(memory.buffer);
+
+        memory.status = AssetStatus::None;
     }
 
 
-    static bool load_asset_memory(AssetMemory& memory)
+    static bool read_asset_memory(AssetMemory& memory)
     {
     #include "../res/asset_sizes.cpp"
 
-        auto buffer = fs::read_bytes(BIN_DATA_PATH);
-        if (!buffer.ok)
-        {
-            buffer = fs::read_bytes(BIN_DATA_FALLBACK);
-        }
-        
+        auto& buffer = memory.buffer;
+
         if (!buffer.ok)
         {
             return false;
@@ -148,6 +188,121 @@ namespace assets
 
         return true;
     }
+    
+    
+    
+}
+
+
+/* load binary data */
+
+namespace assets
+{
+#ifndef IO_TEST_ASSETS_WEB
+
+    static MemoryBuffer<u8> load_asset_binary()
+    {
+        auto buffer = fs::read_bytes(BIN_DATA_PATH);
+        if (!buffer.ok)
+        {
+            buffer = fs::read_bytes(BIN_DATA_FALLBACK);
+        }
+
+        return buffer;
+    }
+
+
+    static void load_asset_memory(AssetMemory& memory)
+    {
+        memory.status = AssetStatus::Load;
+        memory.buffer = load_asset_binary();
+        auto ok = read_asset_memory(memory);
+        memory.status = ok ? AssetStatus::Process : AssetStatus::Fail;
+    }
+
+
+    static void load_asset_memory_async(AssetMemory& memory)
+    {
+        auto const load = [&]()
+        {
+            load_asset_memory(memory);
+        };
+
+        std::thread th(load);
+        th.detach();
+    }
+
+#endif
+}
+
+
+/* load binary data web */
+
+namespace assets
+{
+#ifdef IO_TEST_ASSETS_WEB
+
+    namespace emf = em_fetch;
+
+
+    static void process_asset_data(ByteView const& bytes, void* user_data)
+    {
+        if (!user_data)
+        {
+            return;
+        }
+
+        auto& memory = *(AssetMemory*)user_data;
+
+        if (!bytes.data || !bytes.length)
+        {
+            memory.status = AssetStatus::Fail;
+            return;
+        }
+
+        
+        auto& buffer = memory.buffer;
+
+        bool ok = true;
+
+        ok &= mb::create_buffer(buffer, bytes.length, "assets");
+        span::copy(bytes, span::make_view(buffer));
+
+        ok &= read_asset_memory(memory);
+
+        memory.status = ok ? AssetStatus::Process : AssetStatus::Fail;
+    }
+
+
+    static void asset_load_fail(void* user_data)
+    {
+        if (!user_data)
+        {
+            return;
+        }
+
+        auto& memory = *(AssetMemory*)user_data;
+
+        memory.status = AssetStatus::Fail;
+    }
+
+
+    static void load_asset_memory_async(AssetMemory& memory)
+    {
+        memory.status = AssetStatus::Load;
+
+        emf::FetchContext ctx{};
+
+        ctx.url = BIN_DATA_PATH;
+        ctx.url_backup = BIN_DATA_FALLBACK;
+        ctx.read_bytes = process_asset_data;
+        ctx.fetch_failed = asset_load_fail;
+        ctx.user_data = &memory;
+
+        emf::fetch_async(ctx);
+    }
+
+#endif
 }
 
 
@@ -523,16 +678,16 @@ namespace assets
 
         bool res = true;
         res &= audio::load_sound_from_bytes(am.sound.laser, sounds.laser);
-        assert(res && " *** laser sound *** ");
+        app_assert(res && " *** laser sound *** ");
 
         res &= audio::load_sound_from_bytes(am.sound.explosion, sounds.explosion);
-        assert(res && " *** explosion sound *** ");
+        app_assert(res && " *** explosion sound *** ");
 
         res &= audio::load_sound_from_bytes(am.sound.confirm, sounds.ui_confirm);
-        assert(res && " *** confirm sound *** ");
+        app_assert(res && " *** confirm sound *** ");
 
         res &= audio::load_sound_from_bytes(am.sound.select, sounds.ui_select);
-        assert(res && " *** select sound *** ");
+        app_assert(res && " *** select sound *** ");
 
         sounds.ok = res;       
 
@@ -588,16 +743,16 @@ namespace assets
         bool res = true;
 
         res &= audio::load_music_from_bytes(am.music.A, music.game_00);
-        assert(res && " *** music A *** ");
+        app_assert(res && " *** music A *** ");
 
         res &= audio::load_music_from_bytes(am.music.B, music.game_01);
-        assert(res && " *** music B *** ");
+        app_assert(res && " *** music B *** ");
 
         res &= audio::load_music_from_bytes(am.music.C, music.game_02);
-        assert(res && " *** music C *** ");
+        app_assert(res && " *** music C *** ");
 
         res &= audio::load_music_from_bytes(am.music.D, music.game_03);
-        assert(res && " *** music D *** ");
+        app_assert(res && " *** music D *** ");
 
         music.ok = true;
         return music;

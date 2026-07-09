@@ -1,11 +1,8 @@
 #pragma once
 
 #include "../image/image.hpp"
-#include "../span/span.hpp"
-#include "../util/numeric.hpp"
 
-namespace num = numeric;
-namespace img = image;
+
 
 
 namespace ascii
@@ -13,13 +10,17 @@ namespace ascii
     enum class Font : int
     {
         Ascii5,
-        Joystick8
+        Joystick8,
     };
+
+
+    namespace img = image;
+    using p32 = img::Pixel;
     
 
-    void render_text(StringView const& text, img::SubView const& dst, Font font, u32 desired_height, img::Pixel color);
+    void render_text(StringView const& text, img::SubView const& dst, Font font, u32 desired_height, p32 color);
 
-    void render_text(StringView const& text, img::SubView const& dst, Font font, img::Pixel color);
+    void render_text(StringView const& text, img::SubView const& dst, Font font, p32 color);
 
     u32 font_height(Font font);
 
@@ -27,16 +28,19 @@ namespace ascii
 
     u32 text_width(StringView const& text, Font font, u32 scale);
 
-    Vec2Du32 text_dimensions(StringView const& text, Font font);    
+    Vec2Du32 text_dimensions(StringView const& text, Font font);
+    
+    
+    void render_text_v(StringView const& text, img::SubView const& dst, Font font, p32 color);
 
 
-    inline void render_text(cstr text, img::SubView const& dst, Font font, u32 desired_height, img::Pixel color)
+    inline void render_text(cstr text, img::SubView const& dst, Font font, u32 desired_height, p32 color)
     {
         render_text(span::to_string_view(text), dst, font, desired_height, color);
     }
 
 
-    inline void render_text(cstr text, img::SubView const& dst, Font font, img::Pixel color)
+    inline void render_text(cstr text, img::SubView const& dst, Font font, p32 color)
     {
         render_text(span::to_string_view(text), dst, font, color);
     }
@@ -89,7 +93,10 @@ namespace ascii
         assert(w >= dims.x);
         assert(h >= dims.y);
 
-        auto scale = num::min(w / dims.x, h / dims.y);
+        auto scale_w = w / dims.x;
+        auto scale_h = h / dims.y;
+
+        auto scale = scale_w < scale_h ? scale_w : scale_h;
         dims.x *= scale;
         dims.y *= scale;
 
@@ -97,7 +104,7 @@ namespace ascii
     }
     
     
-    inline void render_text_fit(auto text, auto const& view, Font font, u32 pad, img::Pixel color)
+    inline void render_text_fit(auto text, auto const& view, Font font, u32 pad, p32 color)
     {
         auto dims = text_dimensions(text, font);
         auto scale = (view.width - 2 * pad) / dims.x;

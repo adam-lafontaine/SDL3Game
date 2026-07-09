@@ -1,7 +1,5 @@
 #pragma once
 
-//#define NO_MOUSE
-
 // activate buttons to accept input
 #define MOUSE_LEFT 1
 #define MOUSE_RIGHT 1
@@ -30,3 +28,71 @@ namespace input
 
 #endif
 }
+
+
+/* mouse */
+
+namespace input
+{
+	class MouseInput
+	{
+	public:
+		static constexpr unsigned n_buttons = N_MOUSE_BUTTONS;
+
+		u64 window_id;
+
+	#if MOUSE_POSITION
+
+		Point2Di32 window_pos;
+
+	#endif
+	#if MOUSE_WHEEL
+
+		Vec2Di32 wheel;
+
+	#endif
+
+		union
+		{
+			ButtonState buttons[n_buttons];
+			struct
+			{
+			#if MOUSE_LEFT
+				ButtonState btn_left;
+			#endif
+			#if MOUSE_RIGHT
+				ButtonState btn_right;
+			#endif
+			#if MOUSE_MIDDLE
+				ButtonState btn_middle;
+			#endif
+			#if MOUSE_X1
+				ButtonState btn_x1;
+			#endif
+			#if MOUSE_X2
+				ButtonState btn_x2;
+			#endif
+			};
+		};
+
+		static constexpr const char* btn_str[n_buttons] = {
+		#if MOUSE_LEFT
+			"btn_left",
+		#endif
+		#if MOUSE_RIGHT
+			"btn_right",
+		#endif
+		#if MOUSE_MIDDLE
+			"btn_middle",
+		#endif
+		#if MOUSE_X1
+			"btn_x1",
+		#endif
+		#if MOUSE_X2
+			"btn_x2",
+		#endif
+		};
+
+	};
+}
+

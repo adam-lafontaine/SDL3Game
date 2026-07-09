@@ -1,6 +1,10 @@
 .vscode/
+out_files/
+
 .zig-cache/
 zig-out/
+zig-pkg/
+
 
 # Build results
 [Dd]ebug/
