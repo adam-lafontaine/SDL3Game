@@ -360,8 +360,6 @@ namespace audio
 
     bool init_audio()
     {
-        //SDL_SetHint(SDL_HINT_AUDIODRIVER, "pulse");
-        //SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
         auto rc = SDL_Init(SDL_INIT_AUDIO);
         if (rc < 0)
         {
@@ -605,6 +603,7 @@ namespace audio
 
         if (music.is_on)
         {
+            audio_log("*** music 2\n");
             return;
         }
 

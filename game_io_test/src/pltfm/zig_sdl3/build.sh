@@ -1,7 +1,7 @@
 #!/bin/bash
 # Clean zig build with colored filenames - errors in reverse order
 
-echo "→ zig build $@ SDL3Game"
+echo "→ zig build $@ SDL3Game - SDL3"
 echo "──────────────────────────────────────────"
 
 output=$(zig build "$@" 2>&1)

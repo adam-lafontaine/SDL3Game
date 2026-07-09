@@ -21,15 +21,10 @@ const main_cpp = app ++ "/pltfm/sdl3/io_test_sdl3.cpp";
 
 const cpp_flags = &[_][]const u8{
     "-std=c++20",
-    //"-mavx",
-    //"-mavx2",
-    //"-mfma",
-    //"-O3",
-    //"-DNDEBUG",
+    "-O3",
+    "-DNDEBUG",
     "-DIMAGE_READ",
     "-DNO_AUDIO",
-    //"-DALLOC_COUNT",
-    //"-DAPP_FULLSCREEN"
 };
 
 const targets: []const std.Target.Query = &.{
@@ -41,8 +36,8 @@ const targets: []const std.Target.Query = &.{
 };
 
 pub fn build(b: *std.Build) !void {
-    //const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .ReleaseFast;
-    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .Debug;
+    const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .ReleaseFast;
+    //const optimize = b.option(std.builtin.OptimizeMode, "optimize", "Optimization mode") orelse .Debug;
 
     for (targets) |t| {
         const exe = b.addExecutable(.{

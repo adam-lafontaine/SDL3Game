@@ -572,6 +572,9 @@ namespace game_io_test
     {
         auto& data = get_data(state);
 
+        // must exist for life of the program (SDL2 Mixer)
+        assets::destroy_asset_memory(data.asset_memory);
+
         mb::destroy_buffer(data.buffer32);
         mb::destroy_buffer(data.buffer8);
         mem::free(state.data);
@@ -623,7 +626,8 @@ namespace game_io_test
             return am.status;
         }
         
-        assets::destroy_asset_memory(am);
+        // Can destroy here (SDL3 Mixer only)
+        //assets::destroy_asset_memory(am);
 
         audio::set_sound_volume(0.5f);
         audio::set_music_volume(1.0f);
