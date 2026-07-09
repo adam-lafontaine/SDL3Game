@@ -736,13 +736,13 @@ namespace game_io_test
         switch (data.asset_memory.status)
         {
         case S::None:
-            img::fill(data.out_src, img::to_pixel(255, 50, 255));
+            img::fill(data.out_dst, img::to_pixel(255, 50, 255));
             return;
 
         case S::Load:
         case S::Process:
             process_asset_memory(data);
-            img::fill(data.out_src, COLOR_BACKGROUND);
+            img::fill(data.out_dst, COLOR_BACKGROUND);
             return;
 
         case S::Ready:
@@ -750,7 +750,7 @@ namespace game_io_test
             break;
 
         case S::Fail:
-            img::fill(data.out_src, img::to_pixel(255, 50, 50));
+            img::fill(data.out_dst, img::to_pixel(255, 50, 50));
             return;
 
         default: return;            

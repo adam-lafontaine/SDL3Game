@@ -270,7 +270,7 @@ namespace assets
 
         ok &= read_asset_memory(memory);
 
-        memory.status = ok ? AssetStatus::Success : AssetStatus::Fail;
+        memory.status = ok ? AssetStatus::Process : AssetStatus::Fail;
     }
 
 
@@ -289,7 +289,7 @@ namespace assets
 
     static void load_asset_memory_async(AssetMemory& memory)
     {
-        memory.status = AssetStatus::Loading;
+        memory.status = AssetStatus::Load;
 
         emf::FetchContext ctx{};
 
