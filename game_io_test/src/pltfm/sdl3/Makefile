@@ -5,21 +5,15 @@ GPP += -mavx -mavx2 -mfma
 GPP += -DIMAGE_READ
 GPP += -DAPP_ASSERT_LOG
 
-#GPP += -O3
-#GPP += -DNDEBUG
-
-#GPP += -DALLOC_COUNT
-
-#GPP += -DAPP_FULLSCREEN
+GPP += -O3
+GPP += -DNDEBUG
 
 NO_FLAGS := 
 
 SDL3 := -lSDL3
 SDL3 += -lSDL3_mixer
 
-
 ALL_LFLAGS := $(SDL3)
-
 
 root       := ../../../..
 

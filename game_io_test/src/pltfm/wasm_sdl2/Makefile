@@ -20,12 +20,12 @@ EPPFLAGS += -DIMAGE_READ
 #EPPFLAGS += -DNDEBUG -O3
 #EPPFLAGS += -sASSERTIONS=1
 
-EPPFLAGS += -sUSE_SDL=3
+EPPFLAGS += -sUSE_SDL=2
 
 # SDL3_Mixer not available
-EPPFLAGS += -DNO_AUDIO
-#EPPFLAGS += -sUSE_SDL_MIXER=3
-#EPPFLAGS += -sUSE_OGG=1
+#EPPFLAGS += -DNO_AUDIO
+EPPFLAGS += -sUSE_SDL_MIXER=2
+EPPFLAGS += -sUSE_OGG=1
 
 EPPFLAGS += -sFETCH=1
 EPPFLAGS += -sALLOW_MEMORY_GROWTH=1
@@ -40,7 +40,7 @@ EXE := io_test
 ROOT := ../../../..
 
 APP := $(ROOT)/game_io_test
-BUILD := $(APP)/build/wasm_sdl3
+BUILD := $(APP)/build/wasm_sdl2
 
 OUT := $(BUILD)/$(EXE).html
 
@@ -51,7 +51,7 @@ RES := $(APP)/src/res
 
 BIN_DATA := $(RES)/io_test_data.bin
 
-SRC := ./io_test_wasm_sdl3.cpp
+SRC := ./io_test_wasm_sdl2.cpp
 
 
 #**********************
@@ -78,5 +78,5 @@ source:
 	
 
 serve:
-	python3 -m http.server --directory $(BUILD) 8333
+	python3 -m http.server --directory $(BUILD) 8222
 
