@@ -70,15 +70,16 @@ namespace assets
 
     
 
-/* binary data */
+/* asset binary data */
 
 namespace assets
 {
     enum class AssetStatus : u8
     {
         None = 0,
-        Loading,
-        Success,
+        Load,
+        Process,
+        Ready,
         Fail
     };
     
@@ -213,10 +214,10 @@ namespace assets
 
     static void load_asset_memory(AssetMemory& memory)
     {
-        memory.status = AssetStatus::Loading;
+        memory.status = AssetStatus::Load;
         memory.buffer = load_asset_binary();
         auto ok = read_asset_memory(memory);
-        memory.status = ok ? AssetStatus::Success : AssetStatus::Fail;
+        memory.status = ok ? AssetStatus::Process : AssetStatus::Fail;
     }
 
 
@@ -246,12 +247,20 @@ namespace assets
 
     static void process_asset_data(ByteView const& bytes, void* user_data)
     {
-        if (!bytes.data || !bytes.length || !user_data)
+        if (!user_data)
         {
             return;
         }
 
         auto& memory = *(AssetMemory*)user_data;
+
+        if (!bytes.data || !bytes.length)
+        {
+            memory.status = AssetStatus::Fail;
+            return;
+        }
+
+        
         auto& buffer = memory.buffer;
 
         bool ok = true;
@@ -669,16 +678,16 @@ namespace assets
 
         bool res = true;
         res &= audio::load_sound_from_bytes(am.sound.laser, sounds.laser);
-        assert(res && " *** laser sound *** ");
+        app_assert(res && " *** laser sound *** ");
 
         res &= audio::load_sound_from_bytes(am.sound.explosion, sounds.explosion);
-        assert(res && " *** explosion sound *** ");
+        app_assert(res && " *** explosion sound *** ");
 
         res &= audio::load_sound_from_bytes(am.sound.confirm, sounds.ui_confirm);
-        assert(res && " *** confirm sound *** ");
+        app_assert(res && " *** confirm sound *** ");
 
         res &= audio::load_sound_from_bytes(am.sound.select, sounds.ui_select);
-        assert(res && " *** select sound *** ");
+        app_assert(res && " *** select sound *** ");
 
         sounds.ok = res;       
 
@@ -734,16 +743,16 @@ namespace assets
         bool res = true;
 
         res &= audio::load_music_from_bytes(am.music.A, music.game_00);
-        assert(res && " *** music A *** ");
+        app_assert(res && " *** music A *** ");
 
         res &= audio::load_music_from_bytes(am.music.B, music.game_01);
-        assert(res && " *** music B *** ");
+        app_assert(res && " *** music B *** ");
 
         res &= audio::load_music_from_bytes(am.music.C, music.game_02);
-        assert(res && " *** music C *** ");
+        app_assert(res && " *** music C *** ");
 
         res &= audio::load_music_from_bytes(am.music.D, music.game_03);
-        assert(res && " *** music D *** ");
+        app_assert(res && " *** music D *** ");
 
         music.ok = true;
         return music;

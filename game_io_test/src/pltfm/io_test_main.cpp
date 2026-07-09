@@ -1,6 +1,7 @@
 #include "../../../libs/io/window.hpp"
 #include "../../../libs/io/input/input.hpp"
 #include "../../../libs/datetime/datetime.hpp"
+#include "../../../libs/math/math.hpp"
 
 #include "../app/app.hpp"
 
@@ -68,8 +69,8 @@ bool create_window(Vec2Du32 game_dims)
 #ifndef APP_FULLSCREEN
 
     Vec2Du32 window_dims = {
-        game_dims.x > WINDOW_WIDTH ? game_dims.x : WINDOW_WIDTH,
-        game_dims.y > WINDOW_HEIGHT ? game_dims.y : WINDOW_HEIGHT
+        math::max(game_dims.x, WINDOW_WIDTH),
+        math::max(game_dims.y, WINDOW_HEIGHT)
     };
 
     if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims))
@@ -127,7 +128,7 @@ static bool is_running()
 
 
 static bool main_init()
-{    
+{ 
     if (!window::init())
     {
         return false;

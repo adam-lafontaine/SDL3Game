@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+
 namespace img = image;
 namespace dt = datetime;
 namespace game = game_io_test;
@@ -34,21 +35,6 @@ constexpr f64 TARGET_FPS = 60.0;
 constexpr f64 TARGET_NS_PER_FRAME = NANO / TARGET_FPS;
 
 
-static void cap_framerate(Stopwatch& sw, f64 target_ns)
-{
-    constexpr f64 fudge = 0.9;
-    
-    u64 ns = sw.get_time_nano();
-    if (ns < target_ns)
-    {
-        auto sleep_ns = target_ns - sw.get_time_nano();
-        datetime::delay_nano((u64)(sleep_ns * fudge));
-    }
-
-    sw.start();
-}
-
-
 /* static main variables */
 
 enum class RunState : int
@@ -65,8 +51,6 @@ namespace mn
     constexpr int MAIN_ERROR = 1;
     constexpr int MAIN_OK = 0;
 
-    constexpr u32 GAME_SCALE = 2;
-
     RunState run_state = RunState::Begin;
 
     window::Window window;
@@ -75,12 +59,7 @@ namespace mn
     game::AppState app_state;
     Stopwatch frame_sw;
 
-    constexpr u64 target_frame_ns = NANO / 60;
-
-#ifdef APP_ROTATE_90
-    constexpr window::Rotate GAME_ROTATE = window::Rotate::CounterClockwise_90;
-#endif
-
+    constexpr u64 target_frame_ns = TARGET_NS_PER_FRAME;
     
 }
 
@@ -97,13 +76,29 @@ static inline bool is_running()
 }
 
 
+static void cap_framerate()
+{
+    constexpr f64 fudge = 0.9;
+
+    u64 ns = mn::frame_sw.get_time_nano();
+    
+    if (ns < mn::target_frame_ns)
+    {
+        auto sleep_ns = mn::target_frame_ns - ns;
+        dt::delay_nano((u64)(sleep_ns * fudge));
+    }
+    
+    mn::frame_sw.start();
+}
+
+
 bool create_window(Vec2Du32 game_dims)
 {
 #ifndef APP_FULLSCREEN
 
     Vec2Du32 window_dims = {
-        game_dims.x > WINDOW_WIDTH ? game_dims.x : WINDOW_WIDTH,
-        game_dims.y > WINDOW_HEIGHT ? game_dims.y : WINDOW_HEIGHT
+        math::max(game_dims.x, WINDOW_WIDTH),
+        math::max(game_dims.y, WINDOW_HEIGHT)
     };
 
     if (!window::create(mn::window, game::APP_TITLE, window_dims, game_dims))
@@ -138,13 +133,8 @@ img::ImageView make_window_view()
 
 
 static bool main_init()
-{    
+{
     if (!window::init())
-    {
-        return false;
-    }
-
-    if (!input::init(mn::inputs))
     {
         return false;
     }
@@ -182,26 +172,25 @@ void main_close()
 
 static void main_loop()
 {
-    Stopwatch sw;
-    sw.start();
+    input::record_input(mn::inputs);
+    auto& input = mn::inputs.curr();
 
-    while(is_running())
+    if (input.cmd_end_program)
     {
-        input::record_input(mn::inputs);
-        auto& input = mn::inputs.curr();
-
-        if (input.cmd_end_program)
-        {
-            end_program();
-        }
-
-        game::update(mn::app_state, input);
-
-        window::render(mn::window, input.window_size_changed);
-
-        mn::inputs.swap();
-        cap_framerate(sw, TARGET_NS_PER_FRAME);
+        end_program();
     }
+
+    game::update(mn::app_state, input);
+
+    window::render(mn::window, input.window_size_changed);
+
+    if (!is_running())
+    {
+        emscripten_cancel_main_loop();
+    }
+
+    mn::inputs.swap();
+    cap_framerate();
 }
 
 
@@ -211,11 +200,12 @@ int main()
     {
         main_close();
         return mn::MAIN_ERROR;
-    }
+    }    
 
     mn::run_state = RunState::Run;
+    mn::frame_sw.start();
 
-    main_loop();
+    emscripten_set_main_loop(main_loop, 0, 1);
 
     main_close();
 
