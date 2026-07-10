@@ -15,4 +15,6 @@ echo 'export PATH="$HOME/odin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 
 odin version
+
+sudo apt install clang
 ```
