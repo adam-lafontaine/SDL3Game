@@ -4,7 +4,7 @@ package io_test
 import "core:fmt"
 import "util"
 import img "image_view"
-import io "app_io"
+import win "app_io/window"
 
 
 Vec2Du32 :: util.Vec2Du32
@@ -28,7 +28,7 @@ TARGET_NS_PER_FRAME :: NANO / TARGET_FPS
 
 run_state := RunState.End
 
-window: io.Window
+window: win.Window
 
 
 end_program :: proc()
@@ -52,7 +52,7 @@ create_window :: proc() -> bool
 
     game_dims := window_dims
 
-    if (!io.create(&window, "ODIN IO Test", window_dims, game_dims))
+    if (!win.create(&window, "ODIN IO Test", window_dims, game_dims))
     {
         return false;
     }
@@ -69,7 +69,7 @@ main_init :: proc() -> bool
 
 main_close :: proc()
 {
-    io.destroy(&window)
+    win.destroy(&window)
 }
 
 
@@ -95,9 +95,6 @@ main :: proc()
 
     image: img.ImageView;
     fmt.println("ImageView: ", image)
-
-    io.hide_mouse_cursor()
-    io.show_mouse_cursor()
 
     main_loop()
 

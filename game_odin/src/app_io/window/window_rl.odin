@@ -1,234 +1,12 @@
-package app_io
+#+private
+package window
 
-import "../util"
 import rl "vendor:raylib"
 
 
-Vec2Du32 :: util.Vec2Du32
-
-Window :: struct 
-{
-    pixel_buffer: ^u32,
-    width_px: u32,
-    height_px: u32,
-
-    handle: i32
-}
-
-
-Rotate :: enum
-{
-    None = 0,
-    Clockwise_90,
-    CounterClockwise_90
-}
-
-
-/* api */
-
-create :: proc(window: ^Window, title: cstring, window_size: Vec2Du32, pixel_size: Vec2Du32) -> bool
-{
-    id := allocate_screen_memory()
-
-    if (id < -1)
-    {
-        assert(false, "*** SCREEN NOT ALLOCATED ***")
-        return false
-    }
-
-    screen := get_screen_by_id(id)
-    if (screen == nil)
-    {
-        assert(false, "*** NO SCREEN ***")
-        return false
-    }
-
-    if (!create_screen_memory(screen , title, window_size, pixel_size))
-    {
-        assert(false, "*** SCREEN MEMORY ***")
-        return false
-    }
-
-    window.handle = cast(i32)id
-    set_window_pixels(screen, window)
-    resize_render_rect(screen)
-
-    return true
-}
-
-
-create_rotated :: proc(window: ^Window, title: cstring, window_size: Vec2Du32, pixel_size: Vec2Du32, rotate: Rotate = Rotate.None) -> bool
-{
-    id := allocate_screen_memory()
-
-    if (id < -1)
-    {
-        assert(false, "*** SCREEN NOT ALLOCATED ***")
-        return false
-    }
-
-    screen := get_screen_by_id(id)
-    if (screen == nil)
-    {
-        return false
-    }
-
-    if (!create_screen_memory(screen , title, window_size, pixel_size))
-    {
-        return false
-    }
-
-    window.handle = cast(i32)id
-    set_window_pixels(screen, window)
-    resize_render_rect(screen, rotate)
-
-    return true
-}
-
-
-create_fullscreen :: proc(window: ^Window, title: cstring, pixel_size: Vec2Du32) -> bool
-{
-    id := allocate_screen_memory()
-
-    if (id < -1)
-    {
-        assert(false, "*** SCREEN NOT ALLOCATED ***")
-        return false
-    }
-
-    screen := get_screen_by_id(id)
-    if (screen == nil)
-    {
-        return false
-    }
-
-    if (!create_screen_memory_fullscreen(screen , title, pixel_size))
-    {
-        return false
-    }
-
-    window.handle = cast(i32)id
-    set_window_pixels(screen, window)
-    resize_render_rect(screen)
-
-    return true
-}
-
-
-create_fullscreen_rotated :: proc(window: ^Window, title: cstring, pixel_size: Vec2Du32, rotate: Rotate = Rotate.None) -> bool
-{
-    id := allocate_screen_memory()
-
-    if (id < -1)
-    {
-        assert(false, "*** SCREEN NOT ALLOCATED ***")
-        return false
-    }
-
-    screen := get_screen_by_id(id)
-    if (screen == nil)
-    {
-        return false
-    }
-
-    if (!create_screen_memory_fullscreen(screen , title, pixel_size))
-    {
-        return false
-    }
-
-    window.handle = cast(i32)id
-    set_window_pixels(screen, window)
-    resize_render_rect(screen, rotate)
-
-    return true
-}
-
-
-/*set_window_icon :: proc(window: ^Window)
-{
-
-}*/
-
-
-destroy :: proc(window: ^Window)
-{
-    screen := get_screen(window)
-    destroy_screen_memory(screen)
-    window.handle = -1
-}
-
-
-resize_pixel_buffer :: proc(window: ^Window, width: u32, height: u32) -> bool
-{
-    screen := get_screen(window)
-    pixels := screen.screen_pixels
-
-    w := cast(i32)width
-    h := cast(i32)height
-
-    if (w == pixels.width && h == pixels.height)
-    {
-        return true
-    }
-
-    destroy_screen_texture(screen)
-    if (!create_screen_texture(screen, width, height))
-    {
-        return false
-    }
-
-    set_window_pixels(screen, window)
-
-    return true
-}
-
-
-render :: proc(window: ^Window, size_changed: b32 = false)
-{
-    screen := get_screen(window)
-
-    if (size_changed)
-    {
-        resize_render_rect(screen)
-    }
-
-    render_screen_memory(screen)
-}
-
-
-render_rotated :: proc(window: ^Window, rotate: Rotate, size_changed: b32 = false)
-{
-    screen := get_screen(window)
-
-    if (size_changed)
-    {
-        resize_render_rect(screen, rotate)
-    }
-
-    render_screen_memory(screen)
-}
-
-
-hide_mouse_cursor :: proc()
-{
-    rl.HideCursor()
-}
-
-
-show_mouse_cursor :: proc()
-{
-    rl.ShowCursor()
-}
-
-
-
-
-
-/* ========== PRIVATE ========== */
 
 /* screen memory */
 
-@(private="file")
 ScreenMemory :: struct
 {
     window_title: cstring,
@@ -238,7 +16,6 @@ ScreenMemory :: struct
 }
 
 
-@(private="file")
 destroy_screen_texture :: proc(screen: ^ScreenMemory)
 {
     rl.UnloadRenderTexture(screen.target)
@@ -246,7 +23,7 @@ destroy_screen_texture :: proc(screen: ^ScreenMemory)
 }
 
 
-@(private="file")
+
 destroy_screen_memory :: proc(screen: ^ScreenMemory)
 {
     destroy_screen_texture(screen)
@@ -254,7 +31,6 @@ destroy_screen_memory :: proc(screen: ^ScreenMemory)
 }
 
 
-@(private="file")
 create_screen_window :: proc(screen: ^ScreenMemory, title: cstring, width: u32, height: u32) -> bool
 {
     w := cast(i32)width
@@ -276,7 +52,6 @@ create_screen_window :: proc(screen: ^ScreenMemory, title: cstring, width: u32, 
 }
 
 
-@(private="file")
 create_screen_window_fullscreen :: proc(screen: ^ScreenMemory, title: cstring) -> bool
 {
     flags: rl.ConfigFlags
@@ -295,7 +70,6 @@ create_screen_window_fullscreen :: proc(screen: ^ScreenMemory, title: cstring) -
 }
 
 
-@(private="file")
 create_screen_texture :: proc(screen: ^ScreenMemory, width: u32, height: u32) -> bool
 {
     w := cast(i32)width
@@ -329,7 +103,6 @@ create_screen_texture :: proc(screen: ^ScreenMemory, width: u32, height: u32) ->
 }
 
 
-@(private="file")
 create_screen_memory :: proc(screen: ^ScreenMemory, title: cstring, window_size: Vec2Du32, pixel_size: Vec2Du32) -> bool
 {
     ok := true;
@@ -346,7 +119,6 @@ create_screen_memory :: proc(screen: ^ScreenMemory, title: cstring, window_size:
 }
 
 
-@(private="file")
 create_screen_memory_fullscreen :: proc(screen: ^ScreenMemory, title: cstring, pixel_size: Vec2Du32) -> bool
 {
     ok := true;
@@ -365,22 +137,19 @@ create_screen_memory_fullscreen :: proc(screen: ^ScreenMemory, title: cstring, p
 
 /* stack data */
 
-@(private="file")
+
 ScreenID :: distinct int
 
-@(private="file")
 N_SCREEN_MEMORY :: ScreenID(2)
 
-@(private="file")
 screen_data := [N_SCREEN_MEMORY]ScreenMemory{}
 
-@(private="file")
 screen_data_id := ScreenID(0)
 
 
 /* helpers */
 
-@(private="file")
+
 allocate_screen_memory :: proc() -> ScreenID
 {
     if (screen_data_id >= N_SCREEN_MEMORY)
@@ -394,7 +163,6 @@ allocate_screen_memory :: proc() -> ScreenID
 }
 
 
-@(private="file")
 get_screen_by_id :: proc(id: ScreenID) -> ^ScreenMemory
 {
     if (id < 0 || id >= N_SCREEN_MEMORY)
@@ -406,7 +174,6 @@ get_screen_by_id :: proc(id: ScreenID) -> ^ScreenMemory
 }
 
 
-@(private="file")
 get_screen :: proc(window: ^Window) -> ^ScreenMemory
 {
     id := cast(ScreenID)window.handle
@@ -414,7 +181,6 @@ get_screen :: proc(window: ^Window) -> ^ScreenMemory
 }
 
 
-@(private="file")
 set_window_pixels :: proc(screen: ^ScreenMemory, window: ^Window)
 {
     pixels := screen.screen_pixels
@@ -425,7 +191,6 @@ set_window_pixels :: proc(screen: ^ScreenMemory, window: ^Window)
 }
 
 
-@(private="file")
 get_rotate_angle :: proc(r: Rotate) -> f32
 {
     #partial switch r 
@@ -438,7 +203,7 @@ get_rotate_angle :: proc(r: Rotate) -> f32
 }
 
 
-resize_render_rect :: proc(screen: ^ScreenMemory, rotate: Rotate = Rotate.None)
+resize_render_rect :: proc(screen: ^ScreenMemory, rotate: Rotate)
 {
     in_w := cast(f32)screen.screen_pixels.width
     in_h := cast(f32)screen.screen_pixels.height
@@ -471,7 +236,7 @@ resize_render_rect :: proc(screen: ^ScreenMemory, rotate: Rotate = Rotate.None)
 }
 
 
-render_screen_memory :: proc(screen: ^ScreenMemory, rotate: Rotate = Rotate.None)
+render_screen_memory :: proc(screen: ^ScreenMemory, rotate: Rotate)
 {
     r_px : rl.Rectangle
     r_px.x = 0.0
@@ -506,3 +271,206 @@ render_screen_memory :: proc(screen: ^ScreenMemory, rotate: Rotate = Rotate.None
 
     rl.EndDrawing()
 }
+
+
+/* api for the api */
+
+api_create :: proc(window: ^Window, title: cstring, window_size: Vec2Du32, pixel_size: Vec2Du32) -> bool
+{
+    id := allocate_screen_memory()
+
+    if (id < -1)
+    {
+        assert(false, "*** SCREEN NOT ALLOCATED ***")
+        return false
+    }
+
+    screen := get_screen_by_id(id)
+    if (screen == nil)
+    {
+        assert(false, "*** NO SCREEN ***")
+        return false
+    }
+
+    if (!create_screen_memory(screen , title, window_size, pixel_size))
+    {
+        assert(false, "*** SCREEN MEMORY ***")
+        return false
+    }
+
+    rotate := Rotate.None
+    window.handle = cast(i32)id
+
+    set_window_pixels(screen, window)
+    resize_render_rect(screen, rotate)
+
+    return true
+}
+
+
+api_create_rotated :: proc(window: ^Window, title: cstring, window_size: Vec2Du32, pixel_size: Vec2Du32, rotate: Rotate) -> bool
+{
+    id := allocate_screen_memory()
+
+    if (id < -1)
+    {
+        assert(false, "*** SCREEN NOT ALLOCATED ***")
+        return false
+    }
+
+    screen := get_screen_by_id(id)
+    if (screen == nil)
+    {
+        return false
+    }
+
+    if (!create_screen_memory(screen , title, window_size, pixel_size))
+    {
+        return false
+    }
+
+    window.handle = cast(i32)id
+    set_window_pixels(screen, window)
+    resize_render_rect(screen, rotate)
+
+    return true
+}
+
+
+api_create_fullscreen :: proc(window: ^Window, title: cstring, pixel_size: Vec2Du32) -> bool
+{
+    id := allocate_screen_memory()
+
+    if (id < -1)
+    {
+        assert(false, "*** SCREEN NOT ALLOCATED ***")
+        return false
+    }
+
+    screen := get_screen_by_id(id)
+    if (screen == nil)
+    {
+        return false
+    }
+
+    if (!create_screen_memory_fullscreen(screen , title, pixel_size))
+    {
+        return false
+    }
+
+    rotate := Rotate.None
+    window.handle = cast(i32)id
+    
+    set_window_pixels(screen, window)
+    resize_render_rect(screen, rotate)
+
+    return true
+}
+
+
+api_create_fullscreen_rotated :: proc(window: ^Window, title: cstring, pixel_size: Vec2Du32, rotate: Rotate) -> bool
+{
+    id := allocate_screen_memory()
+
+    if (id < -1)
+    {
+        assert(false, "*** SCREEN NOT ALLOCATED ***")
+        return false
+    }
+
+    screen := get_screen_by_id(id)
+    if (screen == nil)
+    {
+        return false
+    }
+
+    if (!create_screen_memory_fullscreen(screen , title, pixel_size))
+    {
+        return false
+    }
+
+    window.handle = cast(i32)id
+    set_window_pixels(screen, window)
+    resize_render_rect(screen, rotate)
+
+    return true
+}
+
+
+api_set_window_icon :: proc(window: ^Window)
+{
+    assert(false, "*** NOT IMPLEMENTED ***")
+}
+
+
+api_destroy :: proc(window: ^Window)
+{
+    screen := get_screen(window)
+    destroy_screen_memory(screen)
+    window.handle = -1
+}
+
+
+api_resize_pixel_buffer :: proc(window: ^Window, width: u32, height: u32) -> bool
+{
+    screen := get_screen(window)
+    pixels := screen.screen_pixels
+
+    w := cast(i32)width
+    h := cast(i32)height
+
+    if (w == pixels.width && h == pixels.height)
+    {
+        return true
+    }
+
+    destroy_screen_texture(screen)
+    if (!create_screen_texture(screen, width, height))
+    {
+        return false
+    }
+
+    set_window_pixels(screen, window)
+
+    return true
+}
+
+
+api_render :: proc(window: ^Window, size_changed: b32)
+{
+    screen := get_screen(window)
+    rotate := Rotate.None
+
+    if (size_changed)
+    {
+        resize_render_rect(screen, rotate)
+    }
+
+    render_screen_memory(screen, rotate)
+}
+
+
+api_render_rotated :: proc(window: ^Window, rotate: Rotate, size_changed: b32)
+{
+    screen := get_screen(window)
+
+    if (size_changed)
+    {
+        resize_render_rect(screen, rotate)
+    }
+
+    render_screen_memory(screen, rotate)
+}
+
+
+api_hide_mouse_cursor :: proc()
+{
+    rl.HideCursor()
+}
+
+
+api_show_mouse_cursor :: proc()
+{
+    rl.ShowCursor()
+}
+
