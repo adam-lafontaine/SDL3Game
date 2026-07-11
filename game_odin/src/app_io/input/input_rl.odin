@@ -28,7 +28,7 @@ api_record_input :: proc(inputs: ^InputArray)
     prev := prev(inputs)
     curr := curr(inputs)
 
-    if (rl.WindowShouldClose())
+    if (rl.WindowShouldClose()) // !!!
     {
         curr.cmd_end_program = true
     }

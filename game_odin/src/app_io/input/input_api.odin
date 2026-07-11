@@ -9,22 +9,6 @@ InputStatus :: enum
 }
 
 
-Input :: struct
-{
-
-    // flags
-    window_size_changed: b8,
-    cmd_end_program: b8
-}
-
-@(private)
-reset_input :: proc(input: ^Input)
-{
-    input.window_size_changed = false
-    input.cmd_end_program = false
-}
-
-
 InputArray :: struct
 {
     _id_prev: u8,
@@ -43,7 +27,7 @@ reset_input_array :: proc(inputs: ^InputArray)
 
     for &input in inputs._inputs
     {
-        reset_input(&input)
+        reset_input_state(&input)
     }
 
     inputs.status = .Void
@@ -76,6 +60,11 @@ close :: proc(inputs: ^InputArray)
 
 record_input :: proc(inputs: ^InputArray)
 {
+    prev := prev(inputs)^
+    curr := curr(inputs)
+
+    copy_input_state(prev, curr)
+
     api_record_input(inputs)
 }
 
