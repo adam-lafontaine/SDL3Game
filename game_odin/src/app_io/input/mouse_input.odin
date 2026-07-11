@@ -1,5 +1,9 @@
 package input
 
+import "../../util"
+
+Pos2Di32 :: util.Vec2Di32
+
 N_MOUSE_BUTTONS :: 3
 
 
@@ -25,7 +29,7 @@ MouseInput :: struct
 {
     buttons: MouseButtonInput,
 
-    window_pos: int,
+    window_pos: Pos2Di32,
     wheel: int
 }
 
@@ -33,21 +37,22 @@ MouseInput :: struct
 @(private)
 reset_mouse_wheel :: proc(mouse: ^MouseInput)
 {
-
+    mouse.wheel = 0 // !!!
 }
 
 
 @(private)
 reset_mouse_position :: proc(mouse: ^MouseInput)
 {
-
+    mouse.window_pos.x = 0
+    mouse.window_pos.y = 0
 }
 
 
 @(private)
 copy_mouse_position :: proc(src: MouseInput, dst: ^MouseInput)
 {
-
+    dst.window_pos = src.window_pos
 }
 
 

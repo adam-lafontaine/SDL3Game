@@ -57,9 +57,18 @@ record_mouse_button_input :: proc(src: MouseButtons, dst: ^MouseButtons)
 }
 
 
-record_mouse_position :: proc()
+record_mouse_position_input :: proc(mouse: ^MouseInput)
 {
     pos := rl.GetMousePosition()
+
+    mouse.window_pos.x = i32(pos.x)
+    mouse.window_pos.y = i32(pos.y)
+}
+
+
+record_mouse_wheel_input :: proc()
+{
+
 }
 
 
@@ -85,6 +94,7 @@ api_record_input :: proc(inputs: ^InputArray)
     
     record_keyboard_input(prev.keyboard.keys, &curr.keyboard.keys)
     record_mouse_button_input(prev.mouse.buttons.buttons, &curr.mouse.buttons.buttons)
+    record_mouse_position_input(&curr.mouse)
 
     if (rl.WindowShouldClose()) // ESC key
     {
