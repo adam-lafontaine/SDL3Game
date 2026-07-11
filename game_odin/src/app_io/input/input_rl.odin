@@ -66,9 +66,12 @@ record_mouse_position_input :: proc(mouse: ^MouseInput)
 }
 
 
-record_mouse_wheel_input :: proc()
+record_mouse_wheel_input :: proc(mouse: ^MouseInput)
 {
+    vec := rl.GetMouseWheelMoveV()
 
+    mouse.wheel.x = i32(vec.x)
+    mouse.wheel.y = i32(vec.y) // up < 0
 }
 
 
@@ -95,6 +98,7 @@ api_record_input :: proc(inputs: ^InputArray)
     record_keyboard_input(prev.keyboard.keys, &curr.keyboard.keys)
     record_mouse_button_input(prev.mouse.buttons.buttons, &curr.mouse.buttons.buttons)
     record_mouse_position_input(&curr.mouse)
+    record_mouse_wheel_input(&curr.mouse)
 
     if (rl.WindowShouldClose()) // ESC key
     {

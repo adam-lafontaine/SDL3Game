@@ -46,6 +46,7 @@ fake_app_update :: proc (input: inp.Input)
     kbd := input.keyboard.keys
     mouse := input.mouse.buttons.buttons
     pos := input.mouse.window_pos
+    vec := input.mouse.wheel
 
     if (kbd.kbd_SPACE.pressed || mouse.btn_right.pressed)
     {
@@ -53,6 +54,11 @@ fake_app_update :: proc (input: inp.Input)
     }
 
     if (pos.x > 300)
+    {
+        win.dbg_toggle_color(window)
+    }
+
+    if (vec.y > 0)
     {
         win.dbg_toggle_color(window)
     }
