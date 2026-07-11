@@ -28,6 +28,11 @@ api_record_input :: proc(inputs: ^InputArray)
     prev := prev(inputs)
     curr := curr(inputs)
 
+    is_down: b8 = false
+
+    is_down = cast(b8)rl.IsKeyDown(.SPACE)
+    record_button_input(prev.button, &curr.button, is_down)
+
     if (rl.WindowShouldClose()) // !!!
     {
         curr.cmd_end_program = true

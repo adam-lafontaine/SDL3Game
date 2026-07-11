@@ -175,3 +175,21 @@ show_mouse_cursor :: proc()
 {
     api_show_mouse_cursor()
 }
+
+
+@(private)
+is_white := false
+
+dbg_toggle_color :: proc(window: ^Window)
+{
+    is_white = !is_white
+
+    if (is_white)
+    {
+        api_set_white(window)
+    }
+    else
+    {
+        api_set_black(window)
+    }
+}

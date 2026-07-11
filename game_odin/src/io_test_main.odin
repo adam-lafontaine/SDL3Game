@@ -112,6 +112,12 @@ main_loop :: proc()
         }
 
         resize := cast(b32)input.window_size_changed
+
+        if (input.button.pressed)
+        {
+            win.dbg_toggle_color(window)
+        }
+
         win.render(window, resize)
 
         inp.swap(inputs)

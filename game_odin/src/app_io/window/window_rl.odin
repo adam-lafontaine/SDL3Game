@@ -4,7 +4,6 @@ package window
 import rl "vendor:raylib"
 
 
-
 /* screen memory */
 
 ScreenMemory :: struct
@@ -247,8 +246,15 @@ render_screen_memory :: proc(screen: ^ScreenMemory, rotate: Rotate)
     r_out := screen.render_rect
 
     origin : rl.Vector2
-    origin.x = r_out.width / 2
-    origin.y = r_out.height / 2
+    origin.x = 0
+    origin.y = 0
+
+    if (rotate != .None)
+    {
+        // Correct ???
+        origin.x = r_out.width / 2
+        origin.y = r_out.height / 2
+    }
 
     tint := rl.WHITE
 
@@ -472,5 +478,23 @@ api_hide_mouse_cursor :: proc()
 api_show_mouse_cursor :: proc()
 {
     rl.ShowCursor()
+}
+
+
+api_set_white :: proc(window: ^Window)
+{
+    screen := get_screen(window)
+    pixels := &screen.screen_pixels
+
+    rl.ImageClearBackground(pixels, rl.RAYWHITE)
+}
+
+
+api_set_black :: proc(window: ^Window)
+{
+    screen := get_screen(window)
+    pixels := &screen.screen_pixels
+
+    rl.ImageClearBackground(pixels, rl.BLACK)
 }
 
