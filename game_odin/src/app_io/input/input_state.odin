@@ -7,7 +7,8 @@ Input :: struct
 {
     button: ButtonState,
 
-    // keyboard
+    Keyboard: KeyboardInput,
+
     // mouse
     // gamepad
     // joystick
@@ -32,7 +33,7 @@ reset_input_state :: proc(input: ^Input)
 {
     reset_button_state(&input.button)
 
-    // keyboard
+    reset_keyboard_state(&input.Keyboard)    
     // mouse
     // gamepad
     // joystick
@@ -47,7 +48,7 @@ copy_input_state :: proc(src: Input, dst: ^Input)
 {
     copy_button_state(src.button, &dst.button)
 
-    // keyboard
+    copy_keyboard_state(src.Keyboard, &dst.Keyboard)
     // mouse
     // gamepad
     // joystick

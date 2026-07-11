@@ -2,6 +2,7 @@ package io_test
 
 
 import "core:fmt"
+import "core:time"
 import "util"
 import img "image_view"
 import win "app_io/window"
@@ -32,10 +33,12 @@ run_state := RunState.End
 
 main_window: win.Window
 main_inputs: inp.InputArray
+main_sw: time.Stopwatch
 
 // references
 window: ^win.Window = nil
 inputs: ^inp.InputArray = nil
+sw: ^time.Stopwatch = nil
 
 
 end_program :: proc()
@@ -52,7 +55,21 @@ is_running :: proc() -> bool
 
 cap_framerate :: proc()
 {
-    assert(false, "*** NOT IMPLEMENTED ***")
+    fudge :: 0.9
+    x := f64(TARGET_NS_PER_FRAME)
+    target_ns := i64(x)
+
+    time.stopwatch_stop(sw)
+
+    ns := cast(i64)time.stopwatch_duration(sw^)
+    if (ns < target_ns)
+    {
+        fns := f64(fudge) * f64(target_ns - ns)
+        d := time.Duration(fns)
+        time.sleep(d)
+    }
+
+    time.stopwatch_start(sw)
 }
 
 
@@ -77,12 +94,14 @@ create_window :: proc() -> bool
 main_init :: proc() -> bool
 {
     window = &main_window
+    inputs = &main_inputs
+    sw = &main_sw
+
     if (!win.init(window))
     {
         return false;
     }
-
-    inputs = &main_inputs
+    
     if (!inp.init(inputs))
     {
         return false
@@ -102,6 +121,9 @@ main_close :: proc()
 
 main_loop :: proc()
 {
+    time.stopwatch_reset(sw)
+    time.stopwatch_start(sw)
+
     for is_running() // for loop runs at least once
     {
         inp.record_input(inputs)
@@ -121,7 +143,7 @@ main_loop :: proc()
         win.render(window, resize)
 
         inp.swap(inputs)
-        //cap_framerate()
+        cap_framerate()
     }
 }
 

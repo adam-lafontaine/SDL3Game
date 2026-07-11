@@ -4,13 +4,17 @@ package input
 import rl "vendor:raylib"
 
 
+/* keyboard */
+
+
+
+
 
 /* api for the api */
 
 api_init :: proc(inputs: ^InputArray) -> bool
 {
     //assert(false, "*** NOT IMPLEMENTED ***")
-    rl.SetTargetFPS(60) // !!!
     return true
 }
 
