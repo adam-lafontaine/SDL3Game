@@ -43,9 +43,10 @@ sw: ^time.Stopwatch = nil
 
 fake_app_update :: proc (input: inp.Input)
 {
-    kbd := input.Keyboard.keys
+    kbd := input.keyboard.keys
+    mouse := input.mouse.buttons.buttons
 
-    if (kbd.kbd_SPACE.pressed)
+    if (kbd.kbd_SPACE.pressed || mouse.btn_right.pressed)
     {
         win.dbg_toggle_color(window)
     }

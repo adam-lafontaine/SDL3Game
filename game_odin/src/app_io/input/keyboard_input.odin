@@ -3,7 +3,7 @@ package input
 
 N_KEYBOARD_KEYS :: 9
 
-KeyboardArray :: [N_KEYBOARD_KEYS]ButtonState
+KeyboardKeyArray :: [N_KEYBOARD_KEYS]ButtonState
 
 KeyboardKeys :: struct
 {
@@ -21,7 +21,7 @@ KeyboardKeys :: struct
 
 KeyboardInput :: struct #raw_union
 {
-    list: KeyboardArray,
+    list: KeyboardKeyArray,
     keys: KeyboardKeys
 }
 

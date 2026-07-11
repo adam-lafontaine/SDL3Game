@@ -6,7 +6,7 @@ import rl "vendor:raylib"
 
 /* keyboard */
 
-
+@(private="file")
 record_keyboard_input :: proc(kbd_old: KeyboardKeys, kbd_new: ^KeyboardKeys)
 {
     is_down: b8 = false
@@ -40,6 +40,29 @@ record_keyboard_input :: proc(kbd_old: KeyboardKeys, kbd_new: ^KeyboardKeys)
 }
 
 
+/* mouse */
+
+record_mouse_button_input :: proc(src: MouseButtons, dst: ^MouseButtons)
+{
+    is_down: b8 = false
+
+    is_down = cast(b8)rl.IsMouseButtonDown(.LEFT)
+    record_button_input(src.btn_left, &dst.btn_left, is_down)
+
+    is_down = cast(b8)rl.IsMouseButtonDown(.RIGHT)
+    record_button_input(src.btn_right, &dst.btn_right, is_down)
+
+    is_down = cast(b8)rl.IsMouseButtonDown(.MIDDLE)
+    record_button_input(src.btn_middle, &dst.btn_middle, is_down)
+}
+
+
+record_mouse_position :: proc()
+{
+    pos := rl.GetMousePosition()
+}
+
+
 /* api for the api */
 
 api_init :: proc(inputs: ^InputArray) -> bool
@@ -60,7 +83,8 @@ api_record_input :: proc(inputs: ^InputArray)
     prev := prev(inputs)
     curr := curr(inputs)
     
-    record_keyboard_input(prev.Keyboard.keys, &curr.Keyboard.keys)
+    record_keyboard_input(prev.keyboard.keys, &curr.keyboard.keys)
+    record_mouse_button_input(prev.mouse.buttons.buttons, &curr.mouse.buttons.buttons)
 
     if (rl.WindowShouldClose()) // ESC key
     {
