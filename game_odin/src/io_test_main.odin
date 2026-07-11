@@ -5,6 +5,7 @@ import "core:fmt"
 import "util"
 import img "image_view"
 import win "app_io/window"
+import inp "app_io/input"
 
 
 Vec2Du32 :: util.Vec2Du32
@@ -28,18 +29,30 @@ TARGET_NS_PER_FRAME :: NANO / TARGET_FPS
 
 run_state := RunState.End
 
-window: win.Window
+
+main_window: win.Window
+main_inputs: inp.InputArray
+
+// references
+window: ^win.Window = nil
+inputs: ^inp.InputArray = nil
 
 
 end_program :: proc()
 {
-    run_state = RunState.End
+    run_state = .End
 }
 
 
 is_running :: proc() -> bool
 {
-    return run_state != RunState.End
+    return run_state != .End
+}
+
+
+cap_framerate :: proc()
+{
+    assert(false, "*** NOT IMPLEMENTED ***")
 }
 
 
@@ -52,7 +65,7 @@ create_window :: proc() -> bool
 
     game_dims := window_dims
 
-    if (!win.create(&window, "ODIN IO Test", window_dims, game_dims))
+    if (!win.create(window, "ODIN IO Test", window_dims, game_dims))
     {
         return false;
     }
@@ -63,19 +76,47 @@ create_window :: proc() -> bool
 
 main_init :: proc() -> bool
 {
+    window = &main_window
+    if (!win.init(window))
+    {
+        return false;
+    }
+
+    inputs = &main_inputs
+    if (!inp.init(inputs))
+    {
+        return false
+    }
+
     return create_window()
 }
 
 
 main_close :: proc()
-{
-    win.destroy(&window)
+{   
+    inp.close(inputs)
+    win.destroy(window)
+    win.close(window)
 }
 
 
 main_loop :: proc()
 {
+    for is_running() // for loop runs at least once
+    {
+        inp.record_input(inputs)
+        input := inp.curr(inputs)
+        if (input.cmd_end_program)
+        {
+            end_program()
+        }
 
+        resize := cast(b32)input.window_size_changed
+        win.render(window, resize)
+
+        inp.swap(inputs)
+        //cap_framerate()
+    }
 }
 
 
@@ -90,7 +131,7 @@ main :: proc()
         return
     }
 
-    run_state = RunState.Run
+    run_state = .Run
     fmt.println("Running =", run_state)
 
     image: img.ImageView;
