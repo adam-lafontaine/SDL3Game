@@ -41,6 +41,18 @@ inputs: ^inp.InputArray = nil
 sw: ^time.Stopwatch = nil
 
 
+fake_app_update :: proc (input: inp.Input)
+{
+    kbd := input.Keyboard.keys
+
+    if (kbd.kbd_SPACE.pressed)
+    {
+        win.dbg_toggle_color(window)
+    }
+    
+}
+
+
 end_program :: proc()
 {
     run_state = .End
@@ -114,7 +126,6 @@ main_init :: proc() -> bool
 main_close :: proc()
 {   
     inp.close(inputs)
-    win.destroy(window)
     win.close(window)
 }
 
@@ -135,10 +146,7 @@ main_loop :: proc()
 
         resize := cast(b32)input.window_size_changed
 
-        if (input.button.pressed)
-        {
-            win.dbg_toggle_color(window)
-        }
+        fake_app_update(input^)
 
         win.render(window, resize)
 

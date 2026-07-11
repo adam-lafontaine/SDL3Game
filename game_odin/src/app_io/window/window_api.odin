@@ -64,9 +64,8 @@ close :: proc(window: ^Window)
     if (window.status == .Running)
     {
         api_destroy(window)
-    }    
-
-    reset_window(window)
+        reset_window(window)
+    }
 }
 
 
@@ -138,12 +137,6 @@ set_window_icon :: proc(window: ^Window)
     }
 
     api_set_window_icon(window)
-}
-
-
-destroy :: proc(window: ^Window)
-{
-    api_destroy(window)
 }
 
 

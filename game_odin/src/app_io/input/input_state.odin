@@ -5,8 +5,6 @@ import "../../util"
 
 Input :: struct
 {
-    button: ButtonState,
-
     Keyboard: KeyboardInput,
 
     // mouse
@@ -31,8 +29,6 @@ reset_input_flags :: proc(input: ^Input)
 @(private)
 reset_input_state :: proc(input: ^Input)
 {
-    reset_button_state(&input.button)
-
     reset_keyboard_state(&input.Keyboard)    
     // mouse
     // gamepad
@@ -46,8 +42,6 @@ reset_input_state :: proc(input: ^Input)
 @(private)
 copy_input_state :: proc(src: Input, dst: ^Input)
 {
-    copy_button_state(src.button, &dst.button)
-
     copy_keyboard_state(src.Keyboard, &dst.Keyboard)
     // mouse
     // gamepad
