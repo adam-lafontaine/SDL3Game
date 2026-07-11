@@ -2,8 +2,12 @@ package io_test
 
 
 import "core:fmt"
+import "util"
 import img "image_view"
 import io "app_io"
+
+
+Vec2Du32 :: util.Vec2Du32
 
 
 RunState :: enum {
@@ -39,15 +43,33 @@ is_running :: proc() -> bool
 }
 
 
+create_window :: proc() -> bool
+{
+    window_dims := Vec2Du32 {
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT
+    }
+
+    game_dims := window_dims
+
+    if (!io.create(&window, "ODIN IO Test", window_dims, game_dims))
+    {
+        return false;
+    }
+
+    return true
+}
+
+
 main_init :: proc() -> bool
 {
-    return true
+    return create_window()
 }
 
 
 main_close :: proc()
 {
-
+    io.destroy(&window)
 }
 
 
@@ -74,8 +96,8 @@ main :: proc()
     image: img.ImageView;
     fmt.println("ImageView: ", image)
 
-    //io.hide_mouse_cursor()
-    //io.show_mouse_cursor()
+    io.hide_mouse_cursor()
+    io.show_mouse_cursor()
 
     main_loop()
 

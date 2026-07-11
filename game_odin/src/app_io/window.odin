@@ -39,11 +39,13 @@ create :: proc(window: ^Window, title: cstring, window_size: Vec2Du32, pixel_siz
     screen := get_screen_by_id(id)
     if (screen == nil)
     {
+        assert(false, "*** NO SCREEN ***")
         return false
     }
 
     if (!create_screen_memory(screen , title, window_size, pixel_size))
     {
+        assert(false, "*** SCREEN MEMORY ***")
         return false
     }
 
@@ -367,7 +369,7 @@ create_screen_memory_fullscreen :: proc(screen: ^ScreenMemory, title: cstring, p
 ScreenID :: distinct int
 
 @(private="file")
-N_SCREEN_MEMORY :: ScreenID(1)
+N_SCREEN_MEMORY :: ScreenID(2)
 
 @(private="file")
 screen_data := [N_SCREEN_MEMORY]ScreenMemory{}
