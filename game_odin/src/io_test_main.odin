@@ -5,8 +5,8 @@ import "core:fmt"
 import "core:time"
 import "util"
 import img "image_view"
-import win "app_io/window"
-import inp "app_io/input"
+import win "lib_io/window"
+import inp "lib_io/input"
 
 
 Vec2Du32 :: util.Vec2Du32
@@ -49,16 +49,6 @@ fake_app_update :: proc (input: inp.Input)
     vec := input.mouse.wheel
 
     if (kbd.kbd_SPACE.pressed || mouse.btn_right.pressed)
-    {
-        win.dbg_toggle_color(window)
-    }
-
-    if (pos.x > 300)
-    {
-        win.dbg_toggle_color(window)
-    }
-
-    if (vec.y > 0)
     {
         win.dbg_toggle_color(window)
     }
