@@ -1,6 +1,17 @@
 #+private
 package game_io_test
 
+import "../util"
+
+
+Buffer32 :: util.MemoryBuffer // !!!
+
+
+StateData :: struct
+{
+    buffer32: Buffer32
+}
+
 
 app_init :: proc(state: ^AppState) -> AppResult
 {
