@@ -7,9 +7,11 @@ import "util"
 import img "image_view"
 import win "lib_io/window"
 import inp "lib_io/input"
+import game "game_io_test"
 
 
 Vec2Du32 :: util.Vec2Du32
+ImageView :: img.ImageView
 
 
 RunState :: enum {
@@ -34,11 +36,13 @@ run_state := RunState.End
 main_window: win.Window
 main_inputs: inp.InputArray
 main_sw: time.Stopwatch
+main_app_state: game.AppState
 
 // references
 window: ^win.Window = nil
 inputs: ^inp.InputArray = nil
 sw: ^time.Stopwatch = nil
+app_state: ^game.AppState = nil
 
 
 fake_app_update :: proc (input: inp.Input)
@@ -88,14 +92,12 @@ cap_framerate :: proc()
 }
 
 
-create_window :: proc() -> bool
+create_window :: proc(game_dims: Vec2Du32) -> bool
 {
     window_dims := Vec2Du32 {
         WINDOW_WIDTH,
         WINDOW_HEIGHT
     }
-
-    game_dims := window_dims
 
     if (!win.create(window, "ODIN IO Test", window_dims, game_dims))
     {
@@ -106,28 +108,56 @@ create_window :: proc() -> bool
 }
 
 
+make_window_view :: proc() -> ImageView
+{
+    view: ImageView
+
+    assert(false, "*** NOT IMPLEMENTED ***")
+
+    return view
+}
+
+
 main_init :: proc() -> bool
 {
     window = &main_window
     inputs = &main_inputs
     sw = &main_sw
+    app_state = &main_app_state
 
-    if (!win.init(window))
+    if !win.init(window)
     {
         return false;
     }
     
-    if (!inp.init(inputs))
+    if !inp.init(inputs)
     {
         return false
     }
 
-    return create_window()
+    result := game.init(app_state)
+    if !result.success
+    {
+        return false
+    }
+
+    if !create_window(result.screen_dimensions)
+    {
+        return false
+    }
+
+    if !game.set_screen_memory(app_state, make_window_view())
+    {
+        return false
+    }
+
+    return true
 }
 
 
 main_close :: proc()
 {   
+    game.close(app_state)
     inp.close(inputs)
     win.close(window)
 }
@@ -141,7 +171,8 @@ main_loop :: proc()
     for is_running() // for loop runs at least once
     {
         inp.record_input(inputs)
-        input := inp.curr(inputs)
+        input := inp.get(inputs)
+
         if (input.cmd_end_program)
         {
             end_program()
@@ -149,7 +180,8 @@ main_loop :: proc()
 
         resize := cast(b32)input.window_size_changed
 
-        fake_app_update(input^)
+        fake_app_update(input)
+        game.update(app_state, input)
 
         win.render(window, resize)
 
