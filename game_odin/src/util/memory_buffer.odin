@@ -3,10 +3,8 @@ package util
 import "core:mem"
 
 
-T :: u32 // !!! generics
 
-
-MemoryBuffer :: struct
+MemoryBuffer :: struct($T: typeid)
 {
     data: []T,
     size: u32,
@@ -24,17 +22,17 @@ Result :: enum
 }
 
 
-create_buffer :: proc(buffer: ^MemoryBuffer, n_elements: u32) -> Result
+create_buffer :: proc(buffer: ^MemoryBuffer($T), capacity: u32) -> Result
 {
-    assert(n_elements > 0, "*** NO ELEMENTS SPECIFIED ***")
+    assert(capacity > 0, "*** NO CAPACITY SPECIFIED ***")
     assert(len(buffer.data) == 0, "*** DATA ALREADY ALLOCATED ***")
 
-    if n_elements == 0 || buffer.data == nil
+    if capacity == 0 || buffer.data == nil
     {
         return .Fail
     }
 
-    data, err := make([]T, n_elements, context.allocator)
+    data, err := make([]T, capacity, context.allocator)
     if err != nil
     {
         return .Fail
@@ -48,7 +46,7 @@ create_buffer :: proc(buffer: ^MemoryBuffer, n_elements: u32) -> Result
 }
 
 
-destroy_buffer :: proc(buffer: ^MemoryBuffer)
+destroy_buffer :: proc(buffer: ^MemoryBuffer($T))
 {
     delete(buffer.data)
     buffer.size = 0
@@ -56,19 +54,19 @@ destroy_buffer :: proc(buffer: ^MemoryBuffer)
 }
 
 
-reset_buffer :: proc(buffer: ^MemoryBuffer)
+reset_buffer :: proc(buffer: ^MemoryBuffer($T))
 {
     buffer.size = 0
 }
 
 
-zero_buffer :: proc(buffer: ^MemoryBuffer)
+zero_buffer :: proc(buffer: ^MemoryBuffer($T))
 {
     mem.zero_slice(buffer.data)
 }
 
 
-push_elements :: proc(buffer: ^MemoryBuffer, n_elements: u32) -> (^T, Result)
+push_elements :: proc(buffer: ^MemoryBuffer($T), n_elements: u32) -> ([]T, Result)
 {
     assert(n_elements > 0, "*** NO ELEMENTS SPECIFIED ***")
 
@@ -88,14 +86,14 @@ push_elements :: proc(buffer: ^MemoryBuffer, n_elements: u32) -> (^T, Result)
         return nil, .NoElements
     }
 
-    data := &buffer.data[buffer.size]
+    data := buffer.data[buffer.size : n_elements]
     buffer.size += n_elements
 
     return data, .OK
 }
 
 
-pop_elements :: proc(buffer: ^MemoryBuffer, n_elements: u32)
+pop_elements :: proc(buffer: ^MemoryBuffer($T), n_elements: u32)
 {
     if n_elements == 0
     {

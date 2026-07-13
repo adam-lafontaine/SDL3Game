@@ -9,11 +9,14 @@ ImageView :: img.ImageView
 Vec2Du32 :: util.Vec2Du32
 
 
+StateDataRef :: distinct rawptr
+
+
 AppState :: struct
 {
     screen: ImageView,
 
-    data: rawptr,
+    data: StateDataRef,
 }
 
 

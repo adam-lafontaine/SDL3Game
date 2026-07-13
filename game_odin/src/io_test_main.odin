@@ -12,6 +12,7 @@ import game "game_io_test"
 
 Vec2Du32 :: util.Vec2Du32
 ImageView :: img.ImageView
+Pixel32 :: img.Pixel32
 
 
 RunState :: enum {
@@ -43,21 +44,6 @@ window: ^win.Window = nil
 inputs: ^inp.InputArray = nil
 sw: ^time.Stopwatch = nil
 app_state: ^game.AppState = nil
-
-
-fake_app_update :: proc (input: inp.Input)
-{
-    kbd := input.keyboard.keys
-    mouse := input.mouse.buttons.buttons
-    pos := input.mouse.window_pos
-    vec := input.mouse.wheel
-
-    if (kbd.kbd_SPACE.pressed || mouse.btn_right.pressed)
-    {
-        win.dbg_toggle_color(window)
-    }
-    
-}
 
 
 end_program :: proc()
@@ -110,11 +96,15 @@ create_window :: proc(game_dims: Vec2Du32) -> bool
 
 make_window_view :: proc() -> ImageView
 {
-    view: ImageView
+    vdata := window.pixel_buffer
+    vlen := cast(int)(window.width_px * window.height_px)
 
-    assert(false, "*** NOT IMPLEMENTED ***")
-
-    return view
+    return ImageView {
+        width = window.width_px,
+        height = window.height_px,
+        data = transmute([]Pixel32)struct 
+            { data: ^u32, len: int }{ data = vdata, len = vlen }
+    }
 }
 
 
@@ -179,8 +169,7 @@ main_loop :: proc()
         }
 
         resize := cast(b32)input.window_size_changed
-
-        fake_app_update(input)
+        
         game.update(app_state, input)
 
         win.render(window, resize)

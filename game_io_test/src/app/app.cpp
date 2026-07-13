@@ -92,9 +92,9 @@ namespace game_io_test
 
         // Need screen dimensions before loading assets
 
-        Vec2Du32 c = { 192, 92 };  // controller
-        Vec2Du32 k = { 272,  92 }; // keyboard
-        Vec2Du32 m = { 80, 92 };   // mouse
+        Vec2Du32 c = { 192, 92 }; // controller
+        Vec2Du32 k = { 272, 92 }; // keyboard
+        Vec2Du32 m = { 80, 92 };  // mouse
         
         auto w = math::cxpr::max(c.x * 2, k.x + m.x);
         auto h = math::cxpr::max(c.y + k.y, c.y + m.y);
@@ -682,7 +682,7 @@ namespace game_io_test
             return res;
         }
 
-        auto& data = get_data(state);
+        //auto& data = get_data(state);
 
         res.screen_dimensions = app_screen_dimensions();
 
