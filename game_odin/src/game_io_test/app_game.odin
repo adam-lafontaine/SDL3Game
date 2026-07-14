@@ -41,10 +41,9 @@ StateData :: struct
 {
     asset_memory: AssetMemory,
     
-    out_src: ImageView,
-    out_dst: SubView,
+    out_view: ImageView,
 
-    buffer32: Buffer32
+    buffer8: img.Buffer8
 }
 
 
@@ -58,7 +57,7 @@ destroy_state_data ::proc(state: ^AppState)
 {
     data := get_data(state)
 
-    img.destroy_buffer32(&data.buffer32)
+    img.destroy_buffer8(&data.buffer8)
 
     free(state.data)
 }
@@ -112,25 +111,12 @@ app_set_screen_memory :: proc(state: ^AppState, screen: ImageView) -> bool
     data := get_data(state)
 
     dim := app_screen_dimensions()
-    scale_w := screen.width / dim.x
-    scale_h := screen.height / dim.y
-
-    scale := math.min(scale_w, scale_h)
-
-    if scale == 0
+    if dim.x != screen.width || dim.y != screen.height
     {
-        return false // no down scaling
+        return false
     }
 
-    w := dim.x * scale
-    h := dim.y * scale
-
-    x := (screen.width - w) / 2
-    y := (screen.height - h) / 2
-
-    r := img.make_rect(x, y, w, h)
-
-    data.out_dst = img.sub_view(screen, r)
+    data.out_view = screen
 
     return true
 }
