@@ -39,6 +39,8 @@ app_screen_dimensions :: proc() -> Vec2Du32
 
 StateData :: struct
 {
+    asset_memory: AssetMemory,
+    
     out_src: ImageView,
     out_dst: SubView,
 
@@ -71,6 +73,11 @@ create_state_data :: proc(state: ^AppState) -> bool
     }
 
     state.data = cast(StateDataRef)state_data
+
+    data := get_data(state)
+
+    // no thread
+    load_asset_memory(&data.asset_memory)
 
     return true
 }

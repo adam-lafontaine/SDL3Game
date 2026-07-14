@@ -549,12 +549,8 @@ namespace game_io_test
         MaskViewMapList mask_views;
         InputList inputs;
 
-        img::ImageView out_src;
-        img::SubView out_dst;
-
-        u32 out_scale = 1;
-
-        img::Buffer32 buffer32;
+        img::ImageView out_view; // state.screen
+        
         img::Buffer8 buffer8;
     };
 
@@ -571,8 +567,7 @@ namespace game_io_test
 
         // must exist for life of the program (SDL2 Mixer)
         assets::destroy_asset_memory(data.asset_memory);
-
-        mb::destroy_buffer(data.buffer32);
+        
         mb::destroy_buffer(data.buffer8);
         mem::free(state.data);
     }
@@ -599,15 +594,14 @@ namespace game_io_test
         data.masks = assets::create_draw_mask_data(am, data.buffer8);
 
         auto dim = app_screen_dimensions(data.masks);
-        data.buffer32 = img::create_buffer32(dim.x * dim.y, "buffer32");
-        if (!data.buffer32.ok)
+        auto& out = data.out_view;
+        if (dim.x != out.width || dim.y != out.height)
         {
             am.status = S::Fail;
             return am.status;
         }
 
-        data.out_src = img::make_view(dim.x, dim.y, data.buffer32);
-        set_mask_views(data.masks, data.out_src, data.mask_views);
+        set_mask_views(data.masks, out, data.mask_views);
 
         data.sound_list = assets::create_sound_list(am);
         if (!data.sound_list.ok)
@@ -695,28 +689,14 @@ namespace game_io_test
 
         auto& data = get_data(state);
 
-        auto dim = app_screen_dimensions();        
+        auto dim = app_screen_dimensions(); // same as screen?
 
-        auto scale_w = screen.width / dim.x;
-        auto scale_h = screen.height / dim.y;
-
-        auto scale = math::min(scale_w, scale_h);
-
-        if (!scale)
+        if (screen.width != dim.x || screen.height != dim.y)
         {
-            return false; // down scaling not supported
+            return false;
         }
 
-        auto w = dim.x * scale;
-        auto h = dim.y * scale;
-
-        auto x = (screen.width - w) / 2;
-        auto y = (screen.height - h) / 2;
-
-        auto r = img::make_rect(x, y, w, h);
-
-        data.out_dst = img::sub_view(screen, r);
-        data.out_scale = scale;
+        data.out_view = screen;
 
         // process assets if ready
         using S = assets::AssetStatus;
@@ -737,13 +717,13 @@ namespace game_io_test
         switch (data.asset_memory.status)
         {
         case S::None:
-            img::fill(data.out_dst, img::to_pixel(255, 50, 255));
+            img::fill(data.out_view, img::to_pixel(255, 50, 255));
             return;
 
         case S::Load:
         case S::Process:
             process_asset_memory(data);
-            img::fill(data.out_dst, COLOR_BACKGROUND);
+            img::fill(data.out_view, COLOR_BACKGROUND);
             return;
 
         case S::Ready:
@@ -751,7 +731,7 @@ namespace game_io_test
             break;
 
         case S::Fail:
-            img::fill(data.out_dst, img::to_pixel(255, 50, 50));
+            img::fill(data.out_view, img::to_pixel(255, 50, 50));
             return;
 
         default: return;            
@@ -763,10 +743,9 @@ namespace game_io_test
         update_sound(input, data.sound_list);
         update_music(input, data.music_list);
 
-        img::fill(data.out_src, COLOR_BACKGROUND);
+        img::fill(data.out_view, COLOR_BACKGROUND);
 
         draw(data.mask_views, data.inputs);
-        img::scale_up(data.out_src, data.out_dst, data.out_scale);
     }
 
 
