@@ -1,4 +1,4 @@
-package util
+package memory_buffer
 
 import "core:mem"
 
@@ -48,7 +48,11 @@ create_buffer :: proc(buffer: ^MemoryBuffer($T), capacity: u32) -> Result
 
 destroy_buffer :: proc(buffer: ^MemoryBuffer($T))
 {
-    delete(buffer.data)
+    if len(buffer.data) > 0
+    {
+        delete(buffer.data)
+    }
+    
     buffer.size = 0
     buffer.ok = false
 }

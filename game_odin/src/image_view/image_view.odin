@@ -2,8 +2,9 @@ package image_view
 
 import "core:slice"
 import "../util"
+import mb "../util/memory_buffer"
 
-Buffer32 :: util.MemoryBuffer(Pixel32)
+Buffer32 :: mb.MemoryBuffer(Pixel32)
 Rect2Du32 :: util.Rect2Du32
 
 Pixel32 :: struct 
@@ -73,7 +74,7 @@ SubView :: struct
 
 create_buffer32 :: proc(buffer: ^Buffer32, n_pixels: u32) -> bool
 {
-    res := util.create_buffer(buffer, n_pixels)
+    res := mb.create_buffer(buffer, n_pixels)
 
     return res == .OK
 }
@@ -81,7 +82,7 @@ create_buffer32 :: proc(buffer: ^Buffer32, n_pixels: u32) -> bool
 
 destroy_buffer32 :: proc(buffer: ^Buffer32)
 {
-    util.destroy_buffer(buffer)
+    mb.destroy_buffer(buffer)
 }
 
 
@@ -100,7 +101,7 @@ make_view :: proc(buffer: ^Buffer32, width: u32, height: u32) -> ImageView
 {
     view: ImageView
 
-    data, res := util.push_elements(buffer, width * height)
+    data, res := mb.push_elements(buffer, width * height)
     if res == .OK
     {
         view.width = width

@@ -144,7 +144,7 @@ namespace assets
             return false;
         }
 
-        auto const make_view = [&](auto const& s) { return span::make_view(buffer.data_ + s.offset, s.size); };
+        auto const make_view = [&](auto const& s) { return span::sub_view(buffer, s.offset, s.size); };
 
         auto const read_image = [&](auto const& s, auto& im)
         {

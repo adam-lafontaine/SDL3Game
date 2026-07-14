@@ -4,6 +4,7 @@ package game_io_test
 import "core:math"
 
 import img "../image_view"
+import "../res"
 
 
 Buffer32 :: img.Buffer32
@@ -21,12 +22,12 @@ app_screen_dimensions :: proc() -> Vec2Du32
 
     // Need screen dimensions before loading assets
 
-    c := Vec2Du32 { 192, 92 } // controller
-    k := Vec2Du32 { 272, 92 } // keyboard
-    m := Vec2Du32 { 80, 92 }  // mouse
+    c := res.masks[.controller]// Vec2Du32 { 192, 92 } // controller
+    k := res.masks[.keyboard] // Vec2Du32 { 272, 92 } // keyboard
+    m := res.masks[.mouse]// Vec2Du32 { 80, 92 }  // mouse
 
-    w := math.max(c.x * 2, k.x + m.x)
-    h := math.max(c.y + k.y, c.y + m.y)
+    w := math.max(c.width * 2, k.width + m.width)
+    h := math.max(c.height + k.height, c.height + m.height)
 
     res := Vec2Du32 { w, h }
 
