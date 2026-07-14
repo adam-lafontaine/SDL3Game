@@ -22,9 +22,9 @@ app_screen_dimensions :: proc() -> Vec2Du32
 
     // Need screen dimensions before loading assets
 
-    c := res.masks[.controller]// Vec2Du32 { 192, 92 } // controller
-    k := res.masks[.keyboard] // Vec2Du32 { 272, 92 } // keyboard
-    m := res.masks[.mouse]// Vec2Du32 { 80, 92 }  // mouse
+    c := res.masks[.controller]
+    k := res.masks[.keyboard]
+    m := res.masks[.mouse]
 
     w := math.max(c.width * 2, k.width + m.width)
     h := math.max(c.height + k.height, c.height + m.height)

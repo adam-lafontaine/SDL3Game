@@ -10,6 +10,9 @@ SpanView :: struct($T: typeid)
 }
 
 
+ByteView :: SpanView(byte)
+
+
 make_view :: proc(buffer: mb.MemoryBuffer($T)) -> SpanView(T)
 {
     return SpanView {

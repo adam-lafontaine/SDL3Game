@@ -97,16 +97,39 @@ make_rect :: proc(x: u32, y: u32, w: u32, h: u32) -> Rect2Du32
 }
 
 
+push_view :: proc(buffer: ^Buffer32, view: ^ImageView) -> bool
+{
+    w := view.width
+    h := view.height
+
+    if w == 0 || h == 0
+    {
+        return false
+    }
+
+    data, res := mb.push_elements(buffer, w * h)
+    if res == .OK
+    {
+        return false
+    }
+
+    view.data = data
+
+    return true
+}
+
+
 make_view :: proc(buffer: ^Buffer32, width: u32, height: u32) -> ImageView
 {
     view: ImageView
 
-    data, res := mb.push_elements(buffer, width * height)
-    if res == .OK
+    view.width = width
+    view.height = height
+
+    if !push_view(buffer, &view)
     {
-        view.width = width
-        view.height = height
-        view.data = data
+        view.width = 0
+        view.height = 0
     }
 
     return view

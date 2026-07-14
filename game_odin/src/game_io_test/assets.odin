@@ -14,7 +14,7 @@ BIN_DATA_FALLBACK :: "/home/adam/Repos/SDL3Game/game_io_test/src/res/io_test_dat
 
 
 ByteBuffer :: mb.MemoryBuffer(byte)
-ByteView :: sv.SpanView(byte)
+ByteView :: sv.ByteView
 
 
 AssetStatus :: enum 
