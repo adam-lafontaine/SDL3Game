@@ -103,7 +103,7 @@ make_window_view :: proc() -> ImageView
         width = window.width_px,
         height = window.height_px,
         data = transmute([]Pixel32)struct 
-            { data: ^u32, len: int }{ data = vdata, len = vlen }
+            { data: ^u32, len: int }{ vdata, vlen }
     }
 }
 

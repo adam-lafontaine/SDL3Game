@@ -1,16 +1,52 @@
 package image_view
 
+import "core:slice"
 import "../util"
-
-Pixel32 :: u32 // !!!
-Pixel8 :: u8
 
 Buffer32 :: util.MemoryBuffer(Pixel32)
 Rect2Du32 :: util.Rect2Du32
 
+Pixel32 :: struct 
+{
+    red: u8,
+    green: u8,
+    blue: u8,
+    alpha: u8
+}
 
-BLACK: Pixel32 = 0
-WHITE: Pixel32 = ~BLACK
+Pixel8 :: u8
+
+
+rgba_to_pixel :: proc(r: u8, g: u8, b: u8, a: u8) -> Pixel32
+{
+    return Pixel32 {
+        red = r,
+        green = g,
+        blue = b,
+        alpha = a
+    }
+}
+
+
+rgb_to_pixel :: proc(r: u8, g: u8, b: u8) -> Pixel32
+{
+    return Pixel32 {
+        red = r,
+        green = g,
+        blue = b,
+        alpha = 255
+    }
+}
+
+
+to_pixel :: proc {
+    rgba_to_pixel,
+    rgb_to_pixel
+}
+
+
+BLACK := Pixel32 { 0, 0, 0, 255 }
+WHITE := Pixel32 { 255, 255, 255, 255 }
 
 
 ImageView :: struct
@@ -91,10 +127,5 @@ sub_view :: proc(view: ImageView, rect: Rect2Du32) -> SubView
 
 fill :: proc(view: ImageView, color: Pixel32)
 {
-    len := view.width * view.height
-
-    for i in 0..<len
-    {
-        view.data[i] = color
-    }
+    slice.fill(view.data, color)
 }

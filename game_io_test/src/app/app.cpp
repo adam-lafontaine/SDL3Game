@@ -28,9 +28,6 @@
 
 namespace game_io_test
 {
-    //namespace dt = datetime;
-
-
     using Input = input::Input;
 
     template <typename T>
