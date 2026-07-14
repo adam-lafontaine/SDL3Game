@@ -7,6 +7,7 @@ import mb "../util/memory_buffer"
 import sv "../util/span_view"
 import img "../image_view"
 import fs "../util/files"
+import "../res"
 
 
 BIN_DATA_PATH :: "./io_test_data.bin";
@@ -69,9 +70,74 @@ destroy_asset_memory :: proc(memory: ^AssetMemory)
 }
 
 
+count_asset_pixels :: proc() -> u32
+{
+    w := res.masks[.keyboard].width
+    h := res.masks[.keyboard].height
+    count := w * h
+
+    w = res.masks[.controller].width
+    h = res.masks[.controller].height
+    count += w * h
+
+    w = res.masks[.mouse].width
+    h = res.masks[.mouse].height
+    count += w * h
+
+    w = res.masks[.arrow].width
+    h = res.masks[.arrow].height
+    count += w * h
+
+    return count
+}
+
+
+read_image :: proc(memory: ^AssetMemory, id: res.ImageID) -> bool
+{
+    pixels := &memory.pixels
+
+    dst: ^ImageView = nil
+
+    switch id
+    {
+        case .keyboard:   dst = &memory.image.keyboard
+        case .controller: dst = &memory.image.controller
+        case .mouse:      dst = &memory.image.mouse
+        case .arrow:      dst = &memory.image.arrow
+        case: return false
+    }
+    info := res.masks[id]
+    bv := sv.sub_view(memory.bytes, info.offset, info.size)
+    ok := img.read_image_from_memory(bv, pixels, dst)
+
+    return ok
+}
+
+
 read_asset_memory :: proc(memory: ^AssetMemory) -> bool
 {
-    return true
+    buffer := &memory.bytes
+    if !buffer.ok
+    {
+        return false
+    }
+    
+    pixels := &memory.pixels
+
+    result := mb.create_buffer(pixels, count_asset_pixels())
+    if result != .OK
+    {
+        return false
+    }
+
+    ok := true
+    
+    for id in res.ImageID
+    {
+        ok &= read_image(memory, id)
+    }
+    
+    return ok
 }
 
 

@@ -23,7 +23,7 @@ make_view :: proc(buffer: mb.MemoryBuffer($T)) -> SpanView(T)
 
 sub_view :: proc(buffer: mb.MemoryBuffer($T), offset: u32, length: u32) -> SpanView(T)
 {
-    return SpanView {
+    return SpanView(T) {
         data = buffer.data[offset:length]
     }
 }

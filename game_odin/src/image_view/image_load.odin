@@ -19,7 +19,7 @@ read_image_from_file :: proc() -> bool
 }
 
 
-read_image_from_memory :: proc(bv: ^ByteView, buffer: ^Buffer32, dst: ^ImageView) -> bool
+read_image_from_memory :: proc(bv: ByteView, buffer: ^Buffer32, dst: ^ImageView) -> bool
 {
     data, err := image.load_from_bytes(bv.data)
     if err != nil
