@@ -51,27 +51,18 @@ BLACK := Pixel32 { 0, 0, 0, 255 }
 WHITE := Pixel32 { 255, 255, 255, 255 }
 
 
-ImageView :: struct
+View2D :: struct($T: typeid)
 {
     width: u32,
     height: u32,
 
-    data: []Pixel32  // !!! Pixel
+    data: []T
 }
 
 
-GrayView :: struct
+SubView2D :: struct($T: typeid)
 {
-    width: u32,
-    height: u32,
-
-    data: []Pixel8
-}
-
-
-SubView :: struct
-{
-    data: []Pixel32,  // !!! Pixel
+    data: []T,
     view_width: u32,
 
     x_begin: u32,
@@ -80,6 +71,13 @@ SubView :: struct
     width: u32,
     height: u32
 }
+
+
+ImageView :: View2D(Pixel32)
+GrayView :: View2D(Pixel8)
+
+SubView :: SubView2D(Pixel32)
+GraySubView :: SubView2D(Pixel8)
 
 
 create_buffer32 :: proc(buffer: ^Buffer32, n_pixels: u32) -> bool
@@ -121,7 +119,7 @@ make_rect :: proc(x: u32, y: u32, w: u32, h: u32) -> Rect2Du32
 }
 
 
-push_view_32 :: proc(buffer: ^Buffer32, view: ^ImageView) -> bool
+push_view2D :: proc (buffer: ^mb.MemoryBuffer($T), view: ^View2D(T)) -> bool
 {
     w := view.width
     h := view.height
@@ -143,34 +141,24 @@ push_view_32 :: proc(buffer: ^Buffer32, view: ^ImageView) -> bool
 }
 
 
+push_view_32 :: proc(buffer: ^Buffer32, view: ^ImageView) -> bool
+{
+    return push_view2D(buffer, view)
+}
+
+
 push_view_8 :: proc(buffer: ^Buffer8, view: ^GrayView) -> bool
 {
-    w := view.width
-    h := view.height
-
-    if w == 0 || h == 0
-    {
-        return false
-    }
-
-    data, res := mb.push_elements(buffer, w * h)
-    if res == .OK
-    {
-        return false
-    }
-
-    view.data = data
-
-    return true
+    return push_view2D(buffer, view)
 }
 
 
 push_view :: proc { push_view_32, push_view_8 }
 
 
-make_view_32 :: proc(buffer: ^Buffer32, width: u32, height: u32) -> ImageView
+make_view2D :: proc(buffer: ^mb.MemoryBuffer($T), width: u32, height: u32) -> View2D(T)
 {
-   view: ImageView
+    view: View2D(T)
 
     view.width = width
     view.height = height
@@ -185,29 +173,24 @@ make_view_32 :: proc(buffer: ^Buffer32, width: u32, height: u32) -> ImageView
 }
 
 
+make_view_32 :: proc(buffer: ^Buffer32, width: u32, height: u32) -> ImageView
+{
+   return make_view2D(buffer, width, height)
+}
+
+
 make_view_8 :: proc(buffer: ^Buffer8, width: u32, height: u32) -> GrayView
 {
-   view: GrayView
-
-    view.width = width
-    view.height = height
-
-    if !push_view(buffer, &view)
-    {
-        view.width = 0
-        view.height = 0
-    }
-
-    return view
+   return make_view2D(buffer, width, height)
 }
 
 
 make_view :: proc { make_view_32, make_view_8 }
 
 
-sub_view :: proc(view: ImageView, rect: Rect2Du32) -> SubView
+sub_view :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
 {
-    return SubView {
+    return SubView2D(T) {
         data = view.data,
         view_width = view.width,
         x_begin = rect.x_begin,

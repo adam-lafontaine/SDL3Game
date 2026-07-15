@@ -43,3 +43,18 @@ void set_window_icon(Window& window, Icon64 const& icon)
 
 
 ```
+
+### Odin Pros & Cons
+
+Pros
+* Enum shorthand
+
+Cons
+* Packages - directory mess
+* No namespaces - need packages
+* No constexpr
+* No static_assert
+
+### Wishlist
+
+* Convert C/C++ function to Odin proc
