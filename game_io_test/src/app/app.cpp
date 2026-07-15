@@ -696,7 +696,7 @@ namespace game_io_test
 
         data.out_view = screen;
 
-        // process assets if ready
+        // process assets if loaded
         using S = assets::AssetStatus;
 
         auto status = process_asset_memory(data);

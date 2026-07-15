@@ -1,24 +1,24 @@
 package util
 
 
-Vec2Du32 :: struct
+Vec2D_XY :: struct($T: typeid)
 {
-    x: u32,
-    y: u32
+    x: T,
+    y: T
 }
 
 
-Vec2Di32 :: struct
+Rect2D_XY :: struct($T: typeid)
 {
-    x: i32,
-    y: i32
+    x_begin: T,
+    x_end: T,
+    y_begin: T,
+    y_end: T
 }
 
 
-Rect2Du32 :: struct
-{
-    x_begin: u32,
-    x_end: u32,
-    y_begin: u32,
-    y_end: u32
-}
+Vec2Du32 :: Vec2D_XY(u32)
+Vec2Di32 :: Vec2D_XY(i32)
+Vec2Df32 :: Vec2D_XY(f32)
+
+Rect2Du32 :: Rect2D_XY(u32)

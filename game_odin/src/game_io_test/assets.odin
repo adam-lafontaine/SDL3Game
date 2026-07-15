@@ -176,3 +176,14 @@ load_asset_memory :: proc(memory: ^AssetMemory) -> bool
 
     return ok
 }
+
+
+load_asset_memory_async :: proc(memory: ^AssetMemory)
+{
+    // blocking for now
+    ok := load_asset_memory(memory)
+    if !ok
+    {
+        assert(false, "*** LOAD ASSETS ***")
+    }
+}

@@ -6,10 +6,14 @@ import "core:math"
 import img "../image_view"
 import mb "../util/memory_buffer"
 import "../res"
+import "../util"
 
 
 Buffer32 :: img.Buffer32
 SubView :: img.SubView
+Vec2Df32 :: util.Vec2Df32
+Vec2Di32 :: util.Vec2Di32
+
 
 
 /* screen dimensions */
@@ -170,12 +174,8 @@ app_init :: proc(state: ^AppState) -> AppResult
 
     data := get_data(state)
 
-    // no thread, check asset_memory.status later
-    ok := load_asset_memory(&data.asset_memory)
-    if !ok
-    {
-        assert(false, "*** LOAD ASSETS ***")
-    }
+    // check asset_memory.status later
+    load_asset_memory_async(&data.asset_memory)    
 
     res.screen_dimensions = screen_dimensions()
     res.success = true
