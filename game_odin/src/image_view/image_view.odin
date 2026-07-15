@@ -41,14 +41,21 @@ rgb_to_pixel :: proc(r: u8, g: u8, b: u8) -> Pixel32
 }
 
 
-to_pixel :: proc {
-    rgba_to_pixel,
-    rgb_to_pixel
+u8_to_pixel :: proc(gray: u8) -> Pixel32
+{
+    return rgb_to_pixel(gray, gray, gray)
 }
 
 
-BLACK := Pixel32 { 0, 0, 0, 255 }
-WHITE := Pixel32 { 255, 255, 255, 255 }
+to_pixel :: proc {
+    rgba_to_pixel,
+    rgb_to_pixel,
+    u8_to_pixel
+}
+
+
+BLACK :: Pixel32 { 0, 0, 0, 255 }
+WHITE :: Pixel32 { 255, 255, 255, 255 }
 
 
 View2D :: struct($T: typeid)
@@ -130,7 +137,7 @@ push_view2D :: proc (buffer: ^mb.MemoryBuffer($T), view: ^View2D(T)) -> bool
     }
 
     data, res := mb.push_elements(buffer, w * h)
-    if res == .OK
+    if res != .OK
     {
         return false
     }

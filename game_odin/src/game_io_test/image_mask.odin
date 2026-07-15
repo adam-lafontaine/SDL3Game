@@ -279,9 +279,9 @@ create_draw_mask_data :: proc(am: AssetMemory, buffer: ^Buffer8) -> DrawMaskData
     mmv := make_mask_view(am.image.mouse, buffer)
     amv := make_mask_view(am.image.arrow, buffer)
 
-    set_mask_regions_ctlr(cmv, cr, data.controller)
-    set_mask_regions_kbd(kmv, kr, data.keyboard)
-    set_mask_regions_mouse(mmv, mr, data.mouse)
+    set_mask_regions_ctlr(cmv, cr, &data.controller)
+    set_mask_regions_kbd(kmv, kr, &data.keyboard)
+    set_mask_regions_mouse(mmv, mr, &data.mouse)
 
     data.controller_view = cmv
     data.keyboard_view = kmv

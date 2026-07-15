@@ -639,10 +639,6 @@ namespace game_io_test
 
         state.data = state_data;
 
-        auto& data = get_data(state);
-        
-        assets::load_asset_memory_async(data.asset_memory);
-
         return true;
     }
 
@@ -673,10 +669,12 @@ namespace game_io_test
             return res;
         }
 
-        //auto& data = get_data(state);
+        auto& data = get_data(state);
+
+        // check asset_memory.status later        
+        assets::load_asset_memory_async(data.asset_memory);
 
         res.screen_dimensions = app_screen_dimensions();
-
         res.success = true;
 
         return res;

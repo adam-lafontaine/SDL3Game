@@ -27,7 +27,7 @@ create_buffer :: proc(buffer: ^MemoryBuffer($T), capacity: u32) -> Result
     assert(capacity > 0, "*** NO CAPACITY SPECIFIED ***")
     assert(len(buffer.data) == 0, "*** DATA ALREADY ALLOCATED ***")
 
-    if capacity == 0 || buffer.data == nil
+    if capacity == 0 || len(buffer.data) > 0
     {
         return .Fail
     }
@@ -90,8 +90,11 @@ push_elements :: proc(buffer: ^MemoryBuffer($T), n_elements: u32) -> ([]T, Resul
         return nil, .NoElements
     }
 
-    data := buffer.data[buffer.size : n_elements]
-    buffer.size += n_elements
+    begin := buffer.size
+    end := begin + n_elements
+
+    data := buffer.data[begin:end]
+    buffer.size = end
 
     return data, .OK
 }

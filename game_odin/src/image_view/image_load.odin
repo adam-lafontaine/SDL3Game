@@ -24,6 +24,7 @@ read_image_from_memory :: proc(bv: ByteView, buffer: ^Buffer32, dst: ^ImageView)
     data, err := image.load_from_bytes(bv.data)
     if err != nil
     {
+        assert(false, "*** IMAGE LOAD ***")
         return false
     }
 

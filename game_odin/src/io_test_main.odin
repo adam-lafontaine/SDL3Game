@@ -117,27 +117,32 @@ main_init :: proc() -> bool
 
     if !win.init(window)
     {
+        assert(false, "*** WINDOW INIT ***")
         return false;
     }
     
     if !inp.init(inputs)
     {
+        assert(false, "*** INPUT INIT ***")
         return false
     }
 
     result := game.init(app_state)
     if !result.success
     {
+        assert(false, "*** GAME INIT ***")
         return false
     }
 
     if !create_window(result.screen_dimensions)
     {
+        assert(false, "*** WINDOW CREATE ***")
         return false
     }
 
     if !game.set_screen_memory(app_state, make_window_view())
     {
+        assert(false, "*** GAME MEMORY ***")
         return false
     }
 

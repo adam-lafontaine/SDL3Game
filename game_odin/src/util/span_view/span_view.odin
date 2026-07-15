@@ -23,8 +23,10 @@ make_view :: proc(buffer: mb.MemoryBuffer($T)) -> SpanView(T)
 
 sub_view :: proc(buffer: mb.MemoryBuffer($T), offset: u32, length: u32) -> SpanView(T)
 {
+    assert(len(buffer.data) > 0, "*** BAD BUFFER ***")
+    
     return SpanView(T) {
-        data = buffer.data[offset:length]
+        data = buffer.data[offset:offset + length]
     }
 }
 

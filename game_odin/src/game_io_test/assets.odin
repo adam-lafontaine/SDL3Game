@@ -100,13 +100,15 @@ read_image :: proc(memory: ^AssetMemory, id: res.ImageID) -> bool
 
     switch id
     {
-        case .keyboard:   dst = &memory.image.keyboard
-        case .controller: dst = &memory.image.controller
-        case .mouse:      dst = &memory.image.mouse
-        case .arrow:      dst = &memory.image.arrow
-        case: return false
+    case .keyboard:   dst = &memory.image.keyboard
+    case .controller: dst = &memory.image.controller
+    case .mouse:      dst = &memory.image.mouse
+    case .arrow:      dst = &memory.image.arrow
+    case: return false
     }
+
     info := res.masks[id]
+
     bv := sv.sub_view(memory.bytes, info.offset, info.size)
     ok := img.read_image_from_memory(bv, pixels, dst)
 
@@ -119,14 +121,17 @@ read_asset_memory :: proc(memory: ^AssetMemory) -> bool
     buffer := &memory.bytes
     if !buffer.ok
     {
+        assert(false, "*** BAD BUFFER ***")
         return false
     }
     
     pixels := &memory.pixels
+    n_pixels := count_asset_pixels()
 
-    result := mb.create_buffer(pixels, count_asset_pixels())
+    result := mb.create_buffer(pixels, n_pixels)
     if result != .OK
     {
+        assert(false, "*** ASSET PIXELS ***")
         return false
     }
 
@@ -136,12 +141,14 @@ read_asset_memory :: proc(memory: ^AssetMemory) -> bool
     {
         ok &= read_image(memory, id)
     }
+
+    assert(ok, "*** READ IMAGE ***")
     
     return ok
 }
 
 
-load_asset_memory :: proc(memory: ^AssetMemory)
+load_asset_memory :: proc(memory: ^AssetMemory) -> bool
 {
     memory.status = .Load
 
@@ -153,13 +160,19 @@ load_asset_memory :: proc(memory: ^AssetMemory)
 
     if !buffer.ok
     {
+        assert(false, "*** ASSET BUFFER ***")
         memory.status = .Fail
-        return
+        return false
     }
+
+    assert(len(buffer.data) > 0, "*** WAT? ***")
 
     memory.bytes = buffer
     
     ok := read_asset_memory(memory)
+    assert(ok, "*** ASSET READ ***")
 
     memory.status = ok ? .Process : .Fail
+
+    return ok
 }
