@@ -238,8 +238,7 @@ app_update :: proc(state: ^AppState, input: Input)
     case .Ready:
     }
 
-    clear_input_list(&data.inputs)
-    update_visual(input, &data.inputs)    
+    map_input_list(input, &data.inputs)    
     
     img.fill(data.out_view, COLOR_BACKGROUND)
 

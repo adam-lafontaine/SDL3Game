@@ -8,7 +8,7 @@ BtnState :: inp.ButtonState
 
 //ControllerBtnOnOff :: ControllerDef(b8)
 KeyboardOnOff :: [KeyboardId]b8
-//MouseBtnOnOff :: MouseDef(b8)
+//MouseBtnOnOff :: [MouseId]b8
 //ControllerStickRotation :: ControllerStickDef(Vec2Df32)
 
 
@@ -26,6 +26,7 @@ InputList :: struct
 }
 
 
+@(private="file")
 clear_input_list :: proc(inputs: ^InputList)
 {
     clear :: proc(input: $T)
@@ -45,31 +46,34 @@ clear_input_list :: proc(inputs: ^InputList)
 }
 
 
+@(private="file")
 map_button :: proc(btn: BtnState, dst: ^b8)
 {    
     dst^ |= btn.is_down
 }
 
 
+@(private="file")
 map_keyboard_inputs :: proc(src: inp.KeyboardInput, dst: ^KeyboardOnOff)
 {
-    map_button(src.keys.kbd_1, &dst[.n_1])
-    map_button(src.keys.kbd_2, &dst[.n_2])
-    map_button(src.keys.kbd_3, &dst[.n_3])
-    map_button(src.keys.kbd_4, &dst[.n_4])
+    map_button(src[.kbd_1], &dst[.n_1])
+    map_button(src[.kbd_2], &dst[.n_2])
+    map_button(src[.kbd_3], &dst[.n_3])
+    map_button(src[.kbd_4], &dst[.n_4])
 
-    map_button(src.keys.kbd_W, &dst[.w])
-    map_button(src.keys.kbd_A, &dst[.a])
-    map_button(src.keys.kbd_S, &dst[.s])
-    map_button(src.keys.kbd_D, &dst[.d])
+    map_button(src[.kbd_W], &dst[.w])
+    map_button(src[.kbd_A], &dst[.a])
+    map_button(src[.kbd_S], &dst[.s])
+    map_button(src[.kbd_D], &dst[.d])
 
-    map_button(src.keys.kbd_SPACE, &dst[.space])
+    map_button(src[.kbd_SPACE], &dst[.space])
 }
 
 
-/*map_mouse_inputs :: proc(src: inp.MouseInput, dst: ^MouseBtnOnOff)
+/*@(private="file")
+map_mouse_inputs :: proc(src: inp.MouseInput, dst: ^MouseBtnOnOff)
 {
-
+    map_button(src.buttons.buttons.)
 }
 
 
@@ -91,7 +95,7 @@ map_joystick_input :: proc(dst: ^ControllerBtnOnOff)
 }*/
 
 
-update_visual :: proc(src: Input, dst: ^InputList)
+map_input_list :: proc(src: Input, dst: ^InputList)
 {
     clear_input_list(dst)
 
