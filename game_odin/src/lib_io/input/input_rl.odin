@@ -9,34 +9,17 @@ import rl "vendor:raylib"
 @(private="file")
 record_keyboard_input :: proc(kbd_old: KeyboardKeys, kbd_new: ^KeyboardKeys)
 {
-    is_down: b8 = false
-
-    is_down = cast(b8)rl.IsKeyDown(.W)
-    record_button_input(kbd_old.kbd_W, &kbd_new.kbd_W, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.A)
-    record_button_input(kbd_old.kbd_A, &kbd_new.kbd_A, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.S)
-    record_button_input(kbd_old.kbd_S, &kbd_new.kbd_S, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.D)
-    record_button_input(kbd_old.kbd_D, &kbd_new.kbd_D, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.KP_1)
-    record_button_input(kbd_old.kbd_1, &kbd_new.kbd_1, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.KP_2)
-    record_button_input(kbd_old.kbd_2, &kbd_new.kbd_2, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.KP_3)
-    record_button_input(kbd_old.kbd_3, &kbd_new.kbd_3, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.KP_4)
-    record_button_input(kbd_old.kbd_4, &kbd_new.kbd_4, is_down)
-
-    is_down = cast(b8)rl.IsKeyDown(.SPACE)
-    record_button_input(kbd_old.kbd_SPACE, &kbd_new.kbd_SPACE, is_down)
+    bd :: proc(id: rl.KeyboardKey) -> b8 { return cast(b8)rl.IsKeyDown(id) }
+    
+    record_button_input(kbd_old.kbd_W, &kbd_new.kbd_W, bd(.W))
+    record_button_input(kbd_old.kbd_A, &kbd_new.kbd_A, bd(.A))
+    record_button_input(kbd_old.kbd_S, &kbd_new.kbd_S, bd(.S))
+    record_button_input(kbd_old.kbd_D, &kbd_new.kbd_D, bd(.D))
+    record_button_input(kbd_old.kbd_1, &kbd_new.kbd_1, bd(.KP_1) || bd(.ONE))
+    record_button_input(kbd_old.kbd_2, &kbd_new.kbd_2, bd(.KP_2) || bd(.TWO))
+    record_button_input(kbd_old.kbd_3, &kbd_new.kbd_3, bd(.KP_3) || bd(.THREE))
+    record_button_input(kbd_old.kbd_4, &kbd_new.kbd_4, bd(.KP_4) || bd(.FOUR))
+    record_button_input(kbd_old.kbd_SPACE, &kbd_new.kbd_SPACE, bd(.SPACE))
 }
 
 
@@ -44,16 +27,11 @@ record_keyboard_input :: proc(kbd_old: KeyboardKeys, kbd_new: ^KeyboardKeys)
 
 record_mouse_button_input :: proc(src: MouseButtons, dst: ^MouseButtons)
 {
-    is_down: b8 = false
-
-    is_down = cast(b8)rl.IsMouseButtonDown(.LEFT)
-    record_button_input(src.btn_left, &dst.btn_left, is_down)
-
-    is_down = cast(b8)rl.IsMouseButtonDown(.RIGHT)
-    record_button_input(src.btn_right, &dst.btn_right, is_down)
-
-    is_down = cast(b8)rl.IsMouseButtonDown(.MIDDLE)
-    record_button_input(src.btn_middle, &dst.btn_middle, is_down)
+    bd :: proc(id: rl.MouseButton) -> u8 { return cast(b8)rl.IsMouseButtonDown(id) }
+    
+    record_button_input(src.btn_left, &dst.btn_left, bd(.LEFT))
+    record_button_input(src.btn_right, &dst.btn_right, bd(.RIGHT))
+    record_button_input(src.btn_middle, &dst.btn_middle, bd(.MIDDLE))
 }
 
 

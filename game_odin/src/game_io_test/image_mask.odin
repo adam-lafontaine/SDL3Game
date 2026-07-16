@@ -14,14 +14,11 @@ Buffer8 :: img.Buffer8
 RectPx :: util.Rect2Du32
 
 
-BLACK_U8 ::
-
-
 MaskPixel :: enum
 {
     Default = 0,
-    Black,
-    Color
+    Black = 1,
+    Color = 2
 }
 
 
@@ -32,7 +29,7 @@ to_mask_pixel :: proc(p: p32) -> MaskPixel
         return .Default
     }
 
-    sum := p.red + p.blue + p.alpha
+    sum := p.red + p.green + p.blue
     if sum == 0 // black
     {
         return .Black
