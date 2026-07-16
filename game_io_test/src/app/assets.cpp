@@ -398,8 +398,18 @@ namespace controller
     class ControllerStickDef
     {
     public:
-        T stick_left;
-        T stick_right;
+        static constexpr u32 count = 2;
+
+        union
+        {
+            T list[count];
+
+            struct
+            {
+                T stick_left;
+                T stick_right;
+            };
+        };        
     };
 
 

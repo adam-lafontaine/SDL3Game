@@ -36,24 +36,26 @@ screen_dimensions_res :: proc() -> Vec2Du32
     w := math.max(c.width * 2, k.width + m.width)
     h := math.max(c.height + k.height, c.height + m.height)
 
-    res := Vec2Du32 { w, h }
+    dims := Vec2Du32 { w, h }
 
-    return res
+    return dims
 }
 
 
 screen_dimensions_masks :: proc(masks: DrawMaskData) -> Vec2Du32
 {
-    c := masks.controller_view
-    k := masks.keyboard_view
+    /*c := masks.controller_view
+    k := masks.keyboard_view    
     m := masks.mouse_view
 
     w := math.max(c.width * 2, k.width + m.width)
     h := math.max(c.height + k.height, c.height + m.height)
 
-    res := Vec2Du32 { w, h }
+    res := Vec2Du32 { w, h }*/
 
-    return res
+    dims := screen_dimensions_res() // !!!
+
+    return dims
 }
 
 
@@ -140,8 +142,7 @@ process_asset_memory :: proc(data: ^StateData) -> AssetStatus
     }
 
     set_mask_list_views(data.masks, out, &data.mask_views)
-
-    // set_mask_views()
+    
     // sounds
     // music
 
@@ -205,7 +206,7 @@ app_set_screen_memory :: proc(state: ^AppState, screen: ImageView) -> bool
 
     data.out_view = screen
 
-    // process assets if loaded
+    // process assets if already loaded
     status := process_asset_memory(data)
 
     ok := status == .Load || status == .Process || status == .Ready
@@ -236,11 +237,13 @@ app_update :: proc(state: ^AppState, input: Input)
 
     case .Ready:
     }
-    
+
+    clear_input_list(&data.inputs)
+    update_visual(input, &data.inputs)    
     
     img.fill(data.out_view, COLOR_BACKGROUND)
 
-    clear_input_list(&data.inputs)
+    draw_map_list(&data.mask_views, data.inputs)
 }
 
 

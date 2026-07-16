@@ -140,11 +140,10 @@ namespace game_io_test
     }
 
 
-    static void set_map_masks(img::GrayView const& view, ControllerStickMaskViewMap& mv)
-    {
-        auto sub_full = img::sub_view(view, img::make_rect(view.width, view.height));
-        mv.stick_left.mask = sub_full;
-        mv.stick_right.mask = sub_full;
+    static void set_map_masks(img::GraySubView const& view, ControllerStickMaskViewMap& mv)
+    {        
+        mv.stick_left.mask = view;
+        mv.stick_right.mask = view;
     }
     
 
@@ -157,57 +156,57 @@ namespace game_io_test
 
     static void set_mask_views(assets::DrawMaskData const& masks, img::ImageView const& out, MaskViewMapList& mv)
     {
-        auto& c_mask = masks.controller_view;
-        auto& k_mask = masks.keyboard_view;
-        auto& m_mask = masks.mouse_view;
-
         auto sw = out.width;
         auto sh = out.height;
-        auto cw = c_mask.width;
-        auto ch = c_mask.height;
-        auto kw = k_mask.width;
-        auto kh = k_mask.height;
-        auto mw = m_mask.width;
-        auto mh = m_mask.height;
-
-        auto c_out1 = img::sub_view(out, img::make_rect(0, 0, cw, ch));
-        auto c_out2 = img::sub_view(out, img::make_rect(sw - cw, 0, cw, ch));
-        auto k_out = img::sub_view(out, img::make_rect(0, sh - kh, kw, kh));
-        auto m_out = img::sub_view(out, img::make_rect(sw - mw, sh - mh, mw, mh));
 
         auto const sub_full = [](auto const& v) { return img::sub_view(v, img::make_rect(v.width, v.height)); };
 
-        mv.controller1.mask = sub_full(c_mask);
+        // controller
+        auto c_mask = sub_full(masks.controller_view);
+        auto a_mask = sub_full(masks.arrow_view);
+        auto cw = c_mask.width;
+        auto ch = c_mask.height;
+        auto c_reg = assets::controller::get_region_rects();
+
+        // controller 1
+        auto c_out1 = img::sub_view(out, img::make_rect(0, 0, cw, ch));
+        mv.controller1.mask = c_mask;
         mv.controller1.out = c_out1;
-
-        mv.controller2.mask = sub_full(c_mask);
-        mv.controller2.out = c_out2;
-
-        mv.keyboard.mask = sub_full(k_mask);
-        mv.keyboard.out = k_out;
-
-        mv.mouse.mask = sub_full(m_mask);
-        mv.mouse.out = m_out;
-
-        auto creg = assets::controller::get_region_rects();
-        auto kreg = assets::keyboard::get_region_rects();
-        auto mreg = assets::mouse::get_region_rects();
-
-        set_map_out(c_out1, creg, mv.controller1_inputs);
-        set_map_out(c_out2, creg, mv.controller2_inputs);
-        set_map_out(k_out, kreg, mv.keyboard_inputs);
-        set_map_out(m_out, mreg, mv.mouse_inputs);
-
-        set_map_out(c_out1, creg, mv.controller1_thumbsticks);
-        set_map_out(c_out2, creg, mv.controller2_thumbsticks);
-
         set_map_masks(masks.controller, mv.controller1_inputs);
-        set_map_masks(masks.controller, mv.controller2_inputs);
-        set_map_masks(masks.keyboard, mv.keyboard_inputs);
-        set_map_masks(masks.mouse, mv.mouse_inputs);
+        set_map_out(c_out1, c_reg, mv.controller1_inputs);
+        set_map_masks(a_mask, mv.controller1_thumbsticks);
+        set_map_out(c_out1, c_reg, mv.controller1_thumbsticks);
 
-        set_map_masks(masks.arrow_view, mv.controller1_thumbsticks);
-        set_map_masks(masks.arrow_view, mv.controller2_thumbsticks);
+        // controller 2
+        auto c_out2 = img::sub_view(out, img::make_rect(sw - cw, 0, cw, ch));
+        mv.controller2.mask = c_mask;
+        mv.controller2.out = c_out2;
+        set_map_masks(masks.controller, mv.controller2_inputs);
+        set_map_out(c_out2, c_reg, mv.controller2_inputs);
+        set_map_masks(a_mask, mv.controller2_thumbsticks);
+        set_map_out(c_out2, c_reg, mv.controller2_thumbsticks);
+
+        // keyboard
+        auto k_mask = sub_full(masks.keyboard_view);
+        auto kw = k_mask.width;
+        auto kh = k_mask.height;
+        auto k_out = img::sub_view(out, img::make_rect(0, sh - kh, kw, kh));
+        mv.keyboard.mask = k_mask;
+        mv.keyboard.out = k_out;
+        auto k_reg = assets::keyboard::get_region_rects();
+        set_map_masks(masks.keyboard, mv.keyboard_inputs);
+        set_map_out(k_out, k_reg, mv.keyboard_inputs);
+
+        // mouse
+        auto m_mask = sub_full(masks.mouse_view);
+        auto mw = m_mask.width;
+        auto mh = m_mask.height;
+        auto m_out = img::sub_view(out, img::make_rect(sw - mw, sh - mh, mw, mh));
+        mv.mouse.mask = m_mask;
+        mv.mouse.out = m_out;
+        auto m_reg = assets::mouse::get_region_rects();
+        set_map_out(m_out, m_reg, mv.mouse_inputs);
+        set_map_masks(masks.mouse, mv.mouse_inputs);
     }
 }
 

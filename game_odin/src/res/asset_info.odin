@@ -90,18 +90,3 @@ sound := [SoundId]SoundInfo {
     .open_001            = {.OGG, 6703776, 9834 },
     .explosionCrunch_003 = {.OGG, 6713610, 54824 }
 }
-
-
-
-process_info :: proc(info: $T)
-{
-    fmt.println(info.type, info.offset, info.size)
-}
-
-
-process_all :: proc(i: ImageInfo, m: MusicInfo, s: SoundInfo)
-{
-    process_info(i)
-    process_info(m)
-    process_info(s)
-}
