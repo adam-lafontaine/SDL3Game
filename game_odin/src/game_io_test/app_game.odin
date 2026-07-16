@@ -11,6 +11,8 @@ import "../util"
 
 Buffer32 :: img.Buffer32
 SubView :: img.SubView
+GrayView :: img.GrayView
+GraySubView :: img.GraySubView
 Vec2Df32 :: util.Vec2Df32
 Vec2Di32 :: util.Vec2Di32
 
@@ -81,6 +83,9 @@ StateData :: struct
     // music
     // sounds
     asset_memory: AssetMemory,
+
+    mask_views: MaskViewMapList,
+    inputs: InputList,
     
     out_view: ImageView,
 
@@ -133,6 +138,8 @@ process_asset_memory :: proc(data: ^StateData) -> AssetStatus
         am.status = .Fail
         return am.status
     }
+
+    set_mask_list_views(data.masks, out, &data.mask_views)
 
     // set_mask_views()
     // sounds
@@ -233,7 +240,7 @@ app_update :: proc(state: ^AppState, input: Input)
     
     img.fill(data.out_view, COLOR_BACKGROUND)
 
-    // update stuff
+    clear_input_list(&data.inputs)
 }
 
 

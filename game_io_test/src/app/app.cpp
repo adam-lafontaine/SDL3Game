@@ -193,21 +193,21 @@ namespace game_io_test
         auto kreg = assets::keyboard::get_region_rects();
         auto mreg = assets::mouse::get_region_rects();
 
-        set_map_masks(masks.controller, mv.controller1_inputs);
-        set_map_masks(masks.controller, mv.controller2_inputs);
-        set_map_masks(masks.keyboard, mv.keyboard_inputs);
-        set_map_masks(masks.mouse, mv.mouse_inputs);
-
         set_map_out(c_out1, creg, mv.controller1_inputs);
         set_map_out(c_out2, creg, mv.controller2_inputs);
         set_map_out(k_out, kreg, mv.keyboard_inputs);
         set_map_out(m_out, mreg, mv.mouse_inputs);
 
-        set_map_masks(masks.arrow_view, mv.controller1_thumbsticks);
-        set_map_masks(masks.arrow_view, mv.controller2_thumbsticks);
-
         set_map_out(c_out1, creg, mv.controller1_thumbsticks);
         set_map_out(c_out2, creg, mv.controller2_thumbsticks);
+
+        set_map_masks(masks.controller, mv.controller1_inputs);
+        set_map_masks(masks.controller, mv.controller2_inputs);
+        set_map_masks(masks.keyboard, mv.keyboard_inputs);
+        set_map_masks(masks.mouse, mv.mouse_inputs);
+
+        set_map_masks(masks.arrow_view, mv.controller1_thumbsticks);
+        set_map_masks(masks.arrow_view, mv.controller2_thumbsticks);
     }
 }
 

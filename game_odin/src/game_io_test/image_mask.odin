@@ -11,20 +11,56 @@ Mask :: img.GraySubView
 Buffer8 :: img.Buffer8
 
 
-to_u8_mask :: proc(p: p32) -> u8
+MaskPixel :: enum
+{
+    Default = 0,
+    Black,
+    Color
+}
+
+
+to_mask_pixel :: proc(p: p32) -> MaskPixel
 {
     if p.alpha == 0 // transparent
     {
-        return 0
+        return .Default
     }
 
     sum := p.red + p.blue + p.alpha
     if sum == 0 // black
     {
-        return 1
+        return .Black
     }
 
-    return 2
+    return .Color
+}
+
+
+mask_set_on :: proc(p: u8, default: p32) -> p32
+{
+    m := cast(MaskPixel)p
+
+    switch m
+    {
+    case .Black: return COLOR_BLACK
+    case .Color: return COLOR_ON
+    case .Default: return default
+    case: return default
+    }
+}
+
+
+mask_set_off :: proc(p: u8, default: p32) -> p32
+{
+    m := cast(MaskPixel)p
+
+    switch m
+    {
+    case .Black: return COLOR_BLACK
+    case .Color: return COLOR_OFF
+    case .Default: return default
+    case: return default
+    }
 }
 
 
@@ -38,9 +74,9 @@ make_mask_view :: proc(img32: ImageView, buffer: ^Buffer8) -> MaskView
     s := img32.data
     d := mask.data
 
-    for i in 0..<len(s)
+    for i in 0..<len(s) // transform?
     {
-        d[i] = to_u8_mask(s[i])
+        d[i] = cast(u8)to_mask_pixel(s[i])
     }
 
     return mask
@@ -86,11 +122,11 @@ ControllerStickDef :: struct($T: typeid)
 }
 
 
-CtlrMaskList :: ControllerDef(Mask)
-CtlrRectList :: ControllerDef(util.Rect2Du32)
+ControllerMaskList :: ControllerDef(Mask)
+ControllerRectList :: ControllerDef(util.Rect2Du32)
 
 
-set_mask_regions_ctlr :: proc(view: MaskView, reg: CtlrRectList, masks: ^CtlrMaskList)
+set_mask_regions_ctlr :: proc(view: MaskView, reg: ControllerRectList, masks: ^ControllerMaskList)
 {
     for i in 0..<len(reg.list)
     {
@@ -99,9 +135,9 @@ set_mask_regions_ctlr :: proc(view: MaskView, reg: CtlrRectList, masks: ^CtlrMas
 }
 
 
-get_region_rects_ctlr :: proc() -> CtlrRectList
+get_region_rects_ctlr :: proc() -> ControllerRectList
 {
-    r: CtlrRectList
+    r: ControllerRectList
 
     r.items = {
         trigger_left  = img.make_rect(17, 4, 19, 15),
@@ -153,11 +189,11 @@ KeyboardDef :: struct($T: typeid) #raw_union
 }
 
 
-KbdMaskList :: KeyboardDef(Mask)
-KbdRectList :: KeyboardDef(util.Rect2Du32)
+KeyboardMaskList :: KeyboardDef(Mask)
+KeyboardRectList :: KeyboardDef(util.Rect2Du32)
 
 
-set_mask_regions_kbd :: proc(view: MaskView, reg: KbdRectList, masks: ^KbdMaskList)
+set_mask_regions_kbd :: proc(view: MaskView, reg: KeyboardRectList, masks: ^KeyboardMaskList)
 {
     for i in 0..<len(reg.list)
     {
@@ -166,9 +202,9 @@ set_mask_regions_kbd :: proc(view: MaskView, reg: KbdRectList, masks: ^KbdMaskLi
 }
 
 
-get_region_rects_kbd :: proc() -> KbdRectList
+get_region_rects_kbd :: proc() -> KeyboardRectList
 {
-    r: KbdRectList
+    r: KeyboardRectList
 
     r.items = {
         n_1 = img.make_rect(20, 2, 16, 16),
@@ -238,8 +274,8 @@ get_region_rects_mouse :: proc() -> MouseRectList
 
 DrawMaskData :: struct
 {
-    controller: CtlrMaskList,
-    keyboard: KbdMaskList,
+    controller: ControllerMaskList,
+    keyboard: KeyboardMaskList,
     mouse: MouseMaskList,
 
     controller_view: MaskView,
@@ -289,4 +325,150 @@ create_draw_mask_data :: proc(am: AssetMemory, buffer: ^Buffer8) -> DrawMaskData
     data.arrow_view = amv
 
     return data
+}
+
+
+MaskViewMap :: struct
+{
+    mask: Mask,
+    out: SubView
+}
+
+
+draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
+{
+    set_mask := is_on ? mask_set_on : mask_set_off
+
+    s := mv_map.mask.data
+    d := mv_map.out.data    
+
+    for i in 0..<len(s)
+    {
+        d[i] = set_mask(s[i], d[i])
+    }
+}
+
+
+ControllerMaskViewMap :: ControllerDef(MaskViewMap)
+KeyboardMaskViewMap :: KeyboardDef(MaskViewMap)
+MouseMaskViewMap :: MouseDef(MaskViewMap)
+ControllerStickMaskViewMap :: ControllerStickDef(MaskViewMap)
+
+
+draw_masks :: proc(mv: $MV, on_off: $O)
+{
+    N := len(mv.list)
+
+    for i in 0..<N
+    {
+        draw_map(&mv.list[i], on_off.list[i])
+    }
+}
+
+
+set_map_masks :: proc(m: $M, mv: $MV)
+{
+    N := len(mv.list)
+
+    for i in 0..<N
+    {
+        item := &mv.list[i]
+        item.mask = m.list[i]
+    }
+}
+
+
+set_map_out :: proc(out: SubView, r: $R, mv: $KV)
+{
+    N := len(mv.list)
+
+    for i in 0..<N
+    {
+        item := &mv.list[i]
+        item.out = img.sub_view(out, r.list[i])
+    }
+}
+
+
+MaskViewMapList :: struct
+{
+    controller1: MaskViewMap,
+    controller2: MaskViewMap,
+    keyboard: MaskViewMap,
+    mouse: MaskViewMap,
+
+    controller1_inputs: ControllerMaskViewMap,
+    controller2_inputs: ControllerMaskViewMap,
+    keyboard_inputs: KeyboardMaskViewMap,
+    mouse_inputs: MouseMaskViewMap,
+
+    controller1_thumbsticks: ControllerStickMaskViewMap,
+    controller2_thumsticks: ControllerStickMaskViewMap,
+}
+
+
+draw_map_list :: proc(mv: ^MaskViewMapList, input: InputList)
+{
+    draw_map(&mv.controller1, false)
+    draw_map(&mv.controller2, false)
+    draw_map(&mv.keyboard, false)
+    draw_map(&mv.mouse, false)
+
+    draw_masks(&mv.controller1_inputs, input.controller1)
+    draw_masks(&mv.controller2_inputs, input.controller2)
+    draw_masks(&mv.keyboard_inputs, input.keyboard)
+    draw_masks(&mv.mouse_inputs, input.mouse)
+
+    // thumbsticks, mouse coords
+}
+
+
+set_mask_list_views :: proc(masks: DrawMaskData, out: ImageView, mv: ^MaskViewMapList)
+{
+    sub_full :: proc(v: GrayView) -> GraySubView { return img.sub_view(v, img.make_rect(v.width, v.height)) }
+
+    c_mask := masks.controller_view    
+    cw := c_mask.width
+    ch := c_mask.height
+
+    k_mask := masks.keyboard_view
+    kw := k_mask.width
+    kh := k_mask.height
+
+    m_mask := masks.mouse_view
+    mw := m_mask.width
+    mh := m_mask.height
+
+    sw := out.width
+    sh := out.height
+
+    c_out1 := img.sub_view(out, img.make_rect(0, 0, cw, ch))
+    mv.controller1.mask = sub_full(c_mask)
+    mv.controller1.out = c_out1
+
+    c_out2 := img.sub_view(out, img.make_rect(sw - cw, 0, cw, ch))
+    mv.controller2.mask = sub_full(c_mask)
+    mv.controller2.out = c_out2
+
+    k_out := img.sub_view(out, img.make_rect(0, sh - kh, kw, kh))
+    mv.keyboard.mask = sub_full(k_mask)
+    mv.keyboard.out = k_out
+
+    m_out := img.sub_view(out, img.make_rect(sw - mw, sh - mh, mw, mh))
+    mv.mouse.mask = sub_full(m_mask)
+    mv.mouse.out = m_out
+
+    c_reg := get_region_rects_ctlr()
+    k_reg := get_region_rects_kbd()
+    m_reg := get_region_rects_mouse()
+
+    set_map_out(c_out1, c_reg, &mv.controller1_inputs)
+    set_map_out(c_out2, c_reg, &mv.controller2_inputs)
+    set_map_out(k_out, k_reg, &mv.keyboard_inputs)
+    set_map_out(m_out, m_reg, &mv.mouse_inputs)
+
+    set_map_masks(masks.controller, &mv.controller1_inputs)
+    set_map_masks(masks.controller, &mv.controller2_inputs)
+    set_map_masks(masks.keyboard, &mv.keyboard_inputs)
+    set_map_masks(masks.mouse, &mv.mouse_inputs)
 }

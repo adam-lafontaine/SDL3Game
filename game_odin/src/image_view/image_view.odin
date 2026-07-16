@@ -115,7 +115,7 @@ destroy_buffer8 :: proc(buffer: ^Buffer8)
 }
 
 
-make_rect :: proc(x: u32, y: u32, w: u32, h: u32) -> Rect2Du32
+make_rect_xywh :: proc(x: u32, y: u32, w: u32, h: u32) -> Rect2Du32
 {
     return Rect2Du32 {
         x_begin = x,
@@ -124,6 +124,15 @@ make_rect :: proc(x: u32, y: u32, w: u32, h: u32) -> Rect2Du32
         y_end = y + h
     }
 }
+
+
+make_rect_wh :: proc(w: u32, h: u32) -> Rect2Du32
+{
+    return make_rect_xywh(0, 0, w, h)
+}
+
+
+make_rect :: proc{ make_rect_xywh, make_rect_wh }
 
 
 push_view2D :: proc (buffer: ^mb.MemoryBuffer($T), view: ^View2D(T)) -> bool
@@ -195,7 +204,7 @@ make_view_8 :: proc(buffer: ^Buffer8, width: u32, height: u32) -> GrayView
 make_view :: proc { make_view_32, make_view_8 }
 
 
-sub_view :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
+sub_view_1 :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
 {
     return SubView2D(T) {
         data = view.data,
@@ -206,6 +215,22 @@ sub_view :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
         height = rect.y_end - rect.y_begin
     }
 }
+
+
+sub_view_2 :: proc(view: SubView2D($T), rect: Rect2Du32) -> SubView2D(T)
+{
+    return SubView2D(T) {
+        data = view.data,
+        view_width = view.view_width,
+        x_begin = rect.x_begin + view.x_begin,
+        y_begin = rect.y_begin + view.y_begin,
+        width = rect.x_end - rect.x_begin,
+        height = rect.y_end - rect.y_begin
+    }
+}
+
+
+sub_view :: proc{ sub_view_1, sub_view_2}
 
 
 fill :: proc(view: ImageView, color: Pixel32)
