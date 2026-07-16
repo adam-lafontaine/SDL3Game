@@ -3,6 +3,7 @@ package image_view
 import "core:slice"
 import "../util"
 import mb "../util/memory_buffer"
+import span "../util/span_view"
 
 Pixel32 :: struct 
 {
@@ -204,7 +205,7 @@ make_view_8 :: proc(buffer: ^Buffer8, width: u32, height: u32) -> GrayView
 make_view :: proc { make_view_32, make_view_8 }
 
 
-sub_view_1 :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
+sub_view_v :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
 {
     return SubView2D(T) {
         data = view.data,
@@ -217,7 +218,7 @@ sub_view_1 :: proc(view: View2D($T), rect: Rect2Du32) -> SubView2D(T)
 }
 
 
-sub_view_2 :: proc(view: SubView2D($T), rect: Rect2Du32) -> SubView2D(T)
+sub_view_sv :: proc(view: SubView2D($T), rect: Rect2Du32) -> SubView2D(T)
 {
     return SubView2D(T) {
         data = view.data,
@@ -230,7 +231,32 @@ sub_view_2 :: proc(view: SubView2D($T), rect: Rect2Du32) -> SubView2D(T)
 }
 
 
-sub_view :: proc{ sub_view_1, sub_view_2}
+sub_view :: proc{ sub_view_v, sub_view_sv}
+
+
+row_span_v :: proc(view: View2D($T), y: u32) -> span.SpanView(T)
+{
+    begin := y * view.width
+    end := begin + view.width
+
+    return {
+        data = view.data[begin:end]
+    }
+}
+
+
+row_span_sv :: proc(view: SubView2D($T), y: u32) -> span.SpanView(T)
+{
+    begin := (view.y_begin + y) * view.view_width + view.x_begin
+    end := begin + view.width
+    
+    return {
+        data = view.data[begin:end]
+    }
+}
+
+
+row_span :: proc{ row_span_v, row_span_sv }
 
 
 fill :: proc(view: ImageView, color: Pixel32)

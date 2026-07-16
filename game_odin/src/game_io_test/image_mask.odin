@@ -4,12 +4,17 @@ package game_io_test
 import img "../image_view"
 import "../util"
 
+import "core:fmt"
+
 
 p32 :: img.Pixel32
 MaskView :: img.GrayView
 Mask :: img.GraySubView
 Buffer8 :: img.Buffer8
 RectPx :: util.Rect2Du32
+
+
+BLACK_U8 ::
 
 
 MaskPixel :: enum
@@ -229,12 +234,17 @@ draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
 {
     set_mask := is_on ? mask_set_on : mask_set_off
 
-    s := mv_map.mask.data
-    d := mv_map.out.data    
+    src := mv_map.mask
+    dst := mv_map.out
 
-    for i in 0..<len(s)
+    for y in 0..<dst.height
     {
-        d[i] = set_mask(s[i], d[i])
+        s := img.row_span(src, y).data
+        d := img.row_span(dst, y).data
+        for x in 0..<dst.width
+        {
+            d[x] = set_mask(s[x], d[x])
+        }
     }
 }
 
@@ -361,7 +371,7 @@ set_mask_list_views :: proc(masks: DrawMaskData, out: ImageView, mv: ^MaskViewMa
     k_mask := sub_full(masks.keyboard_view)
     kw := k_mask.width
     kh := k_mask.height
-    k_out := img.sub_view(out, img.make_rect(0, sh - kh, kw, kh))
+    k_out := img.sub_view(out, img.make_rect(0, sh - kh, kw, kh))    
     mv.keyboard.mask = k_mask
     mv.keyboard.out = k_out
     k_reg := get_region_rects_kbd()
