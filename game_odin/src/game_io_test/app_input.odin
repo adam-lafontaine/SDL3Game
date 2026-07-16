@@ -8,7 +8,7 @@ BtnState :: inp.ButtonState
 
 //ControllerBtnOnOff :: ControllerDef(b8)
 KeyboardOnOff :: [KeyboardId]b8
-//MouseBtnOnOff :: [MouseId]b8
+MouseBtnOnOff :: [MouseId]b8
 //ControllerStickRotation :: ControllerStickDef(Vec2Df32)
 
 
@@ -17,7 +17,7 @@ InputList :: struct
     //controller1: ControllerBtnOnOff,
     //controller2: ControllerBtnOnOff,
     keyboard: KeyboardOnOff,
-    //mouse: MouseBtnOnOff,
+    mouse: MouseBtnOnOff,
 
     //mouse_pos: Vec2Di32,
 
@@ -40,7 +40,7 @@ clear_input_list :: proc(inputs: ^InputList)
     //clear(&inputs.controller1)
     //clear(&inputs.controller2)
     clear(&inputs.keyboard)
-    //clear(&inputs.mouse)
+    clear(&inputs.mouse)
 
     //inputs.mouse_pos = { 0, 0 }
 }
@@ -70,14 +70,18 @@ map_keyboard_inputs :: proc(src: inp.KeyboardInput, dst: ^KeyboardOnOff)
 }
 
 
-/*@(private="file")
+@(private="file")
 map_mouse_inputs :: proc(src: inp.MouseInput, dst: ^MouseBtnOnOff)
 {
-    map_button(src.buttons.buttons.)
+    map_button(src.buttons[.btn_left], &dst[.left])
+    map_button(src.buttons[.btn_right], &dst[.right])
+    map_button(src.buttons[.btn_middle], &dst[.middle])
+
+    // pos
 }
 
 
-map_controller_inputs :: proc(dst: ^ControllerBtnOnOff)
+/*map_controller_inputs :: proc(dst: ^ControllerBtnOnOff)
 {
 
 }
@@ -100,7 +104,7 @@ map_input_list :: proc(src: Input, dst: ^InputList)
     clear_input_list(dst)
 
     map_keyboard_inputs(src.keyboard, &dst.keyboard)        
-    //map_mouse_inputs(src.mouse, &dst.mouse)
+    map_mouse_inputs(src.mouse, &dst.mouse)
 
     //dst.mouse_pos = src.mouse.window_pos
 
