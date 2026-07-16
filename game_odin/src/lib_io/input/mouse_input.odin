@@ -5,7 +5,7 @@ import "../../util"
 Pos2Di32 :: util.Vec2Di32
 Vec2Di32 :: util.Vec2Di32
 
-N_MOUSE_BUTTONS :: 3
+/*N_MOUSE_BUTTONS :: 3
 
 
 MouseButtonArray :: [N_MOUSE_BUTTONS]ButtonState
@@ -23,7 +23,18 @@ MouseButtonInput :: struct #raw_union
 {
     list: MouseButtonArray,
     buttons: MouseButtons
+}*/
+
+
+MouseButtons :: enum
+{
+    btn_left,
+    btn_right,
+    btn_middle
 }
+
+
+MouseButtonInput :: [MouseButtons]ButtonState
 
 
 MouseInput :: struct
@@ -61,7 +72,7 @@ copy_mouse_position :: proc(src: MouseInput, dst: ^MouseInput)
 @(private)
 reset_mouse_state :: proc(mouse: ^MouseInput)
 {
-    for &btn in mouse.buttons.list
+    for &btn in mouse.buttons
     {
         reset_button_state(&btn)
     }
@@ -74,12 +85,17 @@ reset_mouse_state :: proc(mouse: ^MouseInput)
 @(private)
 copy_mouse_state :: proc(src: MouseInput, dst: ^MouseInput)
 {
-    s := src.buttons.list
+    /*s := src.buttons.list
     d := dst.buttons.list
 
     for i in 0..<N_MOUSE_BUTTONS
     {
         copy_button_state(s[i], &d[i])
+    }*/
+
+    for s, id in src.buttons
+    {
+        copy_button_state(s, &dst.buttons[id])
     }
 
     copy_mouse_position(src, dst)

@@ -25,13 +25,14 @@ record_keyboard_input :: proc(kbd_old: KeyboardInput, kbd_new: ^KeyboardInput)
 
 /* mouse */
 
-record_mouse_button_input :: proc(src: MouseButtons, dst: ^MouseButtons)
+@(private="file")
+record_mouse_button_input :: proc(src: MouseButtonInput, dst: ^MouseButtonInput)
 {
     bd :: proc(id: rl.MouseButton) -> b8 { return cast(b8)rl.IsMouseButtonDown(id) }
     
-    record_button_input(src.btn_left, &dst.btn_left, bd(.LEFT))
-    record_button_input(src.btn_right, &dst.btn_right, bd(.RIGHT))
-    record_button_input(src.btn_middle, &dst.btn_middle, bd(.MIDDLE))
+    record_button_input(src[.btn_left], &dst[.btn_left], bd(.LEFT))
+    record_button_input(src[.btn_right], &dst[.btn_right], bd(.RIGHT))
+    record_button_input(src[.btn_middle], &dst[.btn_middle], bd(.MIDDLE))
 }
 
 
@@ -74,7 +75,7 @@ api_record_input :: proc(inputs: ^InputArray)
     curr := curr(inputs)
     
     record_keyboard_input(prev.keyboard, &curr.keyboard)
-    record_mouse_button_input(prev.mouse.buttons.buttons, &curr.mouse.buttons.buttons)
+    record_mouse_button_input(prev.mouse.buttons, &curr.mouse.buttons)
     record_mouse_position_input(&curr.mouse)
     record_mouse_wheel_input(&curr.mouse)
 
