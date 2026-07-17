@@ -31,6 +31,10 @@ GamepadInput :: struct
 
     trigger_left: f32,
     trigger_right: f32,
+
+    vec_dpad: VectorState,
+    vec_stick_left: VectorState,
+    vec_stick_right: VectorState
 }
 
 
@@ -44,6 +48,10 @@ reset_gamepad_state :: proc(gamepad: ^GamepadInput)
 
     gamepad.trigger_left = 0
     gamepad.trigger_right = 0
+
+    reset_vector_state(&gamepad.vec_dpad)
+    reset_vector_state(&gamepad.vec_stick_left)
+    reset_vector_state(&gamepad.vec_stick_right)
 }
 
 
@@ -57,4 +65,8 @@ copy_gamepad_state :: proc(src: GamepadInput, dst: ^GamepadInput)
 
     dst.trigger_left = src.trigger_left
     dst.trigger_right = src.trigger_right
+
+    dst.vec_dpad = src.vec_dpad
+    dst.vec_stick_left = src.vec_stick_left
+    dst.vec_stick_right = src.vec_stick_right
 }

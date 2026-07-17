@@ -3,6 +3,8 @@ package input
 
 import rl "vendor:raylib"
 
+import "core:math"
+
 //import "core:fmt"
 
 
@@ -81,7 +83,7 @@ record_gamepad_button_input :: proc(handle: i32, gpd_old: GamepadButtonInput, gp
     record(gpd_old, gpd_new, handle, .btn_west,  .RIGHT_FACE_LEFT)
 
     record(gpd_old, gpd_new, handle, .btn_start, .MIDDLE_RIGHT)
-    record(gpd_old, gpd_new, handle, .btn_back, .MIDDLE_LEFT)
+    record(gpd_old, gpd_new, handle, .btn_back,  .MIDDLE_LEFT)
     // MIDDLE,               // Gamepad center buttons, middle one (i.e. PS3: PS, Xbox: XBOX)
 
     record(gpd_old, gpd_new, handle, .btn_shoulder_left,  .LEFT_TRIGGER_1)
@@ -90,15 +92,42 @@ record_gamepad_button_input :: proc(handle: i32, gpd_old: GamepadButtonInput, gp
     // triggers? LEFT_TRIGGER_2, RIGHT_TRIGGER_2, 
 
     record(gpd_old, gpd_new, handle, .btn_stick_left,  .LEFT_THUMB)
-    record(gpd_old, gpd_new, handle, .btn_stick_right, .RIGHT_THUMB)    
+    record(gpd_old, gpd_new, handle, .btn_stick_right, .RIGHT_THUMB)
 }
 
 
 @(private="file")
 record_gamepad_axis_input :: proc(handle: i32, gpd: ^GamepadInput)
 {
-    gpd.trigger_left = rl.GetGamepadAxisMovement(handle, .LEFT_TRIGGER)
-    gpd.trigger_right = rl.GetGamepadAxisMovement(handle, .RIGHT_TRIGGER)
+    to_f32 :: proc(val: b8) -> f32 { return val ? f32(1.0) : f32(0.0) }
+
+    get_axis :: proc(h: i32, id: rl.GamepadAxis) -> f32
+    {
+        deadzone :: 0.2
+        val := rl.GetGamepadAxisMovement(h, id)
+        return math.abs(val) < deadzone ? 0 : val
+    }
+    
+    gpd.trigger_left = get_axis(handle, .LEFT_TRIGGER)
+    gpd.trigger_right = get_axis(handle, .RIGHT_TRIGGER)
+
+    // buttons already recorded
+    right := to_f32(gpd.buttons[.btn_dpad_right].is_down)
+    left  := to_f32(gpd.buttons[.btn_dpad_left].is_down)
+    up    := to_f32(gpd.buttons[.btn_dpad_up].is_down)
+    down  := to_f32(gpd.buttons[.btn_dpad_down].is_down)
+
+    x := right - left
+    y := up - down    
+    set_vector_state(&gpd.vec_dpad, x, y)
+
+    x = get_axis(handle, .LEFT_X)
+    y = get_axis(handle, .LEFT_Y)
+    set_vector_state(&gpd.vec_stick_left, x, y)
+
+    x = get_axis(handle, .RIGHT_X)
+    y = get_axis(handle, .RIGHT_Y)
+    set_vector_state(&gpd.vec_stick_right, x, y)
 }
 
 

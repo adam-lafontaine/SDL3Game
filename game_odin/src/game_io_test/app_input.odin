@@ -82,6 +82,7 @@ map_mouse_button_inputs :: proc(src: inp.MouseButtonInput, dst: ^MouseBtnOnOff)
 }
 
 
+@(private="file")
 map_gamepad_button_inputs :: proc(src: inp.GamepadButtonInput, dst: ^GamepadBtnOnOff)
 {     
     map_button(src[.btn_dpad_up],    &dst[.dpad_up])
@@ -101,7 +102,7 @@ map_gamepad_button_inputs :: proc(src: inp.GamepadButtonInput, dst: ^GamepadBtnO
     map_button(src[.btn_shoulder_right], &dst[.shoulder_right])
     
     map_button(src[.btn_stick_left],  &dst[.stick_left])
-    map_button(src[.btn_stick_right], &dst[.shoulder_right])
+    map_button(src[.btn_stick_right], &dst[.stick_right])
 }
 
 
@@ -109,6 +110,9 @@ map_gamepad_axis_inputs :: proc(src: inp.GamepadInput, dst: ^GamepadBtnOnOff)
 {
     dst[.trigger_left] = src.trigger_left > 0
     dst[.trigger_right] = src.trigger_right > 0
+
+    dst[.stick_left] |= src.vec_stick_left.magnitude > 0
+    dst[.stick_right] |= src.vec_stick_right.magnitude > 0
 }
 
 
@@ -131,6 +135,9 @@ map_input_list :: proc(src: Input, dst: ^InputList)
     map_keyboard_key_inputs(src.keyboard.keys, &dst.keyboard)
     map_mouse_button_inputs(src.mouse.buttons, &dst.mouse)
 
+    wheel := cast(b8)(src.mouse.wheel.x != 0 || src.mouse.wheel.y != 0)
+
+    dst.mouse[.middle] |= wheel
     dst.mouse_pos = src.mouse.window_pos
 
     map_gamepad_button_inputs(src.gamepads[0].buttons, &dst.gamepad1)
