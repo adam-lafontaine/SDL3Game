@@ -259,7 +259,20 @@ row_span_sv :: proc(view: SubView2D($T), y: u32) -> span.SpanView(T)
 row_span :: proc{ row_span_v, row_span_sv }
 
 
-fill :: proc(view: ImageView, color: Pixel32)
+fill_v :: proc(view: ImageView, color: Pixel32)
 {
     slice.fill(view.data, color)
 }
+
+
+fill_sv :: proc(view: SubView, color: Pixel32)
+{
+    for y in 0..<view.height
+    {
+        row := row_span(view, y).data
+        slice.fill(row, color)
+    }
+}
+
+
+fill :: proc{ fill_v, fill_sv }

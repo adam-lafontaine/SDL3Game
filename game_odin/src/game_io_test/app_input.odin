@@ -19,7 +19,7 @@ InputList :: struct
     keyboard: KeyboardOnOff,
     mouse: MouseBtnOnOff,
 
-    //mouse_pos: Vec2Di32,
+    mouse_pos: Vec2Di32,
 
     //sticks1: ControllerStickRotation,
     //sticks2: ControllerStickRotation
@@ -42,7 +42,7 @@ clear_input_list :: proc(inputs: ^InputList)
     clear(&inputs.keyboard)
     clear(&inputs.mouse)
 
-    //inputs.mouse_pos = { 0, 0 }
+    inputs.mouse_pos = { 0, 0 }
 }
 
 
@@ -103,10 +103,10 @@ map_input_list :: proc(src: Input, dst: ^InputList)
 {
     clear_input_list(dst)
 
-    map_keyboard_inputs(src.keyboard, &dst.keyboard)        
+    map_keyboard_inputs(src.keyboard, &dst.keyboard)
     map_mouse_inputs(src.mouse, &dst.mouse)
 
-    //dst.mouse_pos = src.mouse.window_pos
+    dst.mouse_pos = src.mouse.window_pos
 
     //map_gamepad_input(src.gamepads[0], &dst.controller1)
     //map_gamepad_input(src.gamepads[1], &dst.controller2)

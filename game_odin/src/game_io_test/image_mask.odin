@@ -2,7 +2,7 @@
 package game_io_test
 
 import img "../image_view"
-import "../util"
+import ascii "../ascii_image"
 
 import "core:fmt"
 
@@ -11,7 +11,7 @@ p32 :: img.Pixel32
 MaskView :: img.GrayView
 Mask :: img.GraySubView
 Buffer8 :: img.Buffer8
-RectPx :: util.Rect2Du32
+RectPx :: img.Rect2Du32
 
 
 MaskPixel :: enum
@@ -22,6 +22,7 @@ MaskPixel :: enum
 }
 
 
+@(private="file")
 to_mask_pixel :: proc(p: p32) -> MaskPixel
 {
     if p.alpha == 0 // transparent
@@ -39,6 +40,7 @@ to_mask_pixel :: proc(p: p32) -> MaskPixel
 }
 
 
+@(private="file")
 mask_set_on :: proc(p: u8, default: p32) -> p32
 {
     m := cast(MaskPixel)p
@@ -53,6 +55,7 @@ mask_set_on :: proc(p: u8, default: p32) -> p32
 }
 
 
+@(private="file")
 mask_set_off :: proc(p: u8, default: p32) -> p32
 {
     m := cast(MaskPixel)p
@@ -67,6 +70,7 @@ mask_set_off :: proc(p: u8, default: p32) -> p32
 }
 
 
+@(private="file")
 make_mask_view :: proc(img32: ImageView, buffer: ^Buffer8) -> MaskView
 {
     w := img32.width
@@ -86,6 +90,7 @@ make_mask_view :: proc(img32: ImageView, buffer: ^Buffer8) -> MaskView
 }
 
 
+@(private="file")
 set_mask_regions :: proc(view: MaskView, r: [$N]RectPx, m: ^[N]Mask)
 {
     for rect, id in r
@@ -107,7 +112,15 @@ ControllerStickDef :: struct($T: typeid)
 ControllerMaskList :: [ControllerId]Mask
 ControllerRectList :: [ControllerId]RectPx
 
+KeyboardMaskList :: [KeyboardId]Mask
+KeyboardRectList :: [KeyboardId]RectPx
 
+MouseMaskList :: [MouseId]Mask
+MouseRectList :: [MouseId]RectPx
+
+
+
+@(private="file")
 get_region_rects_ctlr :: proc() -> ControllerRectList
 {
     list: ControllerRectList
@@ -122,12 +135,7 @@ get_region_rects_ctlr :: proc() -> ControllerRectList
 }
 
 
-/* keyboard */
-
-KeyboardMaskList :: [KeyboardId]Mask
-KeyboardRectList :: [KeyboardId]RectPx
-
-
+@(private="file")
 get_region_rects_kbd :: proc() -> KeyboardRectList
 {
     list: KeyboardRectList
@@ -142,12 +150,7 @@ get_region_rects_kbd :: proc() -> KeyboardRectList
 }
 
 
-/* mouse */
-
-MouseMaskList :: [MouseId]Mask
-MouseRectList :: [MouseId]RectPx
-
-
+@(private="file")
 get_region_rects_mouse :: proc() -> MouseRectList
 {
     list: MouseRectList
@@ -227,6 +230,7 @@ MaskViewMap :: struct
 }
 
 
+@(private="file")
 draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
 {
     set_mask := is_on ? mask_set_on : mask_set_off
@@ -238,9 +242,10 @@ draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
     {
         s := img.row_span(src, y).data
         d := img.row_span(dst, y).data
-        for x in 0..<dst.width
+        
+        for ms, x in s
         {
-            d[x] = set_mask(s[x], d[x])
+            d[x] = set_mask(ms, d[x])
         }
     }
 }
@@ -252,21 +257,14 @@ MouseMaskViewMap :: [MouseId]MaskViewMap
 //ControllerStickMaskViewMap :: ControllerStickDef(MaskViewMap)
 
 
+@(private="file")
 sub_full :: proc(v: GrayView) -> GraySubView 
 { 
     return img.sub_view(v, img.make_rect(v.width, v.height)) 
 }
 
 
-draw_masks :: proc(mv: $MV, on_off: $O)
-{
-    for _, id in mv
-    {
-        draw_map(&mv[id], on_off[id])
-    }
-}
-
-
+@(private="file")
 set_map_masks :: proc(m: $M, mv: $MV)
 {
     for mask, id in m
@@ -276,6 +274,7 @@ set_map_masks :: proc(m: $M, mv: $MV)
 }
 
 
+@(private="file")
 set_map_out :: proc(out: SubView, r: $R, mv: $MV)
 {
     for rect, id in r
@@ -297,6 +296,37 @@ set_map_out_ts :: proc(out: SubView, r: ControllerRectList, mv: ^ControllerStick
     mv.stick_left.out = img.sub_view(out, r.items.stick_left)
     mv.stick_right.out = img.sub_view(out, r.items.stick_right)
 }*/
+
+
+@(private="file")
+draw_masks :: proc(mv: $MV, on_off: $O)
+{
+    for _, id in mv
+    {
+        draw_map(&mv[id], on_off[id])
+    }
+}
+
+
+@(private="file")
+draw_mouse_coords :: proc(mv: ^MouseMaskViewMap, pos: Vec2Di32)
+{
+    font := ascii.Font.Joystick8
+    color := COLOR_BLACK
+
+    buffer_x: [16]u8
+    buffer_y: [16]u8
+
+    out := mv[.pos_x].out
+    img.fill(out, COLOR_BACKGROUND)
+    str_x := fmt.bprintf(buffer_x[:], "X: %i", pos.x)
+    ascii.render_text(str_x, out, font, color)
+
+    out = mv[.pos_y].out
+    img.fill(out, COLOR_BACKGROUND)
+    str_y := fmt.bprintf(buffer_y[:], "Y: %i", pos.y)
+    ascii.render_text(str_y, out, font, color)
+}
 
 
 MaskViewMapList :: struct
@@ -326,9 +356,11 @@ draw_map_list :: proc(mv: ^MaskViewMapList, input: InputList)
     //draw_masks(&mv.controller1_inputs, input.controller1)
     //draw_masks(&mv.controller2_inputs, input.controller2)
     draw_masks(&mv.keyboard_inputs, input.keyboard)
-    draw_masks(&mv.mouse_inputs, input.mouse)
 
-    // thumbsticks, mouse coords
+    draw_masks(&mv.mouse_inputs, input.mouse)
+    draw_mouse_coords(&mv.mouse_inputs, input.mouse_pos)
+
+    // thumbsticks
 }
 
 

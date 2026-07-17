@@ -3,10 +3,6 @@
 #include "ascii_image.hpp"
 
 
-//#define LOG_ALLOC_TYPE
-#define ASSERT_ALLOC_TYPE
-
-
 
 namespace ascii
 {
