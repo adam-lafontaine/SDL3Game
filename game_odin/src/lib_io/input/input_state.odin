@@ -1,13 +1,16 @@
 package input
 
-import "../../util"
+
+MAX_GAMEPADS :: 2
 
 
 Input :: struct
 {
     keyboard: KeyboardInput,
-    mouse: MouseInput,    
-    // gamepad
+    mouse: MouseInput,
+
+    gamepads: [MAX_GAMEPADS]GamepadInput,
+    
     // joystick
     // touch
 
@@ -30,6 +33,12 @@ reset_input_state :: proc(input: ^Input)
 {
     reset_keyboard_state(&input.keyboard)    
     reset_mouse_state(&input.mouse)
+
+    for &gpd in input.gamepads
+    {
+        reset_gamepad_state(&gpd)
+    }
+
     // gamepad
     // joystick
     // touch
@@ -43,7 +52,12 @@ copy_input_state :: proc(src: Input, dst: ^Input)
 {
     copy_keyboard_state(src.keyboard, &dst.keyboard)
     copy_mouse_state(src.mouse, &dst.mouse)
-    // gamepad
+    
+    for gpd, i in src.gamepads
+    {
+        copy_gamepad_state(gpd, &dst.gamepads[i])
+    }
+
     // joystick
     // touch
 

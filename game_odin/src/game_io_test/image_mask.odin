@@ -100,17 +100,15 @@ set_mask_regions :: proc(view: MaskView, r: [$N]RectPx, m: ^[N]Mask)
 }
 
 
-/* controller */
+/* gamepad */
 
-ControllerStickDef :: struct($T: typeid)
+/*GamepadStickDef :: struct($T: typeid)
 {
     stick_left: T,
     stick_right: T
-}
+}*/
 
 
-ControllerMaskList :: [ControllerId]Mask
-ControllerRectList :: [ControllerId]RectPx
 
 KeyboardMaskList :: [KeyboardId]Mask
 KeyboardRectList :: [KeyboardId]RectPx
@@ -119,13 +117,17 @@ MouseMaskList :: [MouseId]Mask
 MouseRectList :: [MouseId]RectPx
 
 
+GamepadMaskList :: [GamepadId]Mask
+GamepadRectList :: [GamepadId]RectPx
+
+
 
 @(private="file")
-get_region_rects_ctlr :: proc() -> ControllerRectList
+get_region_rects_ctlr :: proc() -> GamepadRectList
 {
-    list: ControllerRectList
+    list: GamepadRectList
 
-    for id in ControllerId
+    for id in GamepadId
     {
         r := CTLR_MASK_RECT[id]
         list[id] = img.make_rect(r.x, r.y, r.w, r.h)
@@ -169,13 +171,13 @@ get_region_rects_mouse :: proc() -> MouseRectList
 
 DrawMaskData :: struct
 {
-    //ontroller: ControllerMaskList,
     keyboard: KeyboardMaskList,
     mouse: MouseMaskList,
-
-    //controller_view: MaskView,
+    gamepad: GamepadMaskList,
+    
     keyboard_view: MaskView,
     mouse_view: MaskView,
+    gamepad_view: MaskView,
 
     //arrow_view: MaskView
 }
@@ -183,40 +185,40 @@ DrawMaskData :: struct
 
 draw_mask_pixel_count ::proc(am: AssetMemory) -> u32
 {
-    c := am.image.controller
+    g := am.image.gamepad
     k := am.image.keyboard
     m := am.image.mouse
     a := am.image.arrow
 
-    cn := c.width * c.height
+    gn := g.width * g.height
     kn := k.width * k.height
     mn := m.width * m.height
     an := a.width * a.height
 
-    return cn + kn + mn + an
+    return gn + kn + mn + an
 }
 
 
 create_draw_mask_data :: proc(am: AssetMemory, buffer: ^Buffer8) -> DrawMaskData
 {
-    cr := get_region_rects_ctlr()
+    gr := get_region_rects_ctlr()
     kr := get_region_rects_kbd()
     mr := get_region_rects_mouse()
 
     data: DrawMaskData
 
-    cmv := make_mask_view(am.image.controller, buffer)
+    gmv := make_mask_view(am.image.gamepad, buffer)
     kmv := make_mask_view(am.image.keyboard, buffer)
     mmv := make_mask_view(am.image.mouse, buffer)
     amv := make_mask_view(am.image.arrow, buffer)
-
-    //set_mask_regions(cmv, cr.list, &data.controller.list)
+    
     set_mask_regions(kmv, kr, &data.keyboard)
     set_mask_regions(mmv, mr, &data.mouse)
-
-    //data.controller_view = cmv
+    set_mask_regions(gmv, gr, &data.gamepad)
+    
     data.keyboard_view = kmv
     data.mouse_view = mmv
+    data.gamepad_view = gmv
     //data.arrow_view = amv
 
     return data
@@ -251,10 +253,10 @@ draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
 }
 
 
-//ControllerMaskViewMap :: ControllerDef(MaskViewMap)
 KeyboardMaskViewMap :: [KeyboardId]MaskViewMap
 MouseMaskViewMap :: [MouseId]MaskViewMap
-//ControllerStickMaskViewMap :: ControllerStickDef(MaskViewMap)
+GamepadMaskViewMap :: [GamepadId]MaskViewMap
+//GamepadStickMaskViewMap :: GamepadStickDef(MaskViewMap)
 
 
 @(private="file")
@@ -284,14 +286,14 @@ set_map_out :: proc(out: SubView, r: $R, mv: $MV)
 }
 
 
-/*set_map_masks_ts :: proc(m: GraySubView, mv: ^ControllerStickMaskViewMap)
+/*set_map_masks_ts :: proc(m: GraySubView, mv: ^GamepadStickMaskViewMap)
 {
     mv.stick_left.mask = m;
     mv.stick_right.mask = m;
 }
 
 
-set_map_out_ts :: proc(out: SubView, r: ControllerRectList, mv: ^ControllerStickMaskViewMap)
+set_map_out_ts :: proc(out: SubView, r: GamepadRectList, mv: ^GamepadStickMaskViewMap)
 {
     mv.stick_left.out = img.sub_view(out, r.items.stick_left)
     mv.stick_right.out = img.sub_view(out, r.items.stick_right)
@@ -331,34 +333,35 @@ draw_mouse_coords :: proc(mv: ^MouseMaskViewMap, pos: Vec2Di32)
 
 MaskViewMapList :: struct
 {
-    //controller1: MaskViewMap,
-    //controller2: MaskViewMap,
     keyboard: MaskViewMap,
     mouse: MaskViewMap,
-
-    //controller1_inputs: ControllerMaskViewMap,
-    //controller2_inputs: ControllerMaskViewMap,
+    gamepad1: MaskViewMap,
+    gamepad2: MaskViewMap,
+    
     keyboard_inputs: KeyboardMaskViewMap,
     mouse_inputs: MouseMaskViewMap,
+    gamepad1_inputs: GamepadMaskViewMap,
+    gamepad2_inputs: GamepadMaskViewMap,
 
-    //controller1_thumbsticks: ControllerStickMaskViewMap,
-    //controller2_thumbsticks: ControllerStickMaskViewMap,
+    //gamepad1_thumbsticks: GamepadStickMaskViewMap,
+    //gamepad2_thumbsticks: GamepadStickMaskViewMap,
 }
 
 
 draw_map_list :: proc(mv: ^MaskViewMapList, input: InputList)
-{
-    //draw_map(&mv.controller1, false)
-    //draw_map(&mv.controller2, false)
+{    
     draw_map(&mv.keyboard, false)
     draw_map(&mv.mouse, false)
-
-    //draw_masks(&mv.controller1_inputs, input.controller1)
-    //draw_masks(&mv.controller2_inputs, input.controller2)
+    draw_map(&mv.gamepad1, false)
+    draw_map(&mv.gamepad2, false)
+    
     draw_masks(&mv.keyboard_inputs, input.keyboard)
 
     draw_masks(&mv.mouse_inputs, input.mouse)
     draw_mouse_coords(&mv.mouse_inputs, input.mouse_pos)
+
+    draw_masks(&mv.gamepad1_inputs, input.gamepad1)
+    draw_masks(&mv.gamepad2_inputs, input.gamepad2)
 
     // thumbsticks
 }
@@ -367,34 +370,7 @@ draw_map_list :: proc(mv: ^MaskViewMapList, input: InputList)
 set_mask_list_views :: proc(masks: DrawMaskData, out: ImageView, mv: ^MaskViewMapList)
 {
     sw := out.width
-    sh := out.height
-
-    // controller
-    /*c_mask := sub_full(masks.controller_view)
-    a_mask := sub_full(masks.arrow_view)
-    cw := c_mask.width
-    ch := c_mask.height
-    c_reg := get_region_rects_ctlr()
-
-    // controller 1
-    c_out1 := img.sub_view(out, img.make_rect(0, 0, cw, ch))
-    mv.controller1.mask = c_mask
-    mv.controller1.out = c_out1
-    set_map_masks(masks.controller, &mv.controller1_inputs)
-    set_map_out(c_out1, c_reg, &mv.controller1_inputs)
-    // thumbstics
-    set_map_masks_ts(a_mask, &mv.controller1_thumbsticks)
-    set_map_out_ts(c_out1, c_reg, &mv.controller1_thumbsticks)
-
-    // controller 2
-    c_out2 := img.sub_view(out, img.make_rect(sw - cw, 0, cw, ch))
-    mv.controller2.mask = c_mask
-    mv.controller2.out = c_out2
-    set_map_masks(masks.controller, &mv.controller2_inputs)
-    set_map_out(c_out2, c_reg, &mv.controller2_inputs)
-    // thumbstics
-    set_map_masks_ts(a_mask, &mv.controller2_thumbsticks)
-    set_map_out_ts(c_out2, c_reg, &mv.controller2_thumbsticks) */   
+    sh := out.height    
 
     // keyboard
     k_mask := sub_full(masks.keyboard_view)
@@ -417,4 +393,35 @@ set_mask_list_views :: proc(masks: DrawMaskData, out: ImageView, mv: ^MaskViewMa
     m_reg := get_region_rects_mouse()
     set_map_out(m_out, m_reg, &mv.mouse_inputs)
     set_map_masks(masks.mouse, &mv.mouse_inputs)
+
+    // gamepad
+    g_mask := sub_full(masks.gamepad_view)
+    
+    cw := g_mask.width
+    ch := g_mask.height
+    g_reg := get_region_rects_ctlr()
+
+    // gamepad 1
+    g_out1 := img.sub_view(out, img.make_rect(0, 0, cw, ch))
+    mv.gamepad1.mask = g_mask
+    mv.gamepad1.out = g_out1
+    set_map_masks(masks.gamepad, &mv.gamepad1_inputs)
+    set_map_out(g_out1, g_reg, &mv.gamepad1_inputs)    
+
+    // gamepad 2
+    g_out2 := img.sub_view(out, img.make_rect(sw - cw, 0, cw, ch))
+    mv.gamepad2.mask = g_mask
+    mv.gamepad2.out = g_out2
+    set_map_masks(masks.gamepad, &mv.gamepad2_inputs)
+    set_map_out(g_out2, g_reg, &mv.gamepad2_inputs)    
+
+    // thumbsticks
+    /*a_mask := sub_full(masks.arrow_view)
+
+    set_map_masks_ts(a_mask, &mv.gamepad1_thumbsticks)
+    set_map_out_ts(g_out1, g_reg, &mv.gamepad1_thumbsticks)
+
+    set_map_masks_ts(a_mask, &mv.gamepad2_thumbsticks)
+    set_map_out_ts(g_out2, g_reg, &mv.gamepad2_thumbsticks)*/
+
 }

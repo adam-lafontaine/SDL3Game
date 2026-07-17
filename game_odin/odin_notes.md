@@ -55,6 +55,7 @@ Cons
 * No namespaces - need packages
 * No constexpr
 * No static_assert
+* No ref/const ref
 
 ### Wishlist
 

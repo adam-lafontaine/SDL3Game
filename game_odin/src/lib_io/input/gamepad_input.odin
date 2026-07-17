@@ -25,5 +25,27 @@ GamepadButtonInput :: [GamepadButtons]ButtonState
 
 GamepadInput :: struct
 {
+    handle: i32,
+
     buttons: GamepadButtonInput,
+}
+
+
+@(private)
+reset_gamepad_state :: proc(gamepad: ^GamepadInput)
+{
+    for &btn in gamepad.buttons
+    {
+        reset_button_state(&btn)
+    }
+}
+
+
+@(private)
+copy_gamepad_state :: proc(src: GamepadInput, dst: ^GamepadInput)
+{
+    for btn, id in src.buttons
+    {
+        copy_button_state(btn, &dst.buttons[id])
+    }
 }

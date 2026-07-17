@@ -65,9 +65,9 @@ reset_mouse_state :: proc(mouse: ^MouseInput)
 @(private)
 copy_mouse_state :: proc(src: MouseInput, dst: ^MouseInput)
 { 
-    for s, id in src.buttons
+    for btn, id in src.buttons
     {
-        copy_button_state(s, &dst.buttons[id])
+        copy_button_state(btn, &dst.buttons[id])
     }
 
     copy_mouse_position(src, dst)

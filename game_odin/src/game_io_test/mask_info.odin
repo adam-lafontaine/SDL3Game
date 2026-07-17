@@ -13,7 +13,7 @@ Rect_WH :: struct
 }
 
 
-ControllerId :: enum
+GamepadId :: enum
 {
     dpad_up,
     dpad_down,
@@ -40,7 +40,7 @@ ControllerId :: enum
 
 
 @(rodata)
-CTLR_MASK_RECT := [ControllerId]Rect_WH {
+CTLR_MASK_RECT := [GamepadId]Rect_WH {
     .trigger_left  = { 17, 4, 19, 15 },
     .trigger_right = { 156, 4, 19, 15 },
 

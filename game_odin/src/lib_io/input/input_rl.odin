@@ -36,6 +36,7 @@ record_mouse_button_input :: proc(src: MouseButtonInput, dst: ^MouseButtonInput)
 }
 
 
+@(private="file")
 record_mouse_position_input :: proc(mouse: ^MouseInput)
 {
     pos := rl.GetMousePosition()
@@ -45,6 +46,7 @@ record_mouse_position_input :: proc(mouse: ^MouseInput)
 }
 
 
+@(private="file")
 record_mouse_wheel_input :: proc(mouse: ^MouseInput)
 {
     vec := rl.GetMouseWheelMoveV()
@@ -54,11 +56,37 @@ record_mouse_wheel_input :: proc(mouse: ^MouseInput)
 }
 
 
+/* gamepad */
+
+@(private="file")
+record_gamepad_button_input :: proc(handle: i32, gpd_old: GamepadButtonInput, gpd_new: ^GamepadButtonInput)
+{
+    bd :: proc(h: i32, id: rl.GamepadButton) -> b8 { return cast(b8)rl.IsGamepadButtonDown(h, id) }
+
+    record_button_input(gpd_old[.btn_dpad_up], &gpd_new[.btn_dpad_up], bd(handle, .LEFT_FACE_UP))
+    // !!!
+}
+
+
 /* api for the api */
 
 api_init :: proc(inputs: ^InputArray) -> bool
 {
-    //assert(false, "*** NOT IMPLEMENTED ***")
+    prev := prev(inputs)
+    curr := curr(inputs)
+
+    N := cast(i32)MAX_GAMEPADS
+
+    for i in 0..<N
+    {
+        if rl.IsGamepadAvailable(i)
+        {
+            handle := i
+            prev.gamepads[i].handle = handle
+            curr.gamepads[i].handle = handle
+        }
+    }
+
     return true
 }
 
@@ -78,6 +106,16 @@ api_record_input :: proc(inputs: ^InputArray)
     record_mouse_button_input(prev.mouse.buttons, &curr.mouse.buttons)
     record_mouse_position_input(&curr.mouse)
     record_mouse_wheel_input(&curr.mouse)
+
+    N := cast(i32)MAX_GAMEPADS
+
+    for i in 0..<N
+    {
+        if rl.IsGamepadAvailable(i)
+        {
+            record_gamepad_button_input(i, prev.gamepads[i].buttons, &curr.gamepads[i].buttons)
+        }
+    }
 
     if (rl.WindowShouldClose()) // ESC key
     {

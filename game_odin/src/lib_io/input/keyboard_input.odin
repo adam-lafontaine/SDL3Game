@@ -37,8 +37,8 @@ reset_keyboard_state :: proc(keyboard: ^KeyboardInput)
 @(private)
 copy_keyboard_state :: proc(src: KeyboardInput, dst: ^KeyboardInput)
 {
-    for s, id in src.keys
+    for key, id in src.keys
     {
-        copy_button_state(s, &dst.keys[id])
+        copy_button_state(key, &dst.keys[id])
     }
 }

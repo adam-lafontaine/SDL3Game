@@ -32,7 +32,7 @@ AssetMemory :: struct
 {
     image: struct
     {
-        controller: ImageView,
+        gamepad: ImageView,
         keyboard: ImageView,
         mouse: ImageView,
         arrow: ImageView
@@ -76,8 +76,8 @@ count_asset_pixels :: proc() -> u32
     h := res.masks[.keyboard].height
     count := w * h
 
-    w = res.masks[.controller].width
-    h = res.masks[.controller].height
+    w = res.masks[.gamepad].width
+    h = res.masks[.gamepad].height
     count += w * h
 
     w = res.masks[.mouse].width
@@ -101,7 +101,7 @@ read_image :: proc(memory: ^AssetMemory, id: res.ImageID) -> bool
     switch id
     {
     case .keyboard:   dst = &memory.image.keyboard
-    case .controller: dst = &memory.image.controller
+    case .gamepad: dst = &memory.image.gamepad
     case .mouse:      dst = &memory.image.mouse
     case .arrow:      dst = &memory.image.arrow
     case: return false

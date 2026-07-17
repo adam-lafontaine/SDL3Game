@@ -41,7 +41,7 @@ SoundInfo :: struct
 ImageID :: enum
 {
     keyboard,
-    controller,
+    gamepad,
     mouse,
     arrow
 }
@@ -49,10 +49,10 @@ ImageID :: enum
 
 @(rodata)
 masks := [ImageID]ImageInfo {
-    .keyboard   = { .PNG, 0,    2588, 272, 92 },
-    .controller = { .PNG, 2588, 2094, 192, 92 },
-    .mouse      = { .PNG, 4682, 807,  80,  92 },
-    .arrow      = { .PNG, 5489, 169,  25,  25 }
+    .keyboard = { .PNG, 0,    2588, 272, 92 },
+    .gamepad  = { .PNG, 2588, 2094, 192, 92 },
+    .mouse    = { .PNG, 4682, 807,  80,  92 },
+    .arrow    = { .PNG, 5489, 169,  25,  25 }
 }
 
 
