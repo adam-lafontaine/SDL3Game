@@ -63,10 +63,10 @@ copy_gamepad_state :: proc(src: GamepadInput, dst: ^GamepadInput)
         copy_button_state(btn, &dst.buttons[id])
     }
 
-    dst.trigger_left = src.trigger_left
-    dst.trigger_right = src.trigger_right
+    dst.trigger_left = 0
+    dst.trigger_right = 0
 
-    dst.vec_dpad = src.vec_dpad
-    dst.vec_stick_left = src.vec_stick_left
-    dst.vec_stick_right = src.vec_stick_right
+    reset_vector_state(&dst.vec_dpad)
+    reset_vector_state(&dst.vec_stick_left)
+    reset_vector_state(&dst.vec_stick_right)
 }
