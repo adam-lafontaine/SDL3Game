@@ -15,13 +15,19 @@ KeyboardKeys :: enum
 }
 
 
-KeyboardInput :: [KeyboardKeys]ButtonState
+KeyboardKeyInput :: [KeyboardKeys]ButtonState
+
+
+KeyboardInput :: struct
+{
+    keys: KeyboardKeyInput
+}
 
 
 @(private)
 reset_keyboard_state :: proc(keyboard: ^KeyboardInput)
 {
-    for &key in keyboard
+    for &key in keyboard.keys
     {
         reset_button_state(&key)
     }
@@ -31,8 +37,8 @@ reset_keyboard_state :: proc(keyboard: ^KeyboardInput)
 @(private)
 copy_keyboard_state :: proc(src: KeyboardInput, dst: ^KeyboardInput)
 {
-    for s, id in src
+    for s, id in src.keys
     {
-        copy_button_state(s, &dst[id])
+        copy_button_state(s, &dst.keys[id])
     }
 }

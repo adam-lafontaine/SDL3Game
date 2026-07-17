@@ -7,7 +7,7 @@ import rl "vendor:raylib"
 /* keyboard */
 
 @(private="file")
-record_keyboard_input :: proc(kbd_old: KeyboardInput, kbd_new: ^KeyboardInput)
+record_keyboard_key_input :: proc(kbd_old: KeyboardKeyInput, kbd_new: ^KeyboardKeyInput)
 {
     bd :: proc(id: rl.KeyboardKey) -> b8 { return cast(b8)rl.IsKeyDown(id) }
     
@@ -74,7 +74,7 @@ api_record_input :: proc(inputs: ^InputArray)
     prev := prev(inputs)
     curr := curr(inputs)
     
-    record_keyboard_input(prev.keyboard, &curr.keyboard)
+    record_keyboard_key_input(prev.keyboard.keys, &curr.keyboard.keys)
     record_mouse_button_input(prev.mouse.buttons, &curr.mouse.buttons)
     record_mouse_position_input(&curr.mouse)
     record_mouse_wheel_input(&curr.mouse)
