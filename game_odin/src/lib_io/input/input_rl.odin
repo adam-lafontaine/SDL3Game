@@ -3,6 +3,8 @@ package input
 
 import rl "vendor:raylib"
 
+//import "core:fmt"
+
 
 /* keyboard */
 
@@ -63,8 +65,32 @@ record_gamepad_button_input :: proc(handle: i32, gpd_old: GamepadButtonInput, gp
 {
     bd :: proc(h: i32, id: rl.GamepadButton) -> b8 { return cast(b8)rl.IsGamepadButtonDown(h, id) }
 
-    record_button_input(gpd_old[.btn_dpad_up], &gpd_new[.btn_dpad_up], bd(handle, .LEFT_FACE_UP))
-    // !!!
+    record :: proc(o: GamepadButtonInput, n: ^GamepadButtonInput, h: i32, b: GamepadButtons, id: rl.GamepadButton)
+    {
+        record_button_input(o[b], &n[b], bd(h, id))
+    }
+
+    record(gpd_old, gpd_new, handle, .btn_dpad_up,    .LEFT_FACE_UP)
+    record(gpd_old, gpd_new, handle, .btn_dpad_right, .LEFT_FACE_RIGHT)
+    record(gpd_old, gpd_new, handle, .btn_dpad_down,  .LEFT_FACE_DOWN)
+    record(gpd_old, gpd_new, handle, .btn_dpad_left,  .LEFT_FACE_LEFT)
+
+    record(gpd_old, gpd_new, handle, .btn_north, .RIGHT_FACE_UP)
+    record(gpd_old, gpd_new, handle, .btn_east,  .RIGHT_FACE_RIGHT)
+    record(gpd_old, gpd_new, handle, .btn_south, .RIGHT_FACE_DOWN)
+    record(gpd_old, gpd_new, handle, .btn_west,  .RIGHT_FACE_LEFT)
+
+    record(gpd_old, gpd_new, handle, .btn_start, .MIDDLE_RIGHT)
+    record(gpd_old, gpd_new, handle, .btn_back, .MIDDLE_LEFT)
+    // MIDDLE,               // Gamepad center buttons, middle one (i.e. PS3: PS, Xbox: XBOX)
+
+    record(gpd_old, gpd_new, handle, .btn_shoulder_left,  .LEFT_TRIGGER_1)
+    record(gpd_old, gpd_new, handle, .btn_shoulder_right, .RIGHT_TRIGGER_1)
+
+    // triggers? LEFT_TRIGGER_2, RIGHT_TRIGGER_2, 
+
+    record(gpd_old, gpd_new, handle, .btn_stick_left,  .LEFT_THUMB)
+    record(gpd_old, gpd_new, handle, .btn_stick_right, .RIGHT_THUMB)    
 }
 
 
@@ -79,12 +105,12 @@ api_init :: proc(inputs: ^InputArray) -> bool
 
     for i in 0..<N
     {
-        if rl.IsGamepadAvailable(i)
-        {
-            handle := i
-            prev.gamepads[i].handle = handle
-            curr.gamepads[i].handle = handle
-        }
+        handle := i
+        prev.gamepads[i].handle = handle
+        curr.gamepads[i].handle = handle
+
+        //avail := rl.IsGamepadAvailable(i)
+        //fmt.println("*** Gamepad: ", i, avail)
     }
 
     return true
@@ -111,9 +137,10 @@ api_record_input :: proc(inputs: ^InputArray)
 
     for i in 0..<N
     {
-        if rl.IsGamepadAvailable(i)
+        h := prev.gamepads[i].handle
+        if rl.IsGamepadAvailable(h)
         {
-            record_gamepad_button_input(i, prev.gamepads[i].buttons, &curr.gamepads[i].buttons)
+            record_gamepad_button_input(h, prev.gamepads[i].buttons, &curr.gamepads[i].buttons)
         }
     }
 

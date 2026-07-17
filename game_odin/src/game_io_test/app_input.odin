@@ -83,9 +83,25 @@ map_mouse_button_inputs :: proc(src: inp.MouseButtonInput, dst: ^MouseBtnOnOff)
 
 
 map_gamepad_button_inputs :: proc(src: inp.GamepadButtonInput, dst: ^GamepadBtnOnOff)
-{
-    map_button(src[.btn_dpad_up], &dst[.dpad_up])
-    // !!!
+{     
+    map_button(src[.btn_dpad_up],    &dst[.dpad_up])
+    map_button(src[.btn_dpad_right], &dst[.dpad_right])
+    map_button(src[.btn_dpad_down],  &dst[.dpad_down])
+    map_button(src[.btn_dpad_left],  &dst[.dpad_left])
+    
+    map_button(src[.btn_start], &dst[.start])
+    map_button(src[.btn_back],  &dst[.back])
+
+    map_button(src[.btn_south], &dst[.a])
+    map_button(src[.btn_east],  &dst[.b])
+    map_button(src[.btn_west],  &dst[.x])
+    map_button(src[.btn_north], &dst[.y])
+
+    map_button(src[.btn_shoulder_left],  &dst[.shoulder_left])
+    map_button(src[.btn_shoulder_right], &dst[.shoulder_right])
+    
+    map_button(src[.btn_stick_left],  &dst[.stick_left])
+    map_button(src[.btn_stick_right], &dst[.shoulder_right])
 }
 
 
