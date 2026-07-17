@@ -254,9 +254,12 @@ draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
 
 
 @(private="file")
-draw_map_rotated :: proc(mv_map: ^MaskViewMap, sin_cos: Vec2Df32, is_on: b8)
+draw_map_rotated :: proc(mv_map: ^MaskViewMap, sin_cos: Vec2Df32)
 {
-    set_mask := is_on ? mask_set_on : mask_set_off
+    mask_set :: proc(m: u8, p: p32) -> p32 
+    { 
+        return cast(MaskPixel)m == .Color ? COLOR_BLACK : p
+    }
 
     src := mv_map.mask
     dst := mv_map.out
@@ -289,11 +292,14 @@ draw_map_rotated :: proc(mv_map: ^MaskViewMap, sin_cos: Vec2Df32, is_on: b8)
     {
         d := img.row_span(dst, y).data
 
-        sxf += cos
-        syf -= sin
+        sxf = dysin
+        syf = dycos
 
         for x in 0..<dw
         {
+            sxf += cos
+            syf -= sin
+
             if sxf < 0 || syf < 0
             {
                 continue;
@@ -308,7 +314,7 @@ draw_map_rotated :: proc(mv_map: ^MaskViewMap, sin_cos: Vec2Df32, is_on: b8)
             }
 
             mp := img.pixel_at(src, sx, sy)
-            d[x] = set_mask(mp, d[x])
+            d[x] = mask_set(mp, d[x])
         }
 
         dysin += sin
@@ -398,16 +404,16 @@ draw_mouse_coords :: proc(mv: ^MouseMaskViewMap, pos: Vec2Di32)
 @(private="file")
 draw_gamepad_thumbsticks :: proc(mv: ^GamepadStickMaskViewMap, rot: GamepadStickRotation)
 {
-    is_on :: proc(v: Vec2Df32) -> bool { return v.x > 0 || v.y > 0 }
+    is_on :: proc(v: Vec2Df32) -> bool { return v.x != 0 || v.y != 0 }
 
     if is_on(rot.stick_left)
     {
-        draw_map_rotated(&mv.stick_left, rot.stick_left, true)
+        draw_map_rotated(&mv.stick_left, rot.stick_left)
     }
 
     if is_on(rot.stick_right)
     {
-        draw_map_rotated(&mv.stick_right, rot.stick_right, true)
+        draw_map_rotated(&mv.stick_right, rot.stick_right)
     }
 }
 
@@ -435,6 +441,9 @@ draw_map_list :: proc(mv: ^MaskViewMapList, input: InputList)
     draw_map(&mv.mouse, false)
     draw_map(&mv.gamepad1, false)
     draw_map(&mv.gamepad2, false)
+
+    //draw_map(&mv.gamepad1_thumbsticks.stick_left, false)
+    //draw_map(&mv.gamepad1_thumbsticks.stick_right, false)
     
     draw_masks(&mv.keyboard_inputs, input.keyboard)
 
