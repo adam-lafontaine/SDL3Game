@@ -105,6 +105,13 @@ map_gamepad_button_inputs :: proc(src: inp.GamepadButtonInput, dst: ^GamepadBtnO
 }
 
 
+map_gamepad_axis_inputs :: proc(src: inp.GamepadInput, dst: ^GamepadBtnOnOff)
+{
+    dst[.trigger_left] = src.trigger_left > 0
+    dst[.trigger_right] = src.trigger_right > 0
+}
+
+
 /*map_thumbstick_input :: proc(dst: ^GamepadStickRotation)
 {
 
@@ -128,6 +135,9 @@ map_input_list :: proc(src: Input, dst: ^InputList)
 
     map_gamepad_button_inputs(src.gamepads[0].buttons, &dst.gamepad1)
     map_gamepad_button_inputs(src.gamepads[1].buttons, &dst.gamepad2)
+
+    map_gamepad_axis_inputs(src.gamepads[0], &dst.gamepad1)
+    map_gamepad_axis_inputs(src.gamepads[1], &dst.gamepad2)
 
     //map_joystick_input(src.joysticks[0], &dst.gamepad1)
     //map_joystick_input(src.joysticks[1], &dst.gamepad2)

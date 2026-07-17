@@ -28,6 +28,9 @@ GamepadInput :: struct
     handle: i32,
 
     buttons: GamepadButtonInput,
+
+    trigger_left: f32,
+    trigger_right: f32,
 }
 
 
@@ -38,6 +41,9 @@ reset_gamepad_state :: proc(gamepad: ^GamepadInput)
     {
         reset_button_state(&btn)
     }
+
+    gamepad.trigger_left = 0
+    gamepad.trigger_right = 0
 }
 
 
@@ -48,4 +54,7 @@ copy_gamepad_state :: proc(src: GamepadInput, dst: ^GamepadInput)
     {
         copy_button_state(btn, &dst.buttons[id])
     }
+
+    dst.trigger_left = src.trigger_left
+    dst.trigger_right = src.trigger_right
 }

@@ -38,8 +38,7 @@ reset_input_state :: proc(input: ^Input)
     {
         reset_gamepad_state(&gpd)
     }
-
-    // gamepad
+    
     // joystick
     // touch
 

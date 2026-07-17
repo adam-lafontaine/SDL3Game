@@ -32,8 +32,8 @@ record_mouse_button_input :: proc(src: MouseButtonInput, dst: ^MouseButtonInput)
 {
     bd :: proc(id: rl.MouseButton) -> b8 { return cast(b8)rl.IsMouseButtonDown(id) }
     
-    record_button_input(src[.btn_left], &dst[.btn_left], bd(.LEFT))
-    record_button_input(src[.btn_right], &dst[.btn_right], bd(.RIGHT))
+    record_button_input(src[.btn_left],   &dst[.btn_left], bd(.LEFT))
+    record_button_input(src[.btn_right],  &dst[.btn_right], bd(.RIGHT))
     record_button_input(src[.btn_middle], &dst[.btn_middle], bd(.MIDDLE))
 }
 
@@ -94,6 +94,14 @@ record_gamepad_button_input :: proc(handle: i32, gpd_old: GamepadButtonInput, gp
 }
 
 
+@(private="file")
+record_gamepad_axis_input :: proc(handle: i32, gpd: ^GamepadInput)
+{
+    gpd.trigger_left = rl.GetGamepadAxisMovement(handle, .LEFT_TRIGGER)
+    gpd.trigger_right = rl.GetGamepadAxisMovement(handle, .RIGHT_TRIGGER)
+}
+
+
 /* api for the api */
 
 api_init :: proc(inputs: ^InputArray) -> bool
@@ -141,6 +149,7 @@ api_record_input :: proc(inputs: ^InputArray)
         if rl.IsGamepadAvailable(h)
         {
             record_gamepad_button_input(h, prev.gamepads[i].buttons, &curr.gamepads[i].buttons)
+            record_gamepad_axis_input(h, &curr.gamepads[i])
         }
     }
 
