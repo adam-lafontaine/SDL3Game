@@ -9,7 +9,7 @@ BtnState :: inp.ButtonState
 KeyboardOnOff :: [KeyboardId]b8
 MouseBtnOnOff :: [MouseId]b8
 GamepadBtnOnOff :: [GamepadId]b8
-//GamepadStickRotation :: GamepadStickDef(Vec2Df32)
+GamepadStickRotation :: GamepadStickDef(Vec2Df32)
 
 
 InputList :: struct
@@ -22,8 +22,8 @@ InputList :: struct
     gamepad1: GamepadBtnOnOff,
     gamepad2: GamepadBtnOnOff,
 
-    //sticks1: GamepadStickRotation,
-    //sticks2: GamepadStickRotation
+    sticks1: GamepadStickRotation,
+    sticks2: GamepadStickRotation
 }
 
 
@@ -45,7 +45,10 @@ clear_input_list :: proc(inputs: ^InputList)
     clear(&inputs.gamepad1)
     clear(&inputs.gamepad2)
 
-    // thumbsticks?
+    inputs.sticks1.stick_left = { 0, 0 }
+    inputs.sticks1.stick_right = { 0, 0 }
+    inputs.sticks2.stick_left = { 0, 0 }
+    inputs.sticks2.stick_right = { 0, 0 }
 }
 
 
@@ -116,13 +119,17 @@ map_gamepad_axis_inputs :: proc(src: inp.GamepadInput, dst: ^GamepadBtnOnOff)
 }
 
 
-/*map_thumbstick_input :: proc(dst: ^GamepadStickRotation)
+map_gamepad_thumbstick_input :: proc(src: inp.GamepadInput, dst: ^GamepadStickRotation)
 {
+    dst.stick_left.x = src.vec_stick_left.cosine
+    dst.stick_left.y = src.vec_stick_left.sine
 
+    dst.stick_right.x = src.vec_stick_right.cosine
+    dst.stick_right.y = src.vec_stick_right.sine
 }
 
 
-map_joystick_input :: proc(dst: ^GamepadBtnOnOff)
+/*map_joystick_input :: proc(dst: ^GamepadBtnOnOff)
 {
 
 }*/
@@ -146,9 +153,9 @@ map_input_list :: proc(src: Input, dst: ^InputList)
     map_gamepad_axis_inputs(src.gamepads[0], &dst.gamepad1)
     map_gamepad_axis_inputs(src.gamepads[1], &dst.gamepad2)
 
+    map_gamepad_thumbstick_input(src.gamepads[0], &dst.sticks1)
+    map_gamepad_thumbstick_input(src.gamepads[1], &dst.sticks2)
+
     //map_joystick_input(src.joysticks[0], &dst.gamepad1)
     //map_joystick_input(src.joysticks[1], &dst.gamepad2)
-
-    //map_thumbstick_input(src.gamepads[0], &dst.sticks1)
-    //map_thumbstick_input(src.gamepads[1], &dst.sticks2)
 }
