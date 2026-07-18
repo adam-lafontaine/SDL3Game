@@ -108,7 +108,7 @@ map_gamepad_button_inputs :: proc(src: inp.GamepadButtonInput, dst: ^GamepadBtnO
     map_button(src[.btn_stick_right], &dst[.stick_right])
 }
 
-
+@(private="file")
 map_gamepad_axis_inputs :: proc(src: inp.GamepadInput, dst: ^GamepadBtnOnOff)
 {
     dst[.trigger_left] = src.trigger_left > 0
@@ -118,7 +118,7 @@ map_gamepad_axis_inputs :: proc(src: inp.GamepadInput, dst: ^GamepadBtnOnOff)
     dst[.stick_right] |= src.vec_stick_right.magnitude > 0
 }
 
-
+@(private="file")
 map_gamepad_thumbstick_input :: proc(src: inp.GamepadInput, dst: ^GamepadStickRotation)
 {
     dst.stick_left.x = src.vec_stick_left.cosine

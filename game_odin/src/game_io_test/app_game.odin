@@ -16,6 +16,14 @@ GraySubView :: img.GraySubView
 Vec2Df32 :: util.Vec2Df32
 Vec2Di32 :: util.Vec2Di32
 
+COLOR_BLACK :: img.BLACK
+COLOR_TRANSPARENT :: p32{ 0, 0, 0, 0 }
+COLOR_BACKGROUND  :: p32{ 200, 200, 200, 255 }
+COLOR_ON          :: p32{ 50, 255, 50, 255 }
+COLOR_OFF         :: p32{ 127, 127, 127, 255 }
+COLOR_UNEXPECTED  :: p32{ 255, 0, 255, 255 }
+COLOR_ERROR       :: p32{ 255, 50, 50, 255 }
+
 
 
 /* screen dimensions */
@@ -23,7 +31,7 @@ Vec2Di32 :: util.Vec2Di32
 screen_dimensions_res :: proc() -> Vec2Du32
 {
     /*
-    | ctlr ctlr |
+    | gpd1 gpd2 |
     | kbd   mse |
     */
 
@@ -42,18 +50,16 @@ screen_dimensions_res :: proc() -> Vec2Du32
 }
 
 
-screen_dimensions_masks :: proc(masks: DrawMaskData) -> Vec2Du32
+screen_dimensions_masks :: proc(masks: MaskViewData) -> Vec2Du32
 {
-    /*c := masks.controller_view
+    g := masks.gamepad_view
     k := masks.keyboard_view    
     m := masks.mouse_view
 
-    w := math.max(c.width * 2, k.width + m.width)
-    h := math.max(c.height + k.height, c.height + m.height)
+    w := math.max(g.width * 2, k.width + m.width)
+    h := math.max(g.height + k.height, g.height + m.height)
 
-    res := Vec2Du32 { w, h }*/
-
-    dims := screen_dimensions_res() // !!!
+    dims := Vec2Du32 { w, h }
 
     return dims
 }
@@ -65,23 +71,11 @@ screen_dimensions :: proc {
 }
 
 
-/* draw */
-
-COLOR_BLACK :: img.BLACK
-COLOR_TRANSPARENT :: p32{ 0, 0, 0, 0 }
-COLOR_BACKGROUND  :: p32{ 200, 200, 200, 255 }
-COLOR_ON          :: p32{ 50, 255, 50, 255 }
-COLOR_OFF         :: p32{ 127, 127, 127, 255 }
-COLOR_UNEXPECTED  :: p32{ 255, 0, 255, 255 }
-COLOR_ERROR       :: p32{ 255, 50, 50, 255 }
-
-
-
 /* state */
 
 StateData :: struct
 {
-    masks: DrawMaskData,
+    masks: MaskViewData,
     // music
     // sounds
     asset_memory: AssetMemory,
@@ -121,7 +115,7 @@ process_asset_memory :: proc(data: ^StateData) -> AssetStatus
         return am.status
     }
 
-    n_pixels := draw_mask_pixel_count(am^)
+    n_pixels := mask_view_pixel_count(am^)
     res := mb.create_buffer(buffer, n_pixels)
     if res != .OK
     {
@@ -130,7 +124,7 @@ process_asset_memory :: proc(data: ^StateData) -> AssetStatus
         return am.status
     }
 
-    data.masks = create_draw_mask_data(am^, buffer)
+    data.masks = create_mask_view_data(am^, buffer)
 
     dim := screen_dimensions(data.masks)
     out := data.out_view

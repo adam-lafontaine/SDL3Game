@@ -69,7 +69,7 @@ record_input :: proc(inputs: ^InputArray)
 }
 
 
-prev :: proc(inputs: ^InputArray) -> ^Input // pass by value?
+prev :: proc(inputs: ^InputArray) -> ^Input
 {
     return &inputs._inputs[inputs._id_prev]
 }
