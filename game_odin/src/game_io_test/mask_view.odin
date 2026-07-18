@@ -3,7 +3,6 @@ package game_io_test
 
 import img "../image_view"
 
-
 import "core:fmt"
 import "core:math"
 

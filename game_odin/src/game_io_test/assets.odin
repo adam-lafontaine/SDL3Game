@@ -1,8 +1,6 @@
 #+private
 package game_io_test
 
-
-import "../util"
 import mb "../util/memory_buffer"
 import sv "../util/span_view"
 import img "../image_view"

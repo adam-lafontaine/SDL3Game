@@ -38,6 +38,13 @@ mask_set_off :: proc(p: u8, default: p32) -> p32
 }
 
 
+@(private="file")
+mask_set_black :: proc(p: u8, default: p32) -> p32
+{
+    return cast(MaskPixel)p == .Color ? COLOR_BLACK : default
+}
+
+
 
 @(private="file")
 draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
@@ -63,11 +70,6 @@ draw_map :: proc(mv_map: ^MaskViewMap, is_on: b8)
 @(private="file")
 draw_map_rotated :: proc(mv_map: ^MaskViewMap, sin_cos: Vec2Df32)
 {
-    mask_set :: proc(m: u8, p: p32) -> p32 
-    { 
-        return cast(MaskPixel)m == .Color ? COLOR_BLACK : p
-    }
-
     src := mv_map.mask
     dst := mv_map.out
 
@@ -121,7 +123,7 @@ draw_map_rotated :: proc(mv_map: ^MaskViewMap, sin_cos: Vec2Df32)
             }
 
             mp := img.pixel_at(src, sx, sy)
-            d[x] = mask_set(mp, d[x])
+            d[x] = mask_set_black(mp, d[x])
         }
 
         dysin += sin

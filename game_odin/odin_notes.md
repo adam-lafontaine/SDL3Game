@@ -20,6 +20,14 @@ sudo apt install clang
 ```
 
 
+### App TODO
+
+* Audio, music, sound
+* joystick input
+* touch input
+* generate asset binary and definitions
+
+
 ### C++ raylib Set icon
 
 ```
@@ -34,14 +42,6 @@ void set_window_icon(Window& window, Icon64 const& icon)
 
     rl::SetWindowIcon(rimage);
 }
-```
-
-### C++ raylib input
-
-```
-
-
-
 ```
 
 ### Odin Pros & Cons

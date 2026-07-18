@@ -16,7 +16,7 @@ GraySubView :: img.GraySubView
 Vec2Df32 :: util.Vec2Df32
 Vec2Di32 :: util.Vec2Di32
 
-COLOR_BLACK :: img.BLACK
+COLOR_BLACK       :: img.BLACK
 COLOR_TRANSPARENT :: p32{ 0, 0, 0, 0 }
 COLOR_BACKGROUND  :: p32{ 200, 200, 200, 255 }
 COLOR_ON          :: p32{ 50, 255, 50, 255 }
